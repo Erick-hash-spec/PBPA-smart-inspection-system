@@ -39,39 +39,32 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden" style={{background:'linear-gradient(135deg,#4a0e0e 0%,#6b1414 35%,#8B1A1A 65%,#a52020 100%)'}}>
-      {/* Animated background orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full opacity-20 animate-pulse" style={{background:'radial-gradient(circle,#fff 0%,transparent 70%)'}} />
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-10 animate-pulse" style={{background:'radial-gradient(circle,#fff 0%,transparent 70%)',animationDelay:'1s'}} />
-        <div className="absolute top-1/2 left-1/4 w-48 h-48 rounded-full opacity-5" style={{background:'radial-gradient(circle,#fff 0%,transparent 70%)'}} />
-        {/* Grid pattern */}
-        <div className="absolute inset-0 opacity-5" style={{backgroundImage:'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)',backgroundSize:'40px 40px'}} />
-      </div>
+    <div className="min-h-screen overflow-y-auto px-4 py-6 sm:py-8 lg:py-10" style={{background:'linear-gradient(135deg,#4a0e0e 0%,#6b1414 35%,#8B1A1A 65%,#a52020 100%)'}}>
+      <div className="pointer-events-none fixed inset-0 opacity-5" style={{backgroundImage:'linear-gradient(rgba(255,255,255,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.18) 1px,transparent 1px)',backgroundSize:'40px 40px'}} />
 
-      <div className="relative w-full max-w-md animate-fade-in">
+      <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-md flex-col justify-center sm:min-h-[calc(100vh-4rem)]">
         {/* Brand header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-5 shadow-2xl" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,0.25)'}}>
-            <Droplets className="w-10 h-10 text-white" />
+        <div className="text-center mb-5 sm:mb-7">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl mb-4 shadow-2xl" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,0.25)'}}>
+            <Droplets className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
           </div>
-          <h1 className="text-4xl font-extrabold text-white mb-2 tracking-tight">Smart Reporting</h1>
-          <p className="text-white/60 text-sm font-medium tracking-wide uppercase">PBPA Petroleum Inspection System</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2 tracking-tight">Smart Reporting</h1>
+          <p className="text-white/70 text-xs sm:text-sm font-medium tracking-wide uppercase">PBPA Petroleum Inspection System</p>
         </div>
 
         {/* Feature pills */}
-        <div className="flex justify-center gap-3 mb-8">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
           {[{icon:Zap,label:'Real-time'},{icon:Shield,label:'Secure'},{icon:Droplets,label:'Petroleum'}].map(({icon:Icon,label})=>(
-            <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/80" style={{background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.15)'}}>
+            <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/85" style={{background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.15)'}}>
               <Icon className="w-3 h-3" />{label}
             </div>
           ))}
         </div>
 
         {/* Glass card */}
-        <div className="rounded-3xl shadow-2xl p-8" style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)'}}>
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
-          <p className="text-gray-500 text-sm mb-7">Sign in to access your dashboard</p>
+        <div className="rounded-2xl shadow-2xl p-5 sm:p-8" style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)'}}>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
+          <p className="text-gray-500 text-sm mb-5 sm:mb-7">Sign in to access your dashboard</p>
           <div className="mb-5 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-600">
             Demo access: <span className="font-semibold text-gray-900">supervisor1</span> /
             <span className="font-semibold text-gray-900"> password123</span>
@@ -84,14 +77,14 @@ export const LoginPage = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Username</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3.5 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all sm:py-3.5"
                 placeholder="Enter your username"
                 required
                 disabled={loading}
@@ -105,7 +98,7 @@ export const LoginPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3.5 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all pr-12"
+                  className="w-full px-4 py-3 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all pr-12 sm:py-3.5"
                   placeholder="Enter your password"
                   required
                   disabled={loading}
@@ -123,7 +116,7 @@ export const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full text-white font-bold py-4 rounded-2xl transition-all disabled:opacity-50 mt-2 text-sm tracking-wide shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
+              className="w-full text-white font-bold py-3.5 rounded-2xl transition-all disabled:opacity-50 mt-2 text-sm tracking-wide shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 sm:py-4"
               style={{background:'linear-gradient(135deg,#8B1A1A 0%,#a52020 100%)'}}
             >
               {loading ? (
@@ -137,7 +130,7 @@ export const LoginPage = () => {
 
         </div>
 
-        <p className="text-center mt-5 text-white/60 text-sm">
+        <p className="text-center mt-4 sm:mt-5 text-white/70 text-sm">
           Contact your administrator to get access.
         </p>
       </div>
