@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
-import { Eye, EyeOff, AlertCircle, BarChart2 } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Droplets, Zap, Shield } from 'lucide-react';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -11,68 +11,81 @@ export const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const getLoginErrorMessage = (err) => {
+    if (!err.response) return 'Cannot reach the server. Please check the API URL or try again in a moment.';
+    return err.response?.data?.detail || 'Login failed. Please check your credentials.';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
       const response = await authService.login(username, password);
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
+      sessionStorage.setItem('access_token', response.data.access);
+      sessionStorage.setItem('refresh_token', response.data.refresh);
       const profile = await authService.getProfile();
-      localStorage.setItem('user_role', profile.data.role);
-      localStorage.setItem('user_id', profile.data.id);
-      localStorage.setItem('username', username);
+      sessionStorage.setItem('user_role', profile.data.role);
+      sessionStorage.setItem('user_id', profile.data.id);
+      sessionStorage.setItem('username', username);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+      setError(getLoginErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
-  const fillDemo = (role) => {
-    setUsername(role === 'inspector' ? 'inspector1' : 'supervisor1');
-    setPassword('password123');
-  };
-
   return (
-    <div className="min-h-screen gradient-primary flex items-center justify-center p-4">
-      {/* Background decoration */}
+    <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden" style={{background:'linear-gradient(135deg,#4a0e0e 0%,#6b1414 35%,#8B1A1A 65%,#a52020 100%)'}}>
+      {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/5 rounded-full" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 rounded-full" />
+        <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full opacity-20 animate-pulse" style={{background:'radial-gradient(circle,#fff 0%,transparent 70%)'}} />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-10 animate-pulse" style={{background:'radial-gradient(circle,#fff 0%,transparent 70%)',animationDelay:'1s'}} />
+        <div className="absolute top-1/2 left-1/4 w-48 h-48 rounded-full opacity-5" style={{background:'radial-gradient(circle,#fff 0%,transparent 70%)'}} />
+        {/* Grid pattern */}
+        <div className="absolute inset-0 opacity-5" style={{backgroundImage:'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)',backgroundSize:'40px 40px'}} />
       </div>
 
       <div className="relative w-full max-w-md animate-fade-in">
-        {/* Header */}
+        {/* Brand header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/15 backdrop-blur rounded-2xl shadow-lg mb-4">
-            <BarChart2 className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-5 shadow-2xl" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,0.25)'}}>
+            <Droplets className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-1">Smart Reporting</h1>
-          <p className="text-blue-200 text-sm">Petroleum Tank Inspection System</p>
+          <h1 className="text-4xl font-extrabold text-white mb-2 tracking-tight">Smart Reporting</h1>
+          <p className="text-white/60 text-sm font-medium tracking-wide uppercase">PBPA Petroleum Inspection System</p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">Sign in to your account</h2>
+        {/* Feature pills */}
+        <div className="flex justify-center gap-3 mb-8">
+          {[{icon:Zap,label:'Real-time'},{icon:Shield,label:'Secure'},{icon:Droplets,label:'Petroleum'}].map(({icon:Icon,label})=>(
+            <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/80" style={{background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.15)'}}>
+              <Icon className="w-3 h-3" />{label}
+            </div>
+          ))}
+        </div>
+
+        {/* Glass card */}
+        <div className="rounded-3xl shadow-2xl p-8" style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)'}}>
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
+          <p className="text-gray-500 text-sm mb-7">Sign in to access your dashboard</p>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex items-start gap-2 text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl mb-5 flex items-start gap-2.5 text-sm">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Username</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition"
+                className="w-full px-4 py-3.5 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all"
                 placeholder="Enter your username"
                 required
                 disabled={loading}
@@ -80,13 +93,13 @@ export const LoginPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition pr-12"
+                  className="w-full px-4 py-3.5 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all pr-12"
                   placeholder="Enter your password"
                   required
                   disabled={loading}
@@ -94,7 +107,7 @@ export const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -104,40 +117,22 @@ export const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full gradient-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 hover:shadow-lg transition disabled:opacity-50 mt-2"
+              className="w-full text-white font-bold py-4 rounded-2xl transition-all disabled:opacity-50 mt-2 text-sm tracking-wide shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
+              style={{background:'linear-gradient(135deg,#8B1A1A 0%,#a52020 100%)'}}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Signing in...
                 </span>
-              ) : 'Sign In'}
+              ) : 'Sign In →'}
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 pt-5 border-t border-gray-100">
-            <p className="text-xs text-gray-500 text-center mb-3 font-medium uppercase tracking-wide">Quick Demo Access</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => fillDemo('inspector')}
-                className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-800 font-semibold px-3 py-2 rounded-lg transition text-center"
-              >
-                Inspector
-              </button>
-              <button
-                onClick={() => fillDemo('supervisor')}
-                className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-semibold px-3 py-2 rounded-lg transition text-center"
-              >
-                Supervisor
-              </button>
-            </div>
-          </div>
         </div>
 
-        <p className="text-center mt-4 text-blue-200 text-sm">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-white font-semibold hover:underline">Register here</Link>
+        <p className="text-center mt-5 text-white/60 text-sm">
+          Contact your administrator to get access.
         </p>
       </div>
     </div>

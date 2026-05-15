@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { inspectionService } from '../services/api';
 import { Plus, AlertCircle, Inbox, ClipboardList, FileText, Send, CheckCircle, XCircle, Search, Filter, Calendar } from 'lucide-react';
 import { SubmitModal } from '../components/SubmitModal';
@@ -27,23 +27,32 @@ const ConfirmModal = ({ message, onConfirm, onCancel }) => (
 
 export const InspectionListPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isDarkMode } = useDarkMode();
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
-  const [status, setStatus]     = useState('');
+  const [status, setStatus]     = useState(() => searchParams.get('status') || '');
   const [timeFilter, setTimeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [submitTarget, setSubmitTarget] = useState(null);
   const [submittedIds, setSubmittedIds] = useState(new Set());
 
+  useEffect(() => {
+    setStatus(searchParams.get('status') || '');
+  }, [searchParams]);
+
   useEffect(() => { fetchInspections(); }, [status, timeFilter]); // eslint-disable-line
 
   const fetchInspections = async () => {
     setLoading(true);
     try {
-      const res = await inspectionService.getInspections(status ? { status } : {});
+      const params = {
+        ...(status ? { status } : {}),
+        ...(timeFilter === 'all' ? {} : { period: timeFilter }),
+      };
+      const res = await inspectionService.getInspections(params);
       setInspections(res.data.results || res.data);
     } catch { setError('Failed to load dip tickets'); }
     finally { setLoading(false); }
@@ -64,6 +73,15 @@ export const InspectionListPage = () => {
     try { await inspectionService.deleteInspection(deleteTarget.id); fetchInspections(); }
     catch (err) { setError(err.response?.data?.detail || 'Failed to delete'); }
     finally { setDeleteTarget(null); }
+  };
+
+  const handleStatusChange = (nextStatus) => {
+    setStatus(nextStatus);
+    if (nextStatus) {
+      setSearchParams({ status: nextStatus });
+    } else {
+      setSearchParams({});
+    }
   };
 
   const filteredInspections = inspections.filter(insp => 
@@ -145,7 +163,7 @@ export const InspectionListPage = () => {
               return (
                 <button
                   key={s}
-                  onClick={() => setStatus(s)}
+                  onClick={() => handleStatusChange(s)}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition inline-flex items-center gap-1.5 ${
                     status === s ? 'gradient-primary text-white shadow-md hover-lift' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
@@ -270,9 +288,7 @@ export const InspectionListPage = () => {
           <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 mb-6">
             {searchQuery ? 'No matching results' : status ? `No ${status} dip tickets` : 'Create your first dip ticket to get started'}
           </p>
-          <button onClick={() => navigate('/inspections/new')} className="gradient-primary text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:shadow-lg transition inline-flex items-center gap-2 hover-lift">
-            <Plus className="w-4 h-4" /> New Dip Ticket
-          </button>
+
         </div>
       )}
     </div>

@@ -6,39 +6,62 @@ Run: python manage.py shell < load_sample_data.py
 from django.contrib.auth.models import User
 from inspections.models import UserProfile, Tank
 
-# Create sample users
-if not User.objects.filter(username='inspector1').exists():
-    inspector = User.objects.create_user(
-        username='inspector1',
-        email='inspector1@example.com',
-        password='password123',
-        first_name='John',
-        last_name='Inspector'
-    )
-    UserProfile.objects.create(user=inspector, role='inspector', department='Field Operations')
-    print("Created inspector user")
 
-if not User.objects.filter(username='supervisor1').exists():
-    supervisor = User.objects.create_user(
-        username='supervisor1',
-        email='supervisor1@example.com',
-        password='password123',
-        first_name='Jane',
-        last_name='Supervisor'
+def ensure_demo_user(username, email, password, first_name, last_name, role, department):
+    user, created = User.objects.get_or_create(
+        username=username,
+        defaults={
+            'email': email,
+            'first_name': first_name,
+            'last_name': last_name,
+        },
     )
-    UserProfile.objects.create(user=supervisor, role='supervisor', department='QA')
-    print("Created supervisor user")
+    user.email = email
+    user.first_name = first_name
+    user.last_name = last_name
+    user.set_password(password)
+    user.save()
 
-if not User.objects.filter(username='admin1').exists():
-    admin = User.objects.create_user(
-        username='admin1',
-        email='admin1@example.com',
-        password='password123',
-        first_name='Admin',
-        last_name='User'
+    UserProfile.objects.update_or_create(
+        user=user,
+        defaults={'role': role, 'department': department, 'is_active': True},
     )
-    UserProfile.objects.create(user=admin, role='admin', department='Management')
-    print("Created admin user")
+
+    action = "Created" if created else "Updated"
+    print(f"{action} {role} user: {username}")
+    return user
+
+
+# Create or repair sample users so the demo buttons always match real accounts.
+ensure_demo_user(
+    username='inspector1',
+    email='inspector1@example.com',
+    password='password123',
+    first_name='John',
+    last_name='Inspector',
+    role='inspector',
+    department='Field Operations',
+)
+
+ensure_demo_user(
+    username='supervisor1',
+    email='supervisor1@example.com',
+    password='password123',
+    first_name='Jane',
+    last_name='Supervisor',
+    role='supervisor',
+    department='QA',
+)
+
+ensure_demo_user(
+    username='admin1',
+    email='admin1@example.com',
+    password='password123',
+    first_name='Admin',
+    last_name='User',
+    role='admin',
+    department='Management',
+)
 
 # Create sample tanks
 tanks_data = [

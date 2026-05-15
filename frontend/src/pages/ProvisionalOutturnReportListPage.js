@@ -138,12 +138,6 @@ const ProvisionalOutturnReportListPage = () => {
       {reports.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-8 text-center">
           <p className="text-gray-500 text-lg">No reports found</p>
-          <button
-            onClick={handleCreateNew}
-            className="mt-4 bg-amber-700 hover:bg-amber-800 text-white px-6 py-2 rounded-lg font-medium transition"
-          >
-            Create First Report
-          </button>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">

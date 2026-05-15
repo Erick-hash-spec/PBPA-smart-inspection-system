@@ -14,6 +14,12 @@ from .models import (
     ProvisionalOuturnReport, ProvisionalOuturnItem,
     StockReport, StockReportItem,
 )
+from .calculations import (
+    SHORE_TANK_ITEM_VALIDATION_FIELDS,
+    shore_tank_item_validation_data,
+    validate_shore_tank_calculation_data,
+    validate_shore_tank_item_data,
+)
 
 
 # ========== USER SERIALIZERS ==========
@@ -26,10 +32,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    user_detail = UserSerializer(source='user', read_only=True)
 
     class Meta:
         model = UserProfile
-        fields = ('id', 'user', 'role', 'department', 'phone', 'is_active', 'created_at', 'updated_at')
+        fields = ('id', 'user', 'user_detail', 'role', 'department', 'phone', 'is_active', 'created_at', 'updated_at')
         read_only_fields = ('id', 'created_at', 'updated_at')
 
 
@@ -408,6 +415,14 @@ class ShoreTankCalculationItemSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'created_at')
 
+    def validate(self, data):
+        merged = shore_tank_item_validation_data(self.instance) if self.instance else {}
+        merged.update(data)
+        errors = validate_shore_tank_item_data(merged)
+        if errors:
+            raise serializers.ValidationError(errors)
+        return data
+
 
 class ShoreTankCalculationListSerializer(serializers.ModelSerializer):
     created_by_name               = serializers.CharField(source='created_by.get_full_name', read_only=True)
@@ -471,6 +486,37 @@ class ShoreTankCalculationDetailSerializer(serializers.ModelSerializer):
             'is_signed', 'signed_at', 'signed_by_name', 'document_hash',
             'created_at', 'updated_at', 'finalized_at'
         )
+
+    def validate(self, data):
+        merged = {}
+        if self.instance:
+            for field in (
+                'vessel_observed_volume_m3', 'vessel_standard_volume_m3',
+                'vessel_weight_air_mt', 'meter_quantity_m3',
+                'vessel_density_kg_m3', 'vessel_temperature_c',
+            ):
+                merged[field] = getattr(self.instance, field)
+        merged.update(data)
+
+        if 'tank_items' not in merged and self.instance:
+            merged['tank_items'] = [
+                shore_tank_item_validation_data(item)
+                for item in self.instance.tank_items.all()
+            ]
+        elif 'tank_items' in merged:
+            merged['tank_items'] = [
+                {
+                    field: item_data.get(field)
+                    for field in SHORE_TANK_ITEM_VALIDATION_FIELDS
+                    if field in item_data
+                }
+                for item_data in merged['tank_items']
+            ]
+
+        errors = validate_shore_tank_calculation_data(merged)
+        if errors:
+            raise serializers.ValidationError(errors)
+        return data
 
     def _sync_items(self, calculation, items_data):
         calculation.tank_items.all().delete()

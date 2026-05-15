@@ -45,8 +45,10 @@ export const VesselReportListPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    vesselReportService.getReports().then(r => setReports(r.data.results || r.data)).finally(() => setLoading(false));
-  }, []);
+    setLoading(true);
+    const params = timeFilter === 'all' ? {} : { period: timeFilter };
+    vesselReportService.getReports(params).then(r => setReports(r.data.results || r.data)).finally(() => setLoading(false));
+  }, [timeFilter]);
 
   const filteredReports = reports.filter(r =>
     r.vessel_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||

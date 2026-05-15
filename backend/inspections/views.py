@@ -2,13 +2,22 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.utils import timezone
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+from datetime import timedelta
+import logging
 import io
+
+sec_log = logging.getLogger('inspections.security')
+
+
+class LoginRateThrottle(AnonRateThrottle):
+    rate = '10/minute'
 
 from .models import (
     UserProfile, Tank, Inspection, Seal, Isolation,
@@ -60,28 +69,69 @@ def get_or_create_user_profile(user):
     return profile
 
 
+def period_start_date(period):
+    """Return the local start date for a supported period filter."""
+    today = timezone.localdate()
+    if period == 'daily':
+        return today
+    if period == 'weekly':
+        return today - timedelta(days=today.weekday())
+    if period == 'monthly':
+        return today.replace(day=1)
+    if period == 'yearly':
+        return today.replace(month=1, day=1)
+    return None
+
+
+def filter_queryset_by_period(queryset, period, date_field):
+    """Apply all/daily/weekly/monthly/yearly filters to DateField or DateTimeField values."""
+    start_date = period_start_date(period)
+    if not start_date:
+        return queryset
+
+    today = timezone.localdate()
+    field = queryset.model._meta.get_field(date_field)
+    if field.get_internal_type() == 'DateTimeField':
+        return queryset.filter(**{
+            f'{date_field}__date__gte': start_date,
+            f'{date_field}__date__lte': today,
+        })
+
+    return queryset.filter(**{
+        f'{date_field}__gte': start_date,
+        f'{date_field}__lte': today,
+    })
+
+
 # ========== USER VIEWSETS ==========
 class UserRegistrationViewSet(viewsets.ModelViewSet):
-    """User registration endpoint"""
+    """User creation — admin only (no public registration)."""
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
-    permission_classes = (AllowAny,)
-    
+    permission_classes = (IsAuthenticated,)
+
     def get_serializer_class(self):
         if self.action == 'create':
             return UserRegistrationSerializer
         return UserSerializer
-    
+
     def create(self, request, *args, **kwargs):
+        # Only admins may create users
+        profile = get_or_create_user_profile(request.user)
+        if profile.role != 'admin':
+            sec_log.warning('Non-admin user %s attempted to create a user.', request.user.username)
+            return Response({'detail': 'Only admins can create users.'}, status=status.HTTP_403_FORBIDDEN)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        
-        # Create user profile
-        UserProfile.objects.create(user=user, role='inspector')
-        
+        role = request.data.get('role', 'inspector')
+        if role not in ('inspector', 'supervisor', 'admin'):
+            role = 'inspector'
+        UserProfile.objects.create(user=user, role=role)
+        sec_log.info('Admin %s created user %s with role %s.', request.user.username, user.username, role)
         return Response(
-            {'detail': 'User registered successfully', 'user_id': user.id},
+            {'detail': 'User created successfully.', 'user_id': user.id},
             status=status.HTTP_201_CREATED
         )
 
@@ -91,27 +141,43 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = (IsAuthenticated,)
-    
+
     def get_queryset(self):
         user = self.request.user
         profile = get_or_create_user_profile(user)
         if profile.role == 'admin':
             return UserProfile.objects.all()
         return UserProfile.objects.filter(user=user)
-    
+
     @action(detail=False, methods=['get'])
     def current_user(self, request):
         """Get current user's profile"""
         profile = get_or_create_user_profile(request.user)
         serializer = self.get_serializer(profile)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=['get'])
     def list_inspectors(self, request):
         """Get all inspectors"""
         inspectors = UserProfile.objects.filter(role='inspector', is_active=True)
         serializer = self.get_serializer(inspectors, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def set_password(self, request, pk=None):
+        """Admin sets password for any user."""
+        profile = get_or_create_user_profile(request.user)
+        if profile.role != 'admin':
+            sec_log.warning('Non-admin %s attempted set_password.', request.user.username)
+            return Response({'detail': 'Only admins can set passwords.'}, status=status.HTTP_403_FORBIDDEN)
+        user_profile = self.get_object()
+        password = request.data.get('password', '')
+        if len(password) < 8:
+            return Response({'detail': 'Password must be at least 8 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+        user_profile.user.set_password(password)
+        user_profile.user.save()
+        sec_log.info('Admin %s reset password for user %s.', request.user.username, user_profile.user.username)
+        return Response({'detail': 'Password updated successfully.'})
 
 
 # ========== TANK VIEWSETS ==========
@@ -233,6 +299,7 @@ class InspectionViewSet(viewsets.ModelViewSet):
         tank_id = self.request.query_params.get('tank_id')
         date_from = self.request.query_params.get('date_from')
         date_to = self.request.query_params.get('date_to')
+        period = self.request.query_params.get('period')
         
         queryset = Inspection.objects.all()
         
@@ -257,6 +324,8 @@ class InspectionViewSet(viewsets.ModelViewSet):
         
         if date_to:
             queryset = queryset.filter(inspection_date__lte=date_to)
+
+        queryset = filter_queryset_by_period(queryset, period, 'inspection_date')
         
         return queryset
     
@@ -360,11 +429,28 @@ class InspectionViewSet(viewsets.ModelViewSet):
     def dashboard(self, request):
         """Get dashboard statistics"""
         user = request.user
+        period = request.query_params.get('period')
         
         profile = get_or_create_user_profile(user)
+
+        inspections_qs = filter_queryset_by_period(Inspection.objects.all(), period, 'inspection_date')
+        seal_reports_qs = filter_queryset_by_period(SealIsolationReport.objects.all(), period, 'report_date')
+        shore_calcs_qs = filter_queryset_by_period(ShoreTankCalculation.objects.all(), period, 'calculation_date')
+        stock_reports_qs = filter_queryset_by_period(StockReport.objects.all(), period, 'report_date')
+        provisional_reports_qs = filter_queryset_by_period(ProvisionalOuturnReport.objects.all(), period, 'report_date')
+        vessel_reports_qs = filter_queryset_by_period(VesselReport.objects.all(), period, 'discharge_date')
+
+        document_counts = {
+            'inspections': inspections_qs.count(),
+            'seal_isolation_reports': seal_reports_qs.count(),
+            'shore_tank_calculations': shore_calcs_qs.count(),
+            'stock_reports': stock_reports_qs.count(),
+            'provisional_outturn_reports': provisional_reports_qs.count(),
+            'vessel_reports': vessel_reports_qs.count(),
+        }
         
         if profile.role == 'inspector':
-            inspections = Inspection.objects.filter(inspector=user)
+            inspections = inspections_qs.filter(inspector=user)
             total_inspections = inspections.count()
             draft = inspections.filter(status='draft').count()
             submitted = inspections.filter(status='submitted').count()
@@ -376,33 +462,36 @@ class InspectionViewSet(viewsets.ModelViewSet):
                 'draft': draft,
                 'submitted': submitted,
                 'approved': approved,
-                'pending_approval': submitted
+                'pending_approval': submitted,
+                'document_counts': document_counts,
             })
         
         elif profile.role == 'supervisor':
-            inspections = Inspection.objects.filter(status='submitted')
+            inspections = inspections_qs.filter(status='submitted')
             total_pending = inspections.count()
-            approved = Inspection.objects.filter(supervisor=user, status='approved').count()
+            approved = inspections_qs.filter(supervisor=user, status='approved').count()
             
             return Response({
                 'role': 'supervisor',
                 'total_pending_approval': total_pending,
                 'total_approved': approved,
-                'awaiting_review': total_pending
+                'awaiting_review': total_pending,
+                'document_counts': document_counts,
             })
         
         elif profile.role == 'admin':
-            total_inspections = Inspection.objects.count()
+            total_inspections = inspections_qs.count()
             total_tanks = Tank.objects.filter(is_active=True).count()
-            approved = Inspection.objects.filter(status='approved').count()
-            rejected = Inspection.objects.filter(status='rejected').count()
+            approved = inspections_qs.filter(status='approved').count()
+            rejected = inspections_qs.filter(status='rejected').count()
             
             return Response({
                 'role': 'admin',
                 'total_inspections': total_inspections,
                 'total_tanks': total_tanks,
                 'approved': approved,
-                'rejected': rejected
+                'rejected': rejected,
+                'document_counts': document_counts,
             })
         
         return Response({'detail': 'Unknown role'}, status=status.HTTP_400_BAD_REQUEST)
@@ -443,6 +532,7 @@ class ProductReceiptCertificateViewSet(viewsets.ModelViewSet):
         queryset = ProductReceiptCertificate.objects.select_related('created_by').prefetch_related('items__tank')
         user = self.request.user
         status_filter = self.request.query_params.get('status')
+        period = self.request.query_params.get('period')
 
         if get_or_create_user_profile(user).role == 'inspector':
             queryset = queryset.filter(created_by=user)
@@ -450,6 +540,7 @@ class ProductReceiptCertificateViewSet(viewsets.ModelViewSet):
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
+        queryset = filter_queryset_by_period(queryset, period, 'receipt_date')
         return queryset
 
     def get_serializer_class(self):
@@ -693,6 +784,7 @@ class SealIsolationReportViewSet(viewsets.ModelViewSet):
         queryset = SealIsolationReport.objects.select_related('created_by').prefetch_related('entries')
         user = self.request.user
         status_filter = self.request.query_params.get('status')
+        period = self.request.query_params.get('period')
 
         if get_or_create_user_profile(user).role == 'inspector':
             queryset = queryset.filter(created_by=user)
@@ -700,6 +792,7 @@ class SealIsolationReportViewSet(viewsets.ModelViewSet):
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
+        queryset = filter_queryset_by_period(queryset, period, 'report_date')
         return queryset
 
     def get_serializer_class(self):
@@ -825,6 +918,7 @@ class ShoreTankCalculationViewSet(viewsets.ModelViewSet):
         queryset = ShoreTankCalculation.objects.select_related('created_by').prefetch_related('tank_items__tank')
         user = self.request.user
         status_filter = self.request.query_params.get('status')
+        period = self.request.query_params.get('period')
 
         if get_or_create_user_profile(user).role == 'inspector':
             queryset = queryset.filter(created_by=user)
@@ -832,6 +926,7 @@ class ShoreTankCalculationViewSet(viewsets.ModelViewSet):
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
+        queryset = filter_queryset_by_period(queryset, period, 'calculation_date')
         return queryset
 
     def get_serializer_class(self):
@@ -991,7 +1086,8 @@ class VesselReportViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        return VesselReport.objects.select_related('created_by')
+        qs = VesselReport.objects.select_related('created_by')
+        return filter_queryset_by_period(qs, self.request.query_params.get('period'), 'discharge_date')
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -1150,6 +1246,7 @@ class ProvisionalOuturnReportViewSet(viewsets.ModelViewSet):
         profile = get_or_create_user_profile(self.request.user)
         if profile.role == 'inspector':
             qs = qs.filter(created_by=self.request.user)
+        qs = filter_queryset_by_period(qs, self.request.query_params.get('period'), 'report_date')
         return qs
 
     def perform_create(self, serializer):
@@ -1535,6 +1632,7 @@ class StockReportViewSet(viewsets.ModelViewSet):
         profile = get_or_create_user_profile(self.request.user)
         if profile.role == 'inspector':
             qs = qs.filter(created_by=self.request.user)
+        qs = filter_queryset_by_period(qs, self.request.query_params.get('period'), 'report_date')
         return qs
 
     def perform_create(self, serializer):
@@ -1690,3 +1788,23 @@ class StockReportViewSet(viewsets.ModelViewSet):
         doc.build(elems)
         buf.seek(0)
         return buf
+
+
+def csrf_failure(request, reason=""):
+    """Handle CSRF failures securely."""
+    from .exception_handler import custom_exception_handler
+    from rest_framework.exceptions import ValidationError
+    
+    sec_log.warning(f"CSRF failure: {reason or 'no reason provided'} | IP: {request.META.get('REMOTE_ADDR')}")
+    
+    if request.headers.get('Accept', '').startswith('application/json') or request.path.startswith('/api/'):
+        return Response(
+            {'detail': 'CSRF verification failed. Request aborted.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    return HttpResponse(
+        '<h1>403 Forbidden</h1><p>CSRF verification failed. Request aborted.</p>',
+        status=403,
+        content_type='text/html'
+    )

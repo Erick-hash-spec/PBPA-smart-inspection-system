@@ -4,53 +4,54 @@ Custom permissions for the inspection system
 from rest_framework.permissions import BasePermission
 
 
+def _role(user):
+    """Return the role string for a user, or None."""
+    if not user or not user.is_authenticated:
+        return None
+    profile = getattr(user, 'profile', None)
+    return getattr(profile, 'role', None)
+
+
 class IsInspector(BasePermission):
-    """Permission to check if user is an inspector"""
-    
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        return hasattr(request.user, 'profile') and request.user.profile.role == 'inspector'
+        return _role(request.user) == 'inspector'
 
 
 class IsSupervisor(BasePermission):
-    """Permission to check if user is a supervisor"""
-    
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        return hasattr(request.user, 'profile') and request.user.profile.role == 'supervisor'
+        return _role(request.user) == 'supervisor'
 
 
 class IsAdmin(BasePermission):
-    """Permission to check if user is an admin"""
-    
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        return hasattr(request.user, 'profile') and request.user.profile.role == 'admin'
+        return _role(request.user) == 'admin'
+
+
+class IsSupervisorOrAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return _role(request.user) in ('supervisor', 'admin')
 
 
 class IsInspectorOrReadOnly(BasePermission):
     """Allow inspectors to create/edit, others can read"""
-    
+
     def has_permission(self, request, view):
         if request.method in ('GET', 'HEAD', 'OPTIONS'):
-            return True
-        return (
-            hasattr(request.user, 'profile') and
-            request.user.profile.role == 'inspector'
-        )
+            return request.user and request.user.is_authenticated
+        return _role(request.user) == 'inspector'
 
 
 class IsOwnerOrAdmin(BasePermission):
-    """Permission to check if user is the owner or admin"""
-    
+    """Require authentication at view level; ownership check at object level."""
+
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+
     def has_object_permission(self, request, view, obj):
-        if hasattr(request.user, 'profile') and request.user.profile.role == 'admin':
+        if _role(request.user) == 'admin':
             return True
-        
-        if hasattr(obj, 'inspector'):
-            return obj.inspector == request.user
-        
-        return False
+        owner_field = next(
+            (f for f in ('inspector', 'created_by', 'submitted_by') if hasattr(obj, f)),
+            None,
+        )
+        return owner_field and getattr(obj, owner_field) == request.user

@@ -1,10 +1,10 @@
 databases:
-  - name: smart-reporting-db
+  - name: pbpa-smart-inspection-system-db
     plan: free
 
 services:
   - type: web
-    name: smart-reporting-api
+    name: pbpa-smart-inspection-system
     runtime: python
     plan: free
     buildCommand: bash build.sh
@@ -19,28 +19,32 @@ services:
       - key: ALLOWED_HOSTS
         value: .onrender.com
       - key: FRONTEND_HOST
-        fromService:
-          name: smart-reporting-frontend
-          type: web
-          property: host
+        value: pbpa-smart-inspection-system-3dr7.onrender.com
+      - key: BACKEND_HOST
+        value: pbpa-smart-inspection-system.onrender.com
+      - key: FRONTEND_URL
+        value: https://pbpa-smart-inspection-system-3dr7.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://pbpa-smart-inspection-system-3dr7.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://pbpa-smart-inspection-system-3dr7.onrender.com,https://pbpa-smart-inspection-system.onrender.com
       - key: DATABASE_URL
         fromDatabase:
-          name: smart-reporting-db
+          name: pbpa-smart-inspection-system-db
           property: connectionString
+      - key: SEED_DEMO_DATA
+        value: true
 
   - type: web
-    name: smart-reporting-frontend
+    name: pbpa-smart-inspection-system-3dr7
     runtime: static
     plan: free
-    buildCommand: cd frontend && npm ci && REACT_APP_API_URL=https://$API_HOST/api npm run build
+    buildCommand: cd frontend && npm ci && REACT_APP_API_URL=https://pbpa-smart-inspection-system.onrender.com/api npm run build
     staticPublishPath: frontend/build
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
     envVars:
-      - key: API_HOST
-        fromService:
-          name: smart-reporting-api
-          type: web
-          property: host
+      - key: REACT_APP_API_URL
+        value: https://pbpa-smart-inspection-system.onrender.com/api

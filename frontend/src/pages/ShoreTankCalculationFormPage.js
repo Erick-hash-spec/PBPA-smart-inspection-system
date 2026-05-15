@@ -35,6 +35,25 @@ const opt  = (v) => (v === '' || v == null ? null : Number(v));
 const zero = (v) => Number(v || 0);
 const nv   = (v) => (v == null ? '' : v);
 
+const formatApiError = (error) => {
+  const data = error.response?.data;
+  if (!data) return null;
+  if (typeof data === 'string') return data;
+  if (data.detail) return data.detail;
+
+  const flatten = (value, path = '') => {
+    if (Array.isArray(value)) {
+      return value.flatMap((item, index) => flatten(item, path ? `${path}.${index + 1}` : `${index + 1}`));
+    }
+    if (value && typeof value === 'object') {
+      return Object.entries(value).flatMap(([key, item]) => flatten(item, path ? `${path}.${key}` : key));
+    }
+    return [`${path}: ${value}`];
+  };
+
+  return flatten(data).join(' ');
+};
+
 export const ShoreTankCalculationFormPage = () => {
   const navigate   = useNavigate();
   const { id }     = useParams();
@@ -242,7 +261,7 @@ export const ShoreTankCalculationFormPage = () => {
         navigate('/shore-tank-calculations');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || `Failed to ${isEdit ? 'update' : 'create'} calculation`);
+      setError(formatApiError(err) || `Failed to ${isEdit ? 'update' : 'create'} calculation`);
     } finally { setLoading(false); }
   };
 

@@ -11,7 +11,7 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = sessionStorage.getItem('access_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
@@ -22,20 +22,34 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Network error (backend down) — redirect to login silently
+    if (!error.response) {
+      if (sessionStorage.getItem('access_token')) {
+        sessionStorage.clear();
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+      const refreshToken = sessionStorage.getItem('refresh_token');
+      if (!refreshToken) {
+        sessionStorage.clear();
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
         const response = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, { refresh: refreshToken });
-        localStorage.setItem('access_token', response.data.access);
+        sessionStorage.setItem('access_token', response.data.access);
         axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
         originalRequest.headers['Authorization'] = `Bearer ${response.data.access}`;
         return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+      } catch {
+        sessionStorage.clear();
         window.location.href = '/login';
-        return Promise.reject(refreshError);
+        return Promise.reject(error);
       }
     }
     return Promise.reject(error);
@@ -47,18 +61,25 @@ export const authService = {
   login: (username, password) => axiosInstance.post('/auth/token/', { username, password }),
   register: (userData) => axiosInstance.post('/auth/register/', userData),
   logout: () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_role');
+    sessionStorage.clear();
   },
   getProfile: () => axiosInstance.get('/users/profile/current_user/'),
   getCurrentUser: () => {
-    const token = localStorage.getItem('access_token');
+    const token = sessionStorage.getItem('access_token');
     if (!token) return null;
     try { return jwtDecode(token); } catch { return null; }
   },
-  isAuthenticated: () => !!localStorage.getItem('access_token'),
-  getUserRole: () => localStorage.getItem('user_role'),
+  isAuthenticated: () => !!sessionStorage.getItem('access_token'),
+  getUserRole: () => sessionStorage.getItem('user_role'),
+};
+
+// ========== USER MANAGEMENT SERVICE (Admin only) ==========
+export const userService = {
+  getUsers: () => axiosInstance.get('/users/profile/'),
+  createUser: (data) => axiosInstance.post('/auth/register/', data),
+  updateUser: (id, data) => axiosInstance.patch(`/users/profile/${id}/`, data),
+  deleteUser: (id) => axiosInstance.delete(`/users/profile/${id}/`),
+  setPassword: (id, password) => axiosInstance.post(`/users/profile/${id}/set_password/`, { password }),
 };
 
 // ========== TANK SERVICE ==========
@@ -83,7 +104,7 @@ export const inspectionService = {
   approveInspection: (id) => axiosInstance.post(`/inspections/${id}/approve/`),
   rejectInspection: (id, data) => axiosInstance.post(`/inspections/${id}/reject/`, data),
   getRecentInspections: (limit = 10) => axiosInstance.get('/inspections/recent/', { params: { limit } }),
-  getDashboard: () => axiosInstance.get('/inspections/dashboard/'),
+  getDashboard: (params = {}) => axiosInstance.get('/inspections/dashboard/', { params }),
   generateDocument: (id) => axiosInstance.get(`/inspections/${id}/generate_document/`, { responseType: 'blob' }),
 };
 

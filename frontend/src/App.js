@@ -26,6 +26,7 @@ import { default as ProvisionalOutturnReportDetailPage } from './pages/Provision
 import { SubmissionsInboxPage } from './pages/SubmissionsInboxPage';
 import { VesselReportListPage, VesselReportFormPage, VesselReportDetailPage } from './pages/VesselReportPage';
 import { StockReportListPage, StockReportFormPage, StockReportDetailPage } from './pages/StockReportPage';
+import { UserManagementPage } from './pages/UserManagementPage';
 import './index.css';
 
 const ProtectedRoute = ({ children }) => {
@@ -43,10 +44,9 @@ function App() {
         <div className="min-h-screen bg-gradient-surface dark:bg-gradient-dark">
           <Navigation />
           <TopBar />
-          <main className={isAuthenticated ? 'app-main min-h-screen pt-20 md:ml-64' : 'min-h-screen'}>
+          <main className={isAuthenticated ? 'app-main min-h-screen md:ml-64' : 'min-h-screen'}>
             <Routes>
             <Route path="/login"    element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
 
             <Route path="/dashboard" element={<P><DashboardPage /></P>} />
             <Route path="/tanks"     element={<P><TankListPage /></P>} />
@@ -93,6 +93,9 @@ function App() {
             <Route path="/stock-reports/new"      element={<P><StockReportFormPage /></P>} />
             <Route path="/stock-reports/:id"      element={<P><StockReportDetailPage /></P>} />
             <Route path="/stock-reports/:id/edit" element={<P><StockReportFormPage /></P>} />
+
+            {/* User Management (Admin only) */}
+            <Route path="/users" element={<P><UserManagementPage /></P>} />
 
             <Route path="/"  element={<Navigate to="/dashboard" />} />
             <Route path="*"  element={<Navigate to="/dashboard" />} />

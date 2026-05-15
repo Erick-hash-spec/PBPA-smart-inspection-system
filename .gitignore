@@ -23,14 +23,37 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# Environment Variables - NEVER COMMIT
 .env
-.env.local
+.env.*
+!.env.example
+!.env.production
+!.env.development
+
+# Secrets and Keys
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cert
+certs/
+secrets/
+private_keys/
 
 # Django
 *.log
 db.sqlite3
 /media/
 /staticfiles/
+/logs/
+backup*.sql
+*.sqlite3-journal
+
+# Database
+postgres_data/
+mysql_data/
 
 # IDE
 .vscode/
@@ -39,6 +62,8 @@ db.sqlite3
 *.swo
 *~
 .DS_Store
+*.sublime-project
+*.sublime-workspace
 
 # Frontend
 node_modules/
@@ -48,6 +73,38 @@ npm-debug.log
 yarn-error.log
 .env.local
 .env.development.local
+.env.production.local
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+.gitkeep
+
+# Security
+.htpasswd
+.htaccess
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+
+# Do not ignore example files
+!.env.example
+!.env.production
+!.env.development
+
 .env.test.local
 .env.production.local
 
