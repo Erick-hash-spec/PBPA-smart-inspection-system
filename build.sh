@@ -9,5 +9,5 @@ python manage.py collectstatic --no-input
 python manage.py migrate
 
 if [ "${SEED_DEMO_DATA:-false}" = "true" ]; then
-  python manage.py shell < load_sample_data.py
+  python manage.py load_data
 fi

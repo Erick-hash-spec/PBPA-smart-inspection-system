@@ -21,13 +21,15 @@ export const LoginPage = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await authService.login(username, password);
+      const normalizedUsername = username.trim();
+      const normalizedPassword = password.trim();
+      const response = await authService.login(normalizedUsername, normalizedPassword);
       sessionStorage.setItem('access_token', response.data.access);
       sessionStorage.setItem('refresh_token', response.data.refresh);
       const profile = await authService.getProfile();
       sessionStorage.setItem('user_role', profile.data.role);
       sessionStorage.setItem('user_id', profile.data.id);
-      sessionStorage.setItem('username', username);
+      sessionStorage.setItem('username', normalizedUsername);
       navigate('/dashboard');
     } catch (err) {
       setError(getLoginErrorMessage(err));
@@ -70,6 +72,10 @@ export const LoginPage = () => {
         <div className="rounded-3xl shadow-2xl p-8" style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)'}}>
           <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
           <p className="text-gray-500 text-sm mb-7">Sign in to access your dashboard</p>
+          <div className="mb-5 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-600">
+            Demo access: <span className="font-semibold text-gray-900">supervisor1</span> /
+            <span className="font-semibold text-gray-900"> password123</span>
+          </div>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl mb-5 flex items-start gap-2.5 text-sm">
