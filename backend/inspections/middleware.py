@@ -119,7 +119,8 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
             response['Content-Security-Policy'] = csp
         
         # Remove server information
-        response.pop('Server', None)
+        if response.has_header('Server'):
+            del response['Server']
         response['Server'] = 'WebServer'  # Obfuscate server type
         
         return response
