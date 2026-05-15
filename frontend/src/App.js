@@ -1,0 +1,107 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { authService } from './services/api';
+import { DarkModeProvider } from './contexts/DarkModeContext';
+import { Navigation } from './components/Navigation';
+import { TopBar } from './components/TopBar';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { TankListPage } from './pages/TankListPage';
+import { InspectionFormPage } from './pages/InspectionFormPage';
+import { InspectionListPage } from './pages/InspectionListPage';
+import { InspectionDetailPage } from './pages/InspectionDetailPage';
+import { ProductReceiptCertificateListPage } from './pages/ProductReceiptCertificateListPage';
+import { ProductReceiptCertificateFormPage } from './pages/ProductReceiptCertificateFormPage';
+import { ProductReceiptCertificateDetailPage } from './pages/ProductReceiptCertificateDetailPage';
+import { SealIsolationReportListPage } from './pages/SealIsolationReportListPage';
+import { SealIsolationReportFormPage } from './pages/SealIsolationReportFormPage';
+import { SealIsolationReportDetailPage } from './pages/SealIsolationReportDetailPage';
+import { ShoreTankCalculationListPage } from './pages/ShoreTankCalculationListPage';
+import { ShoreTankCalculationFormPage } from './pages/ShoreTankCalculationFormPage';
+import { ShoreTankCalculationDetailPage } from './pages/ShoreTankCalculationDetailPage';
+import { default as ProvisionalOutturnReportListPage } from './pages/ProvisionalOutturnReportListPage';
+import { default as ProvisionalOutturnReportFormPage } from './pages/ProvisionalOutturnReportFormPage';
+import { default as ProvisionalOutturnReportDetailPage } from './pages/ProvisionalOutturnReportDetailPage';
+import { SubmissionsInboxPage } from './pages/SubmissionsInboxPage';
+import { VesselReportListPage, VesselReportFormPage, VesselReportDetailPage } from './pages/VesselReportPage';
+import { StockReportListPage, StockReportFormPage, StockReportDetailPage } from './pages/StockReportPage';
+import './index.css';
+
+const ProtectedRoute = ({ children }) => {
+  if (!authService.isAuthenticated()) return <Navigate to="/login" />;
+  return children;
+};
+
+const P = ({ children }) => <ProtectedRoute>{children}</ProtectedRoute>;
+
+function App() {
+  const isAuthenticated = authService.isAuthenticated();
+  return (
+    <DarkModeProvider>
+      <Router>
+        <div className="min-h-screen bg-gradient-surface dark:bg-gradient-dark">
+          <Navigation />
+          <TopBar />
+          <main className={isAuthenticated ? 'app-main min-h-screen pt-20 md:ml-64' : 'min-h-screen'}>
+            <Routes>
+            <Route path="/login"    element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+
+            <Route path="/dashboard" element={<P><DashboardPage /></P>} />
+            <Route path="/tanks"     element={<P><TankListPage /></P>} />
+
+            {/* Dip Tickets */}
+            <Route path="/inspections"          element={<P><InspectionListPage /></P>} />
+            <Route path="/inspections/new"      element={<P><InspectionFormPage /></P>} />
+            <Route path="/inspections/:id"      element={<P><InspectionDetailPage /></P>} />
+            <Route path="/inspections/:id/edit" element={<P><InspectionFormPage /></P>} />
+
+            {/* Product Receipt Certificates */}
+            <Route path="/product-receipt-certificates"          element={<P><ProductReceiptCertificateListPage /></P>} />
+            <Route path="/product-receipt-certificates/new"      element={<P><ProductReceiptCertificateFormPage /></P>} />
+            <Route path="/product-receipt-certificates/:id"      element={<P><ProductReceiptCertificateDetailPage /></P>} />
+            <Route path="/product-receipt-certificates/:id/edit" element={<P><ProductReceiptCertificateFormPage /></P>} />
+
+            {/* Seal & Isolation Reports */}
+            <Route path="/seal-isolation-reports"          element={<P><SealIsolationReportListPage /></P>} />
+            <Route path="/seal-isolation-reports/new"      element={<P><SealIsolationReportFormPage /></P>} />
+            <Route path="/seal-isolation-reports/:id"      element={<P><SealIsolationReportDetailPage /></P>} />
+            <Route path="/seal-isolation-reports/:id/edit" element={<P><SealIsolationReportFormPage /></P>} />
+
+            {/* Shore Tank Calculations */}
+            <Route path="/shore-tank-calculations"          element={<P><ShoreTankCalculationListPage /></P>} />
+            <Route path="/shore-tank-calculations/new"      element={<P><ShoreTankCalculationFormPage /></P>} />
+            <Route path="/shore-tank-calculations/:id"      element={<P><ShoreTankCalculationDetailPage /></P>} />
+            <Route path="/shore-tank-calculations/:id/edit" element={<P><ShoreTankCalculationFormPage /></P>} />
+
+            {/* Provisional Outturn Reports */}
+            <Route path="/provisional-outturn-reports"          element={<P><ProvisionalOutturnReportListPage /></P>} />
+            <Route path="/provisional-outturn-reports/new"      element={<P><ProvisionalOutturnReportFormPage /></P>} />
+            <Route path="/provisional-outturn-reports/:id"      element={<P><ProvisionalOutturnReportDetailPage /></P>} />
+            <Route path="/provisional-outturn-reports/:id/edit" element={<P><ProvisionalOutturnReportFormPage /></P>} />
+
+            {/* Submissions & Vessel Reports */}
+            <Route path="/submissions"          element={<P><SubmissionsInboxPage /></P>} />
+            <Route path="/vessel-reports"        element={<P><VesselReportListPage /></P>} />
+            <Route path="/vessel-reports/new"    element={<P><VesselReportFormPage /></P>} />
+            <Route path="/vessel-reports/:id"    element={<P><VesselReportDetailPage /></P>} />
+            <Route path="/vessel-reports/:id/edit" element={<P><VesselReportFormPage /></P>} />
+
+            {/* Stock Reports */}
+            <Route path="/stock-reports"          element={<P><StockReportListPage /></P>} />
+            <Route path="/stock-reports/new"      element={<P><StockReportFormPage /></P>} />
+            <Route path="/stock-reports/:id"      element={<P><StockReportDetailPage /></P>} />
+            <Route path="/stock-reports/:id/edit" element={<P><StockReportFormPage /></P>} />
+
+            <Route path="/"  element={<Navigate to="/dashboard" />} />
+            <Route path="*"  element={<Navigate to="/dashboard" />} />
+          </Routes>
+        </main>
+      </div>
+      </Router>
+    </DarkModeProvider>
+  );
+}
+
+export default App;
