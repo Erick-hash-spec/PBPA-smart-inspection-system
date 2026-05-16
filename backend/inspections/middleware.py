@@ -19,9 +19,9 @@ class SecurityAuditMiddleware(MiddlewareMixin):
         request._start_time = time.time()
         try:
             user = request.user
-            request._user = str(user) if hasattr(user, 'is_authenticated') and user.is_authenticated else 'Anonymous'
+            request._audit_user = str(user) if hasattr(user, 'is_authenticated') and user.is_authenticated else 'Anonymous'
         except Exception:
-            request._user = 'Anonymous'
+            request._audit_user = 'Anonymous'
 
         # Log authentication events
         if 'api/auth/token/' in request.path:
@@ -43,7 +43,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                 extra={
                     'path': request.path,
                     'method': request.method,
-                    'user': request._user,
+                    'user': request._audit_user,
                     'ip': self._get_client_ip(request),
                 }
             )
@@ -75,7 +75,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                 'Permission denied',
                 extra={
                     'path': request.path,
-                    'user': getattr(request, '_user', 'Unknown'),
+                    'user': getattr(request, '_audit_user', 'Unknown'),
                     'ip': self._get_client_ip(request),
                     'method': request.method,
                 }
