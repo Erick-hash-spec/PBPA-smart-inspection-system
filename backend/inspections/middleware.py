@@ -17,8 +17,12 @@ class SecurityAuditMiddleware(MiddlewareMixin):
     def process_request(self, request):
         """Log incoming requests"""
         request._start_time = time.time()
-        request._user = str(request.user) if request.user.is_authenticated else 'Anonymous'
-        
+        try:
+            user = request.user
+            request._user = str(user) if hasattr(user, 'is_authenticated') and user.is_authenticated else 'Anonymous'
+        except Exception:
+            request._user = 'Anonymous'
+
         # Log authentication events
         if 'api/auth/token/' in request.path:
             if request.method == 'POST':
@@ -31,7 +35,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                         'user_agent': request.META.get('HTTP_USER_AGENT', ''),
                     }
                 )
-        
+
         # Log sensitive operations
         if request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
             audit_logger.info(
@@ -43,7 +47,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                     'ip': self._get_client_ip(request),
                 }
             )
-        
+
         return None
     
     def process_response(self, request, response):
@@ -115,7 +119,7 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
         
         # Content Security Policy
         if not settings.DEBUG:
-            csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;"
+            csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';"
             response['Content-Security-Policy'] = csp
         
         # Remove server information

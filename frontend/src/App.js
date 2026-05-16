@@ -40,11 +40,11 @@ function App() {
   const isAuthenticated = authService.isAuthenticated();
   return (
     <DarkModeProvider>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="min-h-screen bg-gradient-surface dark:bg-gradient-dark">
           <Navigation />
           <TopBar />
-          <main className={isAuthenticated ? 'app-main min-h-screen md:ml-64' : 'min-h-screen'}>
+          <main className={isAuthenticated ? 'app-main min-h-screen pt-14 md:ml-64' : 'min-h-screen'}>
             <Routes>
             <Route path="/login"    element={<LoginPage />} />
 

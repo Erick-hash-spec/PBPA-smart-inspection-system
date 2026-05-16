@@ -28,6 +28,18 @@ services:
         value: https://pbpa-smart-inspection-system-3dr7.onrender.com
       - key: CSRF_TRUSTED_ORIGINS
         value: https://pbpa-smart-inspection-system-3dr7.onrender.com,https://pbpa-smart-inspection-system.onrender.com
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_EMAIL
+        value: admin@your-domain.com
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: ADMIN_FIRST_NAME
+        value: System
+      - key: ADMIN_LAST_NAME
+        value: Admin
+      - key: ADMIN_DEPARTMENT
+        value: Management
       - key: DATABASE_URL
         fromDatabase:
           name: pbpa-smart-inspection-system-db

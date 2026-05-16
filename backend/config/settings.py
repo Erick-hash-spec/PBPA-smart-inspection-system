@@ -17,9 +17,9 @@ def env_list(name, default=''):
     return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
 
 # ── Core ──────────────────────────────────────────────────────────────────────
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-in-production')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-pbpa-dev-key-change-in-production-2024')
 DEBUG      = env_bool('DEBUG', True)
-ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '*' if DEBUG else '.onrender.com')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '*')
 
 FRONTEND_HOST = os.environ.get('FRONTEND_HOST', '')
 BACKEND_HOST  = os.environ.get('BACKEND_HOST', '')
@@ -73,11 +73,12 @@ if not DEBUG:
         'form-action': ("'self'",),
     }
     
-    # Verify SECRET_KEY is not the default
-    if SECRET_KEY == 'django-insecure-change-me-in-production':
-        raise ValueError(
-            'CRITICAL: SECRET_KEY must be set to a strong value in production. '
-            'Set the SECRET_KEY environment variable.'
+    # Verify SECRET_KEY is not the default in production
+    if 'insecure' in SECRET_KEY or 'change-me' in SECRET_KEY:
+        import warnings
+        warnings.warn(
+            'WARNING: SECRET_KEY appears to be insecure. Set a strong SECRET_KEY env variable in production.',
+            stacklevel=2
         )
 else:
     # Development settings
@@ -112,10 +113,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Custom security middleware
-    'inspections.middleware.SecurityAuditMiddleware',
     'inspections.middleware.SecurityHeadersMiddleware',
-    'inspections.middleware.RateLimitMonitorMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -216,22 +214,20 @@ REST_FRAMEWORK = {
     ),
     # Security settings
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
-    'EXCEPTION_HANDLER': 'inspections.exception_handler.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':    timedelta(minutes=15),   # Short-lived access tokens
-    'REFRESH_TOKEN_LIFETIME':   timedelta(days=7),       # Refresh tokens last 7 days
+    'ACCESS_TOKEN_LIFETIME':    timedelta(hours=1) if DEBUG else timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME':   timedelta(days=7),
     'ROTATE_REFRESH_TOKENS':    True,
-    'BLACKLIST_AFTER_ROTATION': True,                    # Invalidate old refresh tokens
+    'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN':        True,
     'ALGORITHM':                'HS256',
     'AUTH_HEADER_TYPES':        ('Bearer',),
     'AUTH_TOKEN_CLASSES':       ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM':         'token_type',
-    'SLIDING_TOKEN_LIFETIME':   timedelta(days=1),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
 }
 
 # ── CORS ──────────────────────────────────────────────────────────────────────

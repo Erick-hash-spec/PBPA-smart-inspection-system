@@ -4,6 +4,21 @@ import jwtDecode from 'jwt-decode';
 export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
+const getStoredValue = (key) => localStorage.getItem(key) || sessionStorage.getItem(key);
+const setStoredValue = (key, value) => localStorage.setItem(key, value);
+const clearAuthStorage = () => {
+  [
+    'access_token',
+    'refresh_token',
+    'user_role',
+    'user_id',
+    'username',
+  ].forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+};
+
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -11,7 +26,7 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('access_token');
+    const token = getStoredValue('access_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
@@ -25,8 +40,8 @@ axiosInstance.interceptors.response.use(
 
     // Network error (backend down) — redirect to login silently
     if (!error.response) {
-      if (sessionStorage.getItem('access_token')) {
-        sessionStorage.clear();
+      if (getStoredValue('access_token')) {
+        clearAuthStorage();
         window.location.href = '/login';
       }
       return Promise.reject(error);
@@ -34,20 +49,20 @@ axiosInstance.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      const refreshToken = sessionStorage.getItem('refresh_token');
+      const refreshToken = getStoredValue('refresh_token');
       if (!refreshToken) {
-        sessionStorage.clear();
+        clearAuthStorage();
         window.location.href = '/login';
         return Promise.reject(error);
       }
       try {
         const response = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, { refresh: refreshToken });
-        sessionStorage.setItem('access_token', response.data.access);
+        setStoredValue('access_token', response.data.access);
         axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
         originalRequest.headers['Authorization'] = `Bearer ${response.data.access}`;
         return axiosInstance(originalRequest);
       } catch {
-        sessionStorage.clear();
+        clearAuthStorage();
         window.location.href = '/login';
         return Promise.reject(error);
       }
@@ -61,16 +76,16 @@ export const authService = {
   login: (username, password) => axiosInstance.post('/auth/token/', { username, password }),
   register: (userData) => axiosInstance.post('/auth/register/', userData),
   logout: () => {
-    sessionStorage.clear();
+    clearAuthStorage();
   },
   getProfile: () => axiosInstance.get('/users/profile/current_user/'),
   getCurrentUser: () => {
-    const token = sessionStorage.getItem('access_token');
+    const token = getStoredValue('access_token');
     if (!token) return null;
     try { return jwtDecode(token); } catch { return null; }
   },
-  isAuthenticated: () => !!sessionStorage.getItem('access_token'),
-  getUserRole: () => sessionStorage.getItem('user_role'),
+  isAuthenticated: () => !!getStoredValue('access_token'),
+  getUserRole: () => getStoredValue('user_role'),
 };
 
 // ========== USER MANAGEMENT SERVICE (Admin only) ==========
