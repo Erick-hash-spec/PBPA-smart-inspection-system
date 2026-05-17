@@ -6,6 +6,7 @@ from .models import (
     ProductReceiptCertificate, ProductReceiptCertificateItem,
     SealIsolationReport, SealIsolationEntry,
     ShoreTankCalculation, ShoreTankCalculationItem,
+    Submission, VesselReport, RosterAssignment,
 )
 
 admin.site.site_header = "Smart Reporting Admin"
@@ -180,3 +181,44 @@ class ShoreTankCalculationAdmin(admin.ModelAdmin):
     list_per_page = 25
     ordering = ('-calculation_date',)
     inlines = [ShoreTankCalculationItemInline]
+
+
+# Submissions and Vessel Reports
+@admin.register(Submission)
+class SubmissionAdmin(admin.ModelAdmin):
+    list_display = ('doc_type', 'doc_number', 'vessel_name', 'terminal', 'submitted_by', 'submitted_at', 'is_read')
+    list_filter = ('doc_type', 'is_read', 'submitted_at')
+    search_fields = ('doc_number', 'vessel_name', 'terminal', 'submitted_by__username')
+    readonly_fields = ('submitted_at',)
+    date_hierarchy = 'submitted_at'
+    list_per_page = 25
+    ordering = ('-submitted_at',)
+    list_editable = ('is_read',)
+
+
+@admin.register(VesselReport)
+class VesselReportAdmin(admin.ModelAdmin):
+    list_display = ('report_number', 'vessel_name', 'terminal', 'product_name', 'discharge_date', 'status', 'total_weight_mt', 'total_volume_m3')
+    list_filter = ('status', 'terminal', 'discharge_date')
+    search_fields = ('report_number', 'vessel_name', 'terminal', 'product_name')
+    readonly_fields = ('report_number', 'created_at', 'updated_at')
+    date_hierarchy = 'discharge_date'
+    list_per_page = 25
+    ordering = ('-discharge_date',)
+    fieldsets = (
+        ('Header', {'fields': ('report_number', 'vessel_name', 'terminal', 'product_name', 'discharge_date', 'status')}),
+        ('Linked Documents', {'fields': ('dip_ticket_ids', 'seal_report_ids', 'shore_calc_ids', 'cert_ids')}),
+        ('Summary', {'fields': ('total_weight_mt', 'total_volume_m3', 'remarks')}),
+        ('Metadata', {'fields': ('created_by', 'created_at', 'updated_at'), 'classes': ('collapse',)}),
+    )
+
+
+@admin.register(RosterAssignment)
+class RosterAssignmentAdmin(admin.ModelAdmin):
+    list_display = ('week_start_date', 'inspector', 'supervisor', 'shift', 'location', 'terminal', 'status', 'sent_at')
+    list_filter = ('status', 'shift', 'week_start_date')
+    search_fields = ('inspector__username', 'inspector__first_name', 'inspector__last_name', 'terminal', 'vessel_name', 'task')
+    readonly_fields = ('created_at', 'updated_at', 'sent_at')
+    date_hierarchy = 'week_start_date'
+    list_per_page = 25
+    ordering = ('-week_start_date', '-created_at')

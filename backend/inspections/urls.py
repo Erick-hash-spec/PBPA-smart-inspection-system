@@ -10,7 +10,7 @@ from .views import (
     SealIsolationReportViewSet,
     ShoreTankCalculationViewSet,
     ASTMLookupView,
-    SubmissionViewSet, VesselReportViewSet,
+    SubmissionViewSet, VesselReportViewSet, RosterAssignmentViewSet,
     ProvisionalOuturnReportViewSet,
     StockReportViewSet,
 )
@@ -28,6 +28,7 @@ router.register(r'product-receipt-certificates', ProductReceiptCertificateViewSe
 router.register(r'seal-isolation-reports', SealIsolationReportViewSet, basename='seal-isolation-report')
 router.register(r'shore-tank-calculations', ShoreTankCalculationViewSet, basename='shore-tank-calculation')
 router.register(r'astm', ASTMLookupView, basename='astm')
+router.register(r'rosters', RosterAssignmentViewSet, basename='roster')
 router.register(r'submissions', SubmissionViewSet, basename='submission')
 router.register(r'vessel-reports', VesselReportViewSet, basename='vessel-report')
 router.register(r'provisional-outturn-reports', ProvisionalOuturnReportViewSet, basename='provisional-outturn-report')

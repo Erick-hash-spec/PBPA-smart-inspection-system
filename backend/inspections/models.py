@@ -33,6 +33,46 @@ class UserProfile(models.Model):
         verbose_name_plural = "User Profiles"
 
 
+class RosterAssignment(models.Model):
+    """Supervisor-created weekly roster assignment for an inspector."""
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('cancelled', 'Cancelled'),
+    )
+    SHIFT_CHOICES = (
+        ('day', 'Day'),
+        ('night', 'Night'),
+        ('custom', 'Custom'),
+    )
+    DAY_CHOICES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+    inspector = models.ForeignKey(User, on_delete=models.CASCADE, related_name='roster_assignments')
+    supervisor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='rosters_created')
+    week_start_date = models.DateField(default=timezone.localdate, help_text='Monday of the roster week')
+    working_days = models.JSONField(default=list, help_text='List of day names, e.g. ["Mon","Wed","Fri"]')
+    shift = models.CharField(max_length=20, choices=SHIFT_CHOICES, default='day')
+    location = models.CharField(max_length=200, blank=True, help_text='KURASINI or KIGAMBONI')
+    terminal = models.CharField(max_length=200, blank=True)
+    vessel_name = models.CharField(max_length=200, blank=True)
+    task = models.CharField(max_length=200, blank=True)
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    is_read = models.BooleanField(default=False)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-week_start_date', '-created_at']
+        verbose_name = "Roster Assignment"
+        verbose_name_plural = "Roster Assignments"
+
+    def __str__(self):
+        days = ', '.join(self.working_days) if self.working_days else 'No days'
+        return f"{self.week_start_date} [{days}] - {self.inspector.get_full_name() or self.inspector.username}"
+
+
 # ========== TANK MANAGEMENT ==========
 class Tank(models.Model):
     """Tank information and specifications"""
@@ -565,10 +605,11 @@ class Submission(models.Model):
 
 
 class VesselReport(models.Model):
-    """Summary report created by admin after a vessel completes discharge."""
+    """Summary report created after a vessel completes discharge."""
     STATUS_CHOICES = (
         ('draft', 'Draft'),
         ('final', 'Final'),
+        ('cancelled', 'Cancelled'),
     )
     vessel_name         = models.CharField(max_length=200)
     terminal            = models.CharField(max_length=200)

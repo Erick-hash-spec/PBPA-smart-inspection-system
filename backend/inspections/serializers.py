@@ -10,7 +10,7 @@ from .models import (
     ProductReceiptCertificate, ProductReceiptCertificateItem,
     SealIsolationReport, SealIsolationEntry,
     ShoreTankCalculation, ShoreTankCalculationItem,
-    Submission, VesselReport,
+    Submission, VesselReport, RosterAssignment,
     ProvisionalOuturnReport, ProvisionalOuturnItem,
     StockReport, StockReportItem,
 )
@@ -56,6 +56,30 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('confirm_password')
         return User.objects.create_user(**validated_data)
+
+
+class RosterAssignmentSerializer(serializers.ModelSerializer):
+    inspector_name     = serializers.CharField(source='inspector.get_full_name', read_only=True)
+    inspector_username = serializers.CharField(source='inspector.username', read_only=True)
+    supervisor_name    = serializers.CharField(source='supervisor.get_full_name', read_only=True, allow_null=True)
+
+    class Meta:
+        model = RosterAssignment
+        fields = (
+            'id', 'inspector', 'inspector_name', 'inspector_username',
+            'supervisor', 'supervisor_name',
+            'week_start_date', 'working_days', 'shift', 'location',
+            'terminal', 'vessel_name', 'task', 'notes', 'status',
+            'is_read', 'sent_at', 'created_at', 'updated_at',
+        )
+        read_only_fields = ('id', 'supervisor', 'supervisor_name', 'is_read', 'sent_at', 'created_at', 'updated_at')
+
+    def validate_working_days(self, value):
+        valid = {'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'}
+        invalid = [d for d in value if d not in valid]
+        if invalid:
+            raise serializers.ValidationError(f'Invalid days: {invalid}. Use Mon/Tue/Wed/Thu/Fri/Sat/Sun.')
+        return value
 
 
 # ========== TANK SERIALIZERS ==========

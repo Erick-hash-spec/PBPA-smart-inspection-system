@@ -25,7 +25,7 @@ from .models import (
     ProductReceiptCertificate,
     SealIsolationReport,
     ShoreTankCalculation,
-    Submission, VesselReport,
+    Submission, VesselReport, RosterAssignment,
     ProvisionalOuturnReport, ProvisionalOuturnItem,
     StockReport,
 )
@@ -42,7 +42,7 @@ from .serializers import (
     SealIsolationReportDetailSerializer,
     ShoreTankCalculationListSerializer,
     ShoreTankCalculationDetailSerializer,
-    SubmissionSerializer, VesselReportSerializer,
+    SubmissionSerializer, VesselReportSerializer, RosterAssignmentSerializer,
     ProvisionalOuturnReportSerializer,
     StockReportSerializer,
 )
@@ -178,6 +178,157 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         user_profile.user.save()
         sec_log.info('Admin %s reset password for user %s.', request.user.username, user_profile.user.username)
         return Response({'detail': 'Password updated successfully.'})
+
+
+class RosterAssignmentViewSet(viewsets.ModelViewSet):
+    """Supervisor roster assignments for inspectors."""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = RosterAssignmentSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['inspector__username', 'inspector__first_name', 'inspector__last_name', 'terminal', 'vessel_name', 'task']
+    ordering_fields = ['week_start_date', 'created_at', 'status']
+    ordering = ['-week_start_date', '-created_at']
+
+    def get_queryset(self):
+        profile = get_or_create_user_profile(self.request.user)
+        qs = RosterAssignment.objects.select_related('inspector', 'supervisor')
+        if profile.role == 'inspector':
+            return qs.filter(inspector=self.request.user, status='sent')
+        if profile.role in ('supervisor', 'admin'):
+            return qs
+        return qs.none()
+
+    def _ensure_supervisor_or_admin(self, request):
+        profile = get_or_create_user_profile(request.user)
+        if profile.role not in ('supervisor', 'admin'):
+            return Response({'detail': 'Only supervisors and admins can manage rosters.'}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
+    def create(self, request, *args, **kwargs):
+        denied = self._ensure_supervisor_or_admin(request)
+        if denied:
+            return denied
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        denied = self._ensure_supervisor_or_admin(request)
+        if denied:
+            return denied
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        denied = self._ensure_supervisor_or_admin(request)
+        if denied:
+            return denied
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        denied = self._ensure_supervisor_or_admin(request)
+        if denied:
+            return denied
+        return super().destroy(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        sent_at = timezone.now() if serializer.validated_data.get('status') == 'sent' else None
+        serializer.save(supervisor=self.request.user, sent_at=sent_at, is_read=False)
+
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        status_value = serializer.validated_data.get('status', instance.status)
+        sent_at = instance.sent_at
+        if status_value == 'sent' and not sent_at:
+            sent_at = timezone.now()
+        serializer.save(sent_at=sent_at, is_read=False if status_value == 'sent' else instance.is_read)
+
+    @action(detail=True, methods=['post'])
+    def send(self, request, pk=None):
+        denied = self._ensure_supervisor_or_admin(request)
+        if denied:
+            return denied
+        assignment = self.get_object()
+        if assignment.status == 'cancelled':
+            return Response({'detail': 'Cancelled roster assignments cannot be sent.'}, status=status.HTTP_400_BAD_REQUEST)
+        assignment.status = 'sent'
+        assignment.sent_at = timezone.now()
+        assignment.is_read = False
+        assignment.save(update_fields=['status', 'sent_at', 'is_read', 'updated_at'])
+        return Response(self.get_serializer(assignment).data)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        denied = self._ensure_supervisor_or_admin(request)
+        if denied:
+            return denied
+        assignment = self.get_object()
+        assignment.status = 'cancelled'
+        assignment.save(update_fields=['status', 'updated_at'])
+        return Response(self.get_serializer(assignment).data)
+
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        profile = get_or_create_user_profile(request.user)
+        if profile.role != 'inspector':
+            return Response({'count': 0})
+        count = RosterAssignment.objects.filter(inspector=request.user, status='sent', is_read=False).count()
+        return Response({'count': count})
+
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        assignment = self.get_object()
+        assignment.is_read = True
+        assignment.save(update_fields=['is_read', 'updated_at'])
+        return Response(self.get_serializer(assignment).data)
+
+    @action(detail=True, methods=['get'])
+    def pdf(self, request, pk=None):
+        assignment = self.get_object()
+        buf = io.BytesIO()
+        pdf = canvas.Canvas(buf, pagesize=letter)
+        width, height = letter
+        y = height - 60
+
+        pdf.setFont("Helvetica-Bold", 15)
+        pdf.drawString(50, y, "INSPECTOR ROSTER ASSIGNMENT")
+        y -= 35
+        pdf.setFont("Helvetica", 10)
+
+        days_str = ', '.join(assignment.working_days) if assignment.working_days else '-'
+        rows = [
+            ("Inspector", assignment.inspector.get_full_name() or assignment.inspector.username),
+            ("Week Starting", assignment.week_start_date.strftime("%d-%m-%Y") if assignment.week_start_date else '-'),
+            ("Working Days", days_str),
+            ("Shift", assignment.get_shift_display()),
+            ("Location", assignment.location or "-"),
+            ("Terminal", assignment.terminal or "-"),
+            ("Vessel", assignment.vessel_name or "-"),
+            ("Task", assignment.task or "-"),
+            ("Supervisor", assignment.supervisor.get_full_name() if assignment.supervisor else "-"),
+            ("Status", assignment.get_status_display()),
+        ]
+        for label, value in rows:
+            pdf.setFont("Helvetica-Bold", 10)
+            pdf.drawString(50, y, f"{label}:")
+            pdf.setFont("Helvetica", 10)
+            pdf.drawString(170, y, str(value))
+            y -= 20
+
+        if assignment.notes:
+            y -= 10
+            pdf.setFont("Helvetica-Bold", 10)
+            pdf.drawString(50, y, "Notes:")
+            y -= 18
+            pdf.setFont("Helvetica", 10)
+            text = pdf.beginText(50, y)
+            for line in assignment.notes.splitlines():
+                text.textLine(line[:95])
+            pdf.drawText(text)
+
+        pdf.showPage()
+        pdf.save()
+        buf.seek(0)
+        response = HttpResponse(buf.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="Roster_{assignment.week_start_date}_{assignment.inspector.username}.pdf"'
+        return response
 
 
 # ========== TANK VIEWSETS ==========
@@ -448,21 +599,25 @@ class InspectionViewSet(viewsets.ModelViewSet):
             'provisional_outturn_reports': provisional_reports_qs.count(),
             'vessel_reports': vessel_reports_qs.count(),
         }
+
+        def get_status_counts(queryset):
+            return {
+                'draft': queryset.filter(status='draft').count(),
+                'submitted': queryset.filter(status='submitted').count(),
+                'approved': queryset.filter(status='approved').count(),
+                'rejected': queryset.filter(status='rejected').count(),
+            }
         
         if profile.role == 'inspector':
             inspections = inspections_qs.filter(inspector=user)
             total_inspections = inspections.count()
-            draft = inspections.filter(status='draft').count()
-            submitted = inspections.filter(status='submitted').count()
-            approved = inspections.filter(status='approved').count()
+            status_counts = get_status_counts(inspections)
             
             return Response({
                 'role': 'inspector',
                 'total_inspections': total_inspections,
-                'draft': draft,
-                'submitted': submitted,
-                'approved': approved,
-                'pending_approval': submitted,
+                **status_counts,
+                'pending_approval': status_counts['submitted'],
                 'document_counts': document_counts,
             })
         
@@ -470,27 +625,27 @@ class InspectionViewSet(viewsets.ModelViewSet):
             inspections = inspections_qs.filter(status='submitted')
             total_pending = inspections.count()
             approved = inspections_qs.filter(supervisor=user, status='approved').count()
+            status_counts = get_status_counts(inspections_qs)
             
             return Response({
                 'role': 'supervisor',
                 'total_pending_approval': total_pending,
                 'total_approved': approved,
                 'awaiting_review': total_pending,
+                **status_counts,
                 'document_counts': document_counts,
             })
         
         elif profile.role == 'admin':
             total_inspections = inspections_qs.count()
             total_tanks = Tank.objects.filter(is_active=True).count()
-            approved = inspections_qs.filter(status='approved').count()
-            rejected = inspections_qs.filter(status='rejected').count()
+            status_counts = get_status_counts(inspections_qs)
             
             return Response({
                 'role': 'admin',
                 'total_inspections': total_inspections,
                 'total_tanks': total_tanks,
-                'approved': approved,
-                'rejected': rejected,
+                **status_counts,
                 'document_counts': document_counts,
             })
         
@@ -894,14 +1049,24 @@ class ASTMLookupView(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        d20 = density_at_20_from_table(sample_density, sample_temp)
-        vcf = vcf_from_table(d20, tank_temp) if d20 is not None else None
-        wcf = wcf_from_density(d20)
+        table_d20 = density_at_20_from_table(sample_density, sample_temp)
+        d20 = table_d20 if table_d20 is not None else ShoreTankCalculationEngine.density_at_20(sample_density, sample_temp)
+
+        table_vcf = vcf_from_table(d20, tank_temp) if d20 is not None else None
+        vcf = table_vcf if table_vcf is not None else (
+            ShoreTankCalculationEngine.vcf(d20, tank_temp) if d20 is not None else None
+        )
+        wcf = ShoreTankCalculationEngine.wcf(d20)
 
         return Response({
             'density_at_20': d20,
             'vcf': vcf,
             'wcf': wcf,
+            'source': {
+                'density_at_20': 'table_59b' if table_d20 is not None else 'formula_fallback',
+                'vcf': 'table_60b' if table_vcf is not None else 'formula_fallback',
+                'wcf': 'density_at_20',
+            },
             'table_range': table_range(),
         })
 
@@ -1078,7 +1243,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
 
 class VesselReportViewSet(viewsets.ModelViewSet):
-    """Admin creates vessel discharge summary reports."""
+    """Create and manage vessel discharge summary reports."""
     permission_classes = (IsAuthenticated,)
     serializer_class = VesselReportSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -1095,7 +1260,16 @@ class VesselReportViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def finalize(self, request, pk=None):
         report = self.get_object()
+        if report.status == 'cancelled':
+            return Response({'detail': 'Cancelled vessel reports cannot be finalized.'}, status=status.HTTP_400_BAD_REQUEST)
         report.status = 'final'
+        report.save(update_fields=['status', 'updated_at'])
+        return Response(VesselReportSerializer(report).data)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        report = self.get_object()
+        report.status = 'cancelled'
         report.save(update_fields=['status', 'updated_at'])
         return Response(VesselReportSerializer(report).data)
 
