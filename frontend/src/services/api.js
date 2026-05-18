@@ -6,6 +6,8 @@ export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const getStoredValue = (key) => localStorage.getItem(key) || sessionStorage.getItem(key);
 const setStoredValue = (key, value) => localStorage.setItem(key, value);
+export const AUTH_CHANGED_EVENT = 'smart-reporting-auth-changed';
+export const notifyAuthChanged = () => window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 const clearAuthStorage = () => {
   [
     'access_token',
@@ -77,6 +79,7 @@ export const authService = {
   register: (userData) => axiosInstance.post('/auth/register/', userData),
   logout: () => {
     clearAuthStorage();
+    notifyAuthChanged();
   },
   getProfile: () => axiosInstance.get('/users/profile/current_user/'),
   getCurrentUser: () => {
@@ -91,10 +94,25 @@ export const authService = {
 // ========== USER MANAGEMENT SERVICE (Admin only) ==========
 export const userService = {
   getUsers: () => axiosInstance.get('/users/profile/'),
+  getInspectors: () => axiosInstance.get('/users/profile/list_inspectors/'),
   createUser: (data) => axiosInstance.post('/auth/register/', data),
   updateUser: (id, data) => axiosInstance.patch(`/users/profile/${id}/`, data),
   deleteUser: (id) => axiosInstance.delete(`/users/profile/${id}/`),
   setPassword: (id, password) => axiosInstance.post(`/users/profile/${id}/set_password/`, { password }),
+};
+
+// ========== ROSTER SERVICE ==========
+export const rosterService = {
+  getRosters: (params = {}) => axiosInstance.get('/rosters/', { params }),
+  getRosterById: (id) => axiosInstance.get(`/rosters/${id}/`),
+  createRoster: (data) => axiosInstance.post('/rosters/', data),
+  updateRoster: (id, data) => axiosInstance.put(`/rosters/${id}/`, data),
+  deleteRoster: (id) => axiosInstance.delete(`/rosters/${id}/`),
+  sendRoster: (id) => axiosInstance.post(`/rosters/${id}/send/`),
+  cancelRoster: (id) => axiosInstance.post(`/rosters/${id}/cancel/`),
+  markRead: (id) => axiosInstance.post(`/rosters/${id}/mark_read/`),
+  getUnreadCount: () => axiosInstance.get('/rosters/unread_count/'),
+  downloadPdf: (id) => axiosInstance.get(`/rosters/${id}/pdf/`, { responseType: 'blob' }),
 };
 
 // ========== TANK SERVICE ==========
@@ -228,6 +246,7 @@ export const vesselReportService = {
   updateReport: (id, data) => axiosInstance.put(`/vessel-reports/${id}/`, data),
   deleteReport: (id) => axiosInstance.delete(`/vessel-reports/${id}/`),
   finalizeReport: (id) => axiosInstance.post(`/vessel-reports/${id}/finalize/`),
+  cancelReport: (id) => axiosInstance.post(`/vessel-reports/${id}/cancel/`),
   downloadPdf: (id) => axiosInstance.get(`/vessel-reports/${id}/pdf/`, { responseType: 'blob' }),
 };
 

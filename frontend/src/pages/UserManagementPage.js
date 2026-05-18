@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { userService } from '../services/api';
 import {
-  Users, Plus, Pencil, Trash2, Eye, EyeOff, X, AlertCircle,
-  CheckCircle, Shield, UserCheck, KeyRound, Search,
+  Users, Plus, Eye, EyeOff, AlertCircle,
+  CheckCircle, Shield, UserCheck, Search,
 } from 'lucide-react';
 
 const ROLES = ['inspector', 'supervisor', 'admin'];
@@ -20,9 +20,7 @@ const Modal = ({ title, onClose, children }) => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-700 animate-slide-up">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
         <h2 className="text-base font-bold text-gray-900 dark:text-white">{title}</h2>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition text-gray-400 hover:text-gray-600">
-          <X className="w-4 h-4" />
-        </button>
+        <button onClick={onClose} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-slate-700 dark:text-gray-200 dark:border-gray-600">Edit</button>
       </div>
       <div className="px-6 py-5">{children}</div>
     </div>
@@ -147,8 +145,8 @@ export const UserManagementPage = () => {
           </div>
         </div>
         <button onClick={openCreate} className="gradient-primary text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:shadow-lg transition inline-flex items-center gap-2 hover-lift">
-          <Plus className="w-4 h-4" /> Add User
-        </button>
+          <Plus className="w-4 h-4" />Add User
+</button>
       </div>
 
       {/* Banner */}
@@ -209,24 +207,18 @@ export const UserManagementPage = () => {
                         <td className="px-5 py-3.5">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border capitalize ${roleBadge[u.role] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
                             <Shield className="w-3 h-3" />{u.role}
-                          </span>
+</span>
                         </td>
                         <td className="px-5 py-3.5">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${u.is_active !== false ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
                             <UserCheck className="w-3 h-3" />{u.is_active !== false ? 'Active' : 'Inactive'}
-                          </span>
+</span>
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-1.5">
-                            <button onClick={() => openEdit(u)} title="Edit" className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 hover:bg-amber-100 transition border border-amber-200 dark:border-amber-700">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => openPassword(u)} title="Set Password" className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 transition border border-blue-200 dark:border-blue-700">
-                              <KeyRound className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => openDelete(u)} title="Delete" className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition border border-red-200 dark:border-red-700">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <button onClick={() => openEdit(u)} title="Edit" className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
+                            <button onClick={() => openPassword(u)} title="Set Password" className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">Password</button>
+                            <button onClick={() => openDelete(u)} title="Delete" className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
                           </div>
                         </td>
                       </tr>
@@ -254,9 +246,9 @@ export const UserManagementPage = () => {
                       <span className={`px-2 py-0.5 rounded-full text-xs font-bold border capitalize ${roleBadge[u.role] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>{u.role}</span>
                     </div>
                     <div className="flex gap-2 mt-3">
-                      <button onClick={() => openEdit(u)} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center justify-center gap-1"><Pencil className="w-3 h-3" />Edit</button>
-                      <button onClick={() => openPassword(u)} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center justify-center gap-1"><KeyRound className="w-3 h-3" />Password</button>
-                      <button onClick={() => openDelete(u)} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-200 inline-flex items-center justify-center gap-1"><Trash2 className="w-3 h-3" />Delete</button>
+                      <button onClick={() => openEdit(u)} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center justify-center gap-1">Edit</button>
+                      <button onClick={() => openPassword(u)} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center justify-center gap-1">Password</button>
+                      <button onClick={() => openDelete(u)} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-200 inline-flex items-center justify-center gap-1">Delete</button>
                     </div>
                   </div>
                 );
@@ -297,7 +289,7 @@ export const UserManagementPage = () => {
               <button type="button" onClick={closeModal} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 transition">Cancel</button>
               <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl gradient-primary text-white text-sm font-semibold hover:shadow-lg transition disabled:opacity-50">
                 {saving ? 'Creating...' : 'Create User'}
-              </button>
+</button>
             </div>
           </form>
         </Modal>
@@ -321,7 +313,7 @@ export const UserManagementPage = () => {
               <button type="button" onClick={closeModal} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 transition">Cancel</button>
               <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl gradient-primary text-white text-sm font-semibold hover:shadow-lg transition disabled:opacity-50">
                 {saving ? 'Saving...' : 'Save Changes'}
-              </button>
+</button>
             </div>
           </form>
         </Modal>
@@ -347,7 +339,7 @@ export const UserManagementPage = () => {
               <button type="button" onClick={closeModal} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 transition">Cancel</button>
               <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl gradient-primary text-white text-sm font-semibold hover:shadow-lg transition disabled:opacity-50">
                 {saving ? 'Updating...' : 'Update Password'}
-              </button>
+</button>
             </div>
           </form>
         </Modal>
@@ -357,16 +349,14 @@ export const UserManagementPage = () => {
       {modal === 'delete' && (
         <Modal title="Delete User" onClose={closeModal}>
           <div className="text-center py-2">
-            <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-7 h-7 text-red-500" />
-            </div>
+            <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4"></div>
             <p className="text-gray-800 dark:text-white font-semibold mb-1">Delete <span className="text-red-600">"{selected?.user_detail?.username}"</span>?</p>
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">This action cannot be undone. All data associated with this user will be removed.</p>
             <div className="flex gap-3">
               <button onClick={closeModal} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 transition">Cancel</button>
               <button onClick={handleDelete} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition disabled:opacity-50">
                 {saving ? 'Deleting...' : 'Delete User'}
-              </button>
+</button>
             </div>
           </div>
         </Modal>

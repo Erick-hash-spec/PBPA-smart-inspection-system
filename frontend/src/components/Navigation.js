@@ -3,14 +3,13 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { API_ORIGIN, authService } from '../services/api';
 import {
   LayoutDashboard, ClipboardList, Shield, Calculator, Award,
-  Database, Settings, Menu, Bell, Ship, FileText, Package,
-  Moon, Sun, LogOut, X, Droplets, Users,
+  Settings, Menu, Bell, Ship, FileText, Package,
+  Moon, Sun, LogOut, X, Droplets, Users, CalendarDays,
 } from 'lucide-react';
 import { useDarkMode } from '../contexts/DarkModeContext';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/tanks',     label: 'Tanks',     icon: Database },
 ];
 
 const operationsNavItems = [
@@ -23,6 +22,13 @@ const operationsNavItems = [
   { to: '/vessel-reports',               label: 'Vessel Reports',              icon: Ship },
 ];
 
+const adminNavItems = [
+  { to: '/submissions',                  label: 'Inspection Reports',          icon: Bell },
+  { to: '/stock-reports',                label: 'Stock Reports',               icon: Package },
+  { to: '/provisional-outturn-reports',  label: 'Provisional Outturn Reports', icon: FileText },
+  { to: '/vessel-reports',               label: 'Vessel Reports',              icon: Ship },
+];
+
 export const Navigation = () => {
   const navigate = useNavigate();
   const { isDarkMode, setIsDarkMode } = useDarkMode();
@@ -31,7 +37,6 @@ export const Navigation = () => {
   const userRole = localStorage.getItem('user_role');
   const username = localStorage.getItem('username') || 'User';
   const initials = username.slice(0, 2).toUpperCase();
-  const canReviewSubmissions = ['admin', 'supervisor'].includes(userRole);
 
   if (!isAuthenticated) return null;
 
@@ -75,49 +80,80 @@ export const Navigation = () => {
           </NavLink>
         ))}
 
-        {/* Operations */}
-        <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5 mt-4">Operations</p>
-        {operationsNavItems.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} className={linkClass} onClick={() => setOpen(false)}>
-            <Icon className="w-4 h-4 shrink-0" />
-            <span className="truncate">{label}</span>
-          </NavLink>
-        ))}
+        {/* Inspector */}
+        {userRole === 'inspector' && (
+          <>
+            <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5 mt-4">Operations</p>
+            {operationsNavItems.map(({ to, label, icon: Icon }) => (
+              <NavLink key={to} to={to} className={linkClass} onClick={() => setOpen(false)}>
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate">{label}</span>
+              </NavLink>
+            ))}
+            <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5 mt-4">Schedule</p>
+            <NavLink to="/roster" className={linkClass} onClick={() => setOpen(false)}>
+              <CalendarDays className="w-4 h-4 shrink-0" />
+              <span>My Roster</span>
+            </NavLink>
+          </>
+        )}
+
+        {/* Supervisor */}
+        {userRole === 'supervisor' && (
+          <>
+            <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5 mt-4">Operations</p>
+            {operationsNavItems.map(({ to, label, icon: Icon }) => (
+              <NavLink key={to} to={to} className={linkClass} onClick={() => setOpen(false)}>
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate">{label}</span>
+              </NavLink>
+            ))}
+            <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5 mt-4">Admin</p>
+            <NavLink to="/submissions" className={linkClass} onClick={() => setOpen(false)}>
+              <Bell className="w-4 h-4 shrink-0" />
+              <span>Inspection Reports</span>
+            </NavLink>
+            <NavLink to="/roster" className={linkClass} onClick={() => setOpen(false)}>
+              <CalendarDays className="w-4 h-4 shrink-0" />
+              <span>Inspector Roster</span>
+            </NavLink>
+          </>
+        )}
 
         {/* Admin */}
-        {(canReviewSubmissions || userRole === 'admin') && (
+        {userRole === 'admin' && (
           <>
-            <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5 mt-4">Admin</p>
-            {canReviewSubmissions && (
-              <NavLink to="/submissions" className={linkClass} onClick={() => setOpen(false)}>
-                <Bell className="w-4 h-4 shrink-0" />
-                <span>Inspection Reports</span>
+            <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5 mt-4">Reports</p>
+            {adminNavItems.map(({ to, label, icon: Icon }) => (
+              <NavLink key={to} to={to} className={linkClass} onClick={() => setOpen(false)}>
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate">{label}</span>
               </NavLink>
-            )}
-            {userRole === 'admin' && (
-              <NavLink to="/users" className={linkClass} onClick={() => setOpen(false)}>
-                <Users className="w-4 h-4 shrink-0" />
-                <span>User Management</span>
-              </NavLink>
-            )}
-            {userRole === 'admin' && (
-              <a
-                href={`${API_ORIGIN}/admin`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-white/75 hover:bg-white/12 hover:text-white transition-all"
-              >
-                <Settings className="w-4 h-4 shrink-0" />
-                <span>Admin Panel</span>
-              </a>
-            )}
+            ))}
+            <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5 mt-4">Management</p>
+            <NavLink to="/roster" className={linkClass} onClick={() => setOpen(false)}>
+              <CalendarDays className="w-4 h-4 shrink-0" />
+              <span>Inspector Roster</span>
+            </NavLink>
+            <NavLink to="/users" className={linkClass} onClick={() => setOpen(false)}>
+              <Users className="w-4 h-4 shrink-0" />
+              <span>User Management</span>
+            </NavLink>
+            <a
+              href={`${API_ORIGIN}/admin`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-white/75 hover:bg-white/12 hover:text-white transition-all"
+            >
+              <Settings className="w-4 h-4 shrink-0" />
+              <span>Admin Panel</span>
+            </a>
           </>
         )}
       </nav>
 
       {/* Footer */}
       <div className="px-3 py-3 border-t border-white/10 space-y-1">
-        {/* User info */}
         <div className="flex items-center gap-2.5 px-3 py-2 mb-1">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{background:'rgba(255,255,255,0.2)'}}>
             {initials}
@@ -151,7 +187,8 @@ export const Navigation = () => {
       {/* Mobile toggle */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed left-4 top-3.5 z-50 md:hidden gradient-primary text-white p-2 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
+        className="fixed left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-50 md:hidden gradient-primary text-white p-2.5 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
+        aria-label="Open navigation menu"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -164,8 +201,8 @@ export const Navigation = () => {
       {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <aside className="gradient-primary relative h-full w-64 shadow-2xl flex flex-col">
+          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} aria-label="Close navigation menu" />
+          <aside className="gradient-primary relative h-full w-[min(20rem,86vw)] shadow-2xl flex flex-col">
             <SidebarContent />
           </aside>
         </div>

@@ -105,8 +105,8 @@ const ProvisionalOutturnReportDetailPage = () => {
       {/* ── Page header ── */}
       <button onClick={() => navigate('/provisional-outturn-reports')}
         className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline mb-4">
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
+        <ChevronLeft className="w-4 h-4" />Back
+</button>
 
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div>
@@ -117,34 +117,30 @@ const ProvisionalOutturnReportDetailPage = () => {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${isFinal ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-            {isFinal ? <><CheckCircle className="w-4 h-4" /> Final</> : <><Clock className="w-4 h-4" /> Draft</>}
-          </span>
+            {isFinal ? <>Final</> : <>Draft</>}
+</span>
           {!isFinal && (
             <>
               <button onClick={() => navigate(`/provisional-outturn-reports/${id}/edit`)}
-                className="bg-amber-50 text-amber-700 border border-amber-200 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-100 transition">
-                ✏️ Edit
-              </button>
+                className="bg-amber-50 text-amber-700 border border-amber-200 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-100 transition">Edit
+</button>
               <button onClick={handleFinalize}
-                className="bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition">
-                ✓ Finalize
-              </button>
+                className="bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition">Finalize
+</button>
             </>
           )}
           <button onClick={handleDownloadPdf} disabled={downloading}
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-            <Download className="w-4 h-4" /> {downloading ? 'Downloading…' : 'Download PDF'}
-          </button>
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">{downloading ? 'Downloading…' : 'Download PDF'}
+</button>
           {isFinal && (
             <button onClick={() => setSubmitOpen(true)}
-              className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-              ✉ Submit
-            </button>
+              className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Submit
+</button>
           )}
         </div>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 text-sm">⚠️ {error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 text-sm">{error}</div>}
 
       {/* ── Vessel info ── */}
       <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">

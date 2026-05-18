@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { submissionService } from '../services/api';
-import { Bell, CheckCheck, Eye, FileText, Lock, Ruler, ClipboardList, Package, ShipWheel } from 'lucide-react';
+import {
+  inspectionService,
+  productReceiptCertificateService,
+  provisionalOuturnService,
+  sealIsolationReportService,
+  shoreTankCalculationService,
+  stockReportService,
+  submissionService,
+} from '../services/api';
+import { Bell, CheckCheck, Download, Eye, FileText, Lock, Printer, Ruler, ClipboardList, Package, ShipWheel } from 'lucide-react';
 
 const DOC_TYPE_CONFIG = {
   dip_ticket:      { label: 'Dip Ticket',               icon: ClipboardList, color: 'text-blue-600',   bg: 'bg-blue-50',   href: (id) => `/inspections/${id}` },
@@ -10,6 +18,28 @@ const DOC_TYPE_CONFIG = {
   shore_tank:      { label: 'Shore Tank Calculation',   icon: Ruler,         color: 'text-teal-600',   bg: 'bg-teal-50',   href: (id) => `/shore-tank-calculations/${id}` },
   stock_report:    { label: 'Stock Report',             icon: Package,       color: 'text-emerald-600', bg: 'bg-emerald-50', href: (id) => `/stock-reports/${id}` },
   provisional_outturn: { label: 'Provisional Outturn',   icon: ShipWheel,     color: 'text-indigo-600', bg: 'bg-indigo-50', href: (id) => `/provisional-outturn-reports/${id}` },
+};
+
+const downloadBlob = (blob, filename) => {
+  const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+};
+
+const printBlob = (blob) => {
+  const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+  const win = window.open(url, '_blank');
+  if (win) {
+    win.onload = () => {
+      win.focus();
+      win.print();
+    };
+  }
 };
 
 export const SubmissionsInboxPage = () => {
@@ -45,6 +75,53 @@ export const SubmissionsInboxPage = () => {
     if (cfg) navigate(cfg.href(sub.doc_id));
   };
 
+  const fetchSubmissionPdf = async (sub) => {
+    if (sub.doc_type === 'dip_ticket') {
+      const res = await inspectionService.generateDocument(sub.doc_id);
+      return res.data;
+    }
+    if (sub.doc_type === 'seal_isolation') {
+      const res = await sealIsolationReportService.generateDocument(sub.doc_id);
+      return res.data;
+    }
+    if (sub.doc_type === 'shore_tank') {
+      const res = await shoreTankCalculationService.generateDocument(sub.doc_id);
+      return res.data;
+    }
+    if (sub.doc_type === 'product_receipt') {
+      const res = await productReceiptCertificateService.downloadCertificatePdf(sub.doc_id);
+      return res.data;
+    }
+    if (sub.doc_type === 'stock_report') {
+      const res = await stockReportService.downloadPdf(sub.doc_id);
+      return res.data;
+    }
+    if (sub.doc_type === 'provisional_outturn') {
+      return provisionalOuturnService.generatePDF(sub.doc_id);
+    }
+    throw new Error('No printable document is available for this submission type.');
+  };
+
+  const handleDownload = async (sub) => {
+    try {
+      const blob = await fetchSubmissionPdf(sub);
+      if (!sub.is_read) await handleMarkRead(sub.id);
+      downloadBlob(blob, `${sub.doc_type}_${sub.doc_number || sub.doc_id}.pdf`);
+    } catch {
+      window.alert('Failed to download this report.');
+    }
+  };
+
+  const handlePrint = async (sub) => {
+    try {
+      const blob = await fetchSubmissionPdf(sub);
+      if (!sub.is_read) await handleMarkRead(sub.id);
+      printBlob(blob);
+    } catch {
+      window.alert('Failed to print this report.');
+    }
+  };
+
   const filtered = filter ? submissions.filter(s => s.doc_type === filter) : submissions;
   const unread   = submissions.filter(s => !s.is_read).length;
 
@@ -63,12 +140,12 @@ export const SubmissionsInboxPage = () => {
         <div className="flex gap-2">
           {unread > 0 && (
             <button onClick={handleMarkAllRead} className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold transition">
-              <CheckCheck className="w-4 h-4" /> Mark all read
-            </button>
+              <CheckCheck className="w-4 h-4" />Mark all read
+</button>
           )}
           <button onClick={() => navigate('/vessel-reports/new')} className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
             + New Vessel Report
-          </button>
+</button>
         </div>
       </div>
 
@@ -78,7 +155,7 @@ export const SubmissionsInboxPage = () => {
           <button key={key} onClick={() => setFilter(key)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filter === key ? 'bg-[#8B1A1A] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {label}
-          </button>
+</button>
         ))}
       </div>
 
@@ -110,9 +187,14 @@ export const SubmissionsInboxPage = () => {
                     Submitted by {sub.submitted_by_name || 'Inspector'} · {new Date(sub.submitted_at).toLocaleString()}
                   </p>
                 </div>
-                <button onClick={() => handleView(sub)} className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition shrink-0">
-                  <Eye className="w-3.5 h-3.5" /> View
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => handleView(sub)} className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition">View
+</button>
+                  <button onClick={() => handleDownload(sub)} className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-green-100 transition">PDF
+</button>
+                  <button onClick={() => handlePrint(sub)} className="inline-flex items-center gap-1.5 bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">Print
+</button>
+                </div>
               </div>
             );
           })}

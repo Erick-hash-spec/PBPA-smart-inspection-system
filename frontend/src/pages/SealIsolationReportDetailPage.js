@@ -122,8 +122,8 @@ export const SealIsolationReportDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       <div className="mb-8">
         <button onClick={() => navigate('/seal-isolation-reports')} className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm mb-4 transition-colors">
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
+          <ChevronLeft className="w-4 h-4" />Back
+</button>
         
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
@@ -140,23 +140,20 @@ export const SealIsolationReportDetailPage = () => {
           <div className="flex items-center gap-2 flex-wrap">
             {isDraft ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                <Clock className="w-4 h-4" /> Draft
-              </span>
+                Draft
+</span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200">
-                <CheckCircle className="w-4 h-4" /> Issued
-              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200">Issued
+</span>
             )}
 
             {isDraft && (
-              <button onClick={() => navigate(`/seal-isolation-reports/${id}/edit`)} className="px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">
-                ✏️ Edit
-              </button>
+              <button onClick={() => navigate(`/seal-isolation-reports/${id}/edit`)} className="px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">Edit
+</button>
             )}
 
-            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors inline-flex items-center gap-2">
-              <Trash2 className="w-4 h-4" /> Delete
-            </button>
+            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors inline-flex items-center gap-2">Delete
+</button>
           </div>
         </div>
       </div>
@@ -164,7 +161,6 @@ export const SealIsolationReportDetailPage = () => {
       {/* Error Banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm flex gap-2 animate-slide-up">
-          <span>⚠️</span>
           <span>{error}</span>
         </div>
       )}
@@ -172,7 +168,7 @@ export const SealIsolationReportDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* REPORT HEADER SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Section title="📋 Report Header">
+      <Section title="Report Header">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Field label="Report No." value={report.report_number} highlight />
           <Field label="Date" value={report.report_date} />
@@ -187,7 +183,7 @@ export const SealIsolationReportDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* SEAL ENTRIES SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Section title="🔐 Seal Entries">
+      <Section title="Seal Entries">
         <div className="overflow-x-auto -mx-2 md:mx-0">
           <table className="w-full text-sm">
             <thead>
@@ -215,26 +211,22 @@ export const SealIsolationReportDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* ACTIONS SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Section title="⚡ Actions">
+      <Section title="Actions">
         <div className="flex flex-wrap gap-2.5">
           {isDraft && (
-            <button onClick={handleIssue} className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">
-              <CheckCircle className="w-4 h-4" /> Issue Report
-            </button>
+            <button onClick={handleIssue} className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Issue Report
+</button>
           )}
 
-          <button onClick={handleDownload} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">
-            <FileText className="w-4 h-4" /> Word
-          </button>
+          <button onClick={handleDownload} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Word
+</button>
 
           {!report.is_signed ? (
-            <button onClick={handleSign} className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">
-              <Download className="w-4 h-4" /> Sign & Download
-            </button>
+            <button onClick={handleSign} className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Sign & Download
+</button>
           ) : (
-            <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-purple-100 text-purple-800 border border-purple-200 cursor-help" title={`Digitally Signed`}>
-              🔐 Signed
-            </span>
+            <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-purple-100 text-purple-800 border border-purple-200 cursor-help" title={`Digitally Signed`}>Signed
+</span>
           )}
         </div>
       </Section>

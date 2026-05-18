@@ -6,12 +6,11 @@ services:
   - type: web
     name: pbpa-smart-inspection-system
     runtime: python
+    pythonVersion: 3.11.9
     plan: free
     buildCommand: bash build.sh
     startCommand: cd backend && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
       - key: DEBUG
         value: false
       - key: SECRET_KEY

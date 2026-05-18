@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/api';
+import { authService, notifyAuthChanged } from '../services/api';
 import { Eye, EyeOff, AlertCircle, Droplets, Zap, Shield } from 'lucide-react';
 
 export const LoginPage = () => {
@@ -30,6 +30,7 @@ export const LoginPage = () => {
       localStorage.setItem('user_role', profile.data.role);
       localStorage.setItem('user_id', profile.data.id);
       localStorage.setItem('username', normalizedUsername);
+      notifyAuthChanged();
       navigate('/dashboard');
     } catch (err) {
       setError(getLoginErrorMessage(err));
@@ -105,7 +106,7 @@ export const LoginPage = () => {
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+</button>
               </div>
             </div>
 
@@ -119,9 +120,9 @@ export const LoginPage = () => {
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Signing in...
-                </span>
+</span>
               ) : 'Sign In →'}
-            </button>
+</button>
           </form>
 
         </div>

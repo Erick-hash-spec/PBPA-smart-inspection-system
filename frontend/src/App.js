@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { authService } from './services/api';
+import { AUTH_CHANGED_EVENT, authService } from './services/api';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import { Navigation } from './components/Navigation';
 import { TopBar } from './components/TopBar';
@@ -27,24 +27,37 @@ import { SubmissionsInboxPage } from './pages/SubmissionsInboxPage';
 import { VesselReportListPage, VesselReportFormPage, VesselReportDetailPage } from './pages/VesselReportPage';
 import { StockReportListPage, StockReportFormPage, StockReportDetailPage } from './pages/StockReportPage';
 import { UserManagementPage } from './pages/UserManagementPage';
+import { RosterPage } from './pages/RosterPage';
+import { RosterFormPage } from './pages/RosterFormPage';
 import './index.css';
 
-const ProtectedRoute = ({ children }) => {
-  if (!authService.isAuthenticated()) return <Navigate to="/login" />;
+const ProtectedRoute = ({ children, isAuthenticated }) => {
+  if (!isAuthenticated) return <Navigate to="/login" />;
   return children;
 };
 
-const P = ({ children }) => <ProtectedRoute>{children}</ProtectedRoute>;
-
 function App() {
-  const isAuthenticated = authService.isAuthenticated();
+  const [isAuthenticated, setIsAuthenticated] = useState(() => authService.isAuthenticated());
+
+  useEffect(() => {
+    const syncAuthState = () => setIsAuthenticated(authService.isAuthenticated());
+    window.addEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+    window.addEventListener('storage', syncAuthState);
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+      window.removeEventListener('storage', syncAuthState);
+    };
+  }, []);
+
+  const P = ({ children }) => <ProtectedRoute isAuthenticated={isAuthenticated}>{children}</ProtectedRoute>;
+
   return (
     <DarkModeProvider>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <div className="min-h-screen bg-gradient-surface dark:bg-gradient-dark">
+        <div className="min-h-screen overflow-x-hidden bg-gradient-surface dark:bg-gradient-dark">
           <Navigation />
           <TopBar />
-          <main className={isAuthenticated ? 'app-main min-h-screen pt-14 md:ml-64' : 'min-h-screen'}>
+          <main className={isAuthenticated ? 'app-main min-h-screen pt-14 md:ml-64' : 'min-h-screen overflow-x-hidden'}>
             <Routes>
             <Route path="/login"    element={<LoginPage />} />
 
@@ -93,6 +106,11 @@ function App() {
             <Route path="/stock-reports/new"      element={<P><StockReportFormPage /></P>} />
             <Route path="/stock-reports/:id"      element={<P><StockReportDetailPage /></P>} />
             <Route path="/stock-reports/:id/edit" element={<P><StockReportFormPage /></P>} />
+
+            {/* Roster */}
+            <Route path="/roster"           element={<P><RosterPage /></P>} />
+            <Route path="/roster/new"       element={<P><RosterFormPage /></P>} />
+            <Route path="/roster/:id/edit"  element={<P><RosterFormPage /></P>} />
 
             {/* User Management (Admin only) */}
             <Route path="/users" element={<P><UserManagementPage /></P>} />

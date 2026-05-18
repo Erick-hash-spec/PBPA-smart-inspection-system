@@ -321,13 +321,12 @@ const ProvisionalOutturnReportFormPage = () => {
                 className="flex-1 bg-amber-700 hover:bg-amber-800 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition"
               >
                 {saving ? 'Saving...' : 'Save Report'}
-              </button>
+</button>
               <button
                 onClick={() => navigate('/provisional-outturn-reports')}
                 className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-medium transition"
-              >
-                Cancel
-              </button>
+              >Cancel
+</button>
             </div>
           </div>
         </div>
@@ -430,7 +429,7 @@ const ProvisionalOutturnReportFormPage = () => {
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition"
             >
               + Add Item
-            </button>
+</button>
           </div>
 
           {/* Summary Table */}
@@ -571,9 +570,7 @@ const ProvisionalOutturnReportFormPage = () => {
                           <button
                             onClick={() => handleDeleteItem(idx)}
                             className="text-red-600 hover:text-red-800 font-medium"
-                          >
-                            ✕
-                          </button>
+                          >Remove</button>
                         </td>
                       </tr>
                     );

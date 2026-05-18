@@ -2,36 +2,38 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { provisionalOuturnService } from '../services/api';
 import { SubmitModal } from '../components/SubmitModal';
+import { Plus } from 'lucide-react';
+
+const StatusBadge = ({ status }) => {
+  const map = {
+    draft: 'bg-amber-50 text-amber-700 border-amber-200',
+    final: 'bg-green-50 text-green-700 border-green-200',
+  };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${map[status] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+      {status?.charAt(0).toUpperCase() + status?.slice(1)}
+</span>
+  );
+};
 
 const ProvisionalOutturnReportListPage = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('all');
   const [submitTarget, setSubmitTarget] = useState(null);
   const [submittedIds, setSubmittedIds] = useState(new Set());
 
-  useEffect(() => {
-    loadReports();
-  }, [filter]);
+  useEffect(() => { loadReports(); }, []); // eslint-disable-line
 
   const loadReports = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       const response = await provisionalOuturnService.list();
-      // Handle paginated response from DRF
-      const allReports = response.results || response;
-      const filtered = filter === 'all' 
-        ? allReports 
-        : allReports.filter(r => r.status === filter);
-      setReports(filtered);
-    } catch (err) {
-      setError('Failed to load reports: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
+      const all = response.results || response;
+      setReports(all);
+    } catch (err) { setError('Failed to load reports: ' + err.message); }
+    finally { setLoading(false); }
   };
 
   const handleDownloadPdf = async (report) => {
@@ -45,182 +47,91 @@ const ProvisionalOutturnReportListPage = () => {
     } catch { setError('Failed to download PDF'); }
   };
 
-  const handleCreateNew = () => {
-    navigate('/provisional-outturn-reports/new');
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this report? This cannot be undone.')) return;
+    try { await provisionalOuturnService.delete(id); setReports(reports.filter(r => r.id !== id)); }
+    catch (err) { setError('Failed to delete: ' + err.message); }
   };
-
-  const handleEdit = (reportId) => {
-    navigate(`/provisional-outturn-reports/${reportId}/edit`);
-  };
-
-  const handleView = (reportId) => {
-    navigate(`/provisional-outturn-reports/${reportId}`);
-  };
-
-  const handleDelete = async (reportId) => {
-    if (!window.confirm('Are you sure you want to delete this report?')) return;
-    try {
-      await provisionalOuturnService.delete(reportId);
-      setReports(reports.filter(r => r.id !== reportId));
-    } catch (err) {
-      setError('Failed to delete report: ' + err.message);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  if (loading) {
-    return (
-      <div className="p-6">
-        <p className="text-gray-500">Loading reports...</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto animate-fade-in">
       {submitTarget && (
         <SubmitModal
-          docType="Provisional Outturn Report"
-          docTypeKey="provisional_outturn"
-          docId={submitTarget.id}
-          docNumber={submitTarget.report_number}
-          vesselName={submitTarget.vessel_name}
-          terminal={submitTarget.port || ''}
+          docType="Provisional Outturn Report" docTypeKey="provisional_outturn"
+          docId={submitTarget.id} docNumber={submitTarget.report_number}
+          vesselName={submitTarget.vessel_name} terminal={submitTarget.port || ''}
           onDownload={() => handleDownloadPdf(submitTarget)}
           onClose={() => setSubmitTarget(null)}
           onSubmitted={(id) => { setSubmittedIds(p => new Set(p).add(id)); setSubmitTarget(null); }}
         />
       )}
-      {/* Header */}
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Provisional Outturn Reports</h1>
-          <p className="text-gray-600 text-sm mt-1">Manage PBPA Provisional Outturn Reports</p>
+
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-sm"></div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Provisional Outturn Reports</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">PBPA vessel outturn summary records</p>
+          </div>
         </div>
-        <button
-          onClick={handleCreateNew}
-          className="bg-amber-700 hover:bg-amber-800 text-white px-6 py-2 rounded-lg font-medium transition"
-        >
-          + New Report
-        </button>
+        <button onClick={() => navigate('/provisional-outturn-reports/new')}
+          className="gradient-primary text-white px-5 py-2.5 rounded-xl font-semibold text-sm inline-flex items-center gap-2 hover:opacity-90 transition shadow-sm">
+          <Plus className="w-4 h-4" />New Report
+</button>
       </div>
 
-      {/* Error Alert */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">{error}</div>}
 
-      {/* Filter Tabs */}
-      <div className="mb-6 flex gap-2">
-        {['all', 'draft', 'final'].map(status => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded font-medium transition ${
-              filter === status
-                ? 'bg-amber-700 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:border-amber-700'
-            }`}
-          >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-            {' '}
-            ({reports.filter(r => status === 'all' || r.status === status).length})
-          </button>
-        ))}
-      </div>
-
-      {/* Reports Table */}
-      {reports.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <p className="text-gray-500 text-lg">No reports found</p>
+      {/* Table */}
+      {loading ? (
+        <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-[#8B1A1A]/20 border-t-[#8B1A1A] rounded-full animate-spin" /></div>
+      ) : reports.length === 0 ? (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-16 text-center shadow-sm">
+          <p className="text-gray-500 dark:text-gray-400 font-semibold">No reports found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-100 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Report #</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Vessel</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Product</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Port</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reports.map((report, idx) => (
-                <tr
-                  key={report.id}
-                  className={`border-b border-gray-200 hover:bg-gray-50 ${
-                    idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                  }`}
-                >
-                  <td className="px-6 py-4 text-sm font-medium text-amber-700">
-                    {report.report_number}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-800">{report.vessel_name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{report.product || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{report.port || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    {formatDate(report.report_date)}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        report.status === 'final'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => handleView(report.id)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleEdit(report.id)}
-                        className="text-amber-600 hover:text-amber-800 text-sm font-medium"
-                      >
-                        Edit
-                      </button>
-                      {report.status === 'final' && (
-                        submittedIds.has(report.id) ? (
-                          <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-lg border border-green-200">
-                            ✓ Submitted
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => setSubmitTarget(report)}
-                            className="bg-[#8B1A1A] hover:bg-[#7a1717] text-white text-xs font-semibold px-3 py-1 rounded-lg transition"
-                          >
-                            ✉ Submit
-                          </button>
-                        )
-                      )}
-                      <button
-                        onClick={() => handleDelete(report.id)}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-gray-700">
+                  {['Report No.', 'Vessel', 'Product', 'Port', 'Date', 'Status', ''].map(h => (
+                    <th key={h} className="px-5 py-3.5 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                {reports.map(r => (
+                  <tr key={r.id} onClick={() => navigate(`/provisional-outturn-reports/${r.id}`)}
+                    className="hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors">
+                    <td className="px-5 py-3.5 font-bold text-[#8B1A1A] dark:text-red-400 whitespace-nowrap">{r.report_number}</td>
+                    <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-200">{r.vessel_name}</td>
+                    <td className="px-5 py-3.5 text-gray-600 dark:text-gray-400">{r.product || '—'}</td>
+                    <td className="px-5 py-3.5 text-gray-600 dark:text-gray-400">{r.port || '—'}</td>
+                    <td className="px-5 py-3.5 text-gray-500 dark:text-gray-500 whitespace-nowrap">{new Date(r.report_date).toLocaleDateString()}</td>
+                    <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => navigate(`/provisional-outturn-reports/${r.id}`)} title="View"
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
+                        <button onClick={() => navigate(`/provisional-outturn-reports/${r.id}/edit`)} title="Edit"
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
+                        {r.status === 'final' && (
+                          submittedIds.has(r.id)
+                            ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>
+                            : <button onClick={() => setSubmitTarget(r)} title="Submit"
+                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit</button>
+                        )}
+                        <button onClick={() => handleDelete(r.id)} title="Delete"
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

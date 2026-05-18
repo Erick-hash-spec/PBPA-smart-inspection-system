@@ -47,7 +47,7 @@ export const SubmitModal = ({ docType, docTypeKey, docId, docNumber, vesselName,
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition">
             <X className="w-5 h-5 text-gray-500" />
-          </button>
+</button>
         </div>
 
         {!submitted ? (
@@ -92,10 +92,9 @@ export const SubmitModal = ({ docType, docTypeKey, docId, docNumber, vesselName,
               >
                 <Send className="w-4 h-4" />
                 {loading ? 'Submitting…' : 'Submit'}
-              </button>
-              <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition">
-                Cancel
-              </button>
+</button>
+              <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition">Cancel
+</button>
             </div>
           </div>
         ) : (
@@ -106,12 +105,11 @@ export const SubmitModal = ({ docType, docTypeKey, docId, docNumber, vesselName,
             <h3 className="text-lg font-bold text-gray-900 mb-2">Submitted Successfully</h3>
             <p className="text-sm text-gray-500 mb-6">The document has been submitted to PBPA admin successfully.</p>
             <div className="text-left space-y-2 mb-6">
-              <div className="bg-blue-50 rounded-lg px-4 py-2 text-sm font-medium text-blue-800">✓ Terminal Representative</div>
-              <div className="bg-green-50 rounded-lg px-4 py-2 text-sm font-medium text-green-800">✓ PBPA Admin Dashboard — notified</div>
+              <div className="bg-blue-50 rounded-lg px-4 py-2 text-sm font-medium text-blue-800">Terminal Representative</div>
+              <div className="bg-green-50 rounded-lg px-4 py-2 text-sm font-medium text-green-800">PBPA Admin Dashboard — notified</div>
             </div>
-            <button onClick={onClose} className="w-full bg-gray-100 text-gray-700 px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-200 transition">
-              Close
-            </button>
+            <button onClick={onClose} className="w-full bg-gray-100 text-gray-700 px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-200 transition">Close
+</button>
           </div>
         )}
       </div>

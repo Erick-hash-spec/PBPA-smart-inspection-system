@@ -150,19 +150,19 @@ export const ProductReceiptCertificateFormPage = () => {
     <div className="p-6 md:p-8 max-w-5xl mx-auto animate-fade-in">
       <div className="mb-6">
         <button onClick={() => navigate(isEdit ? `/product-receipt-certificates/${id}` : '/product-receipt-certificates')} className="text-sm text-blue-600 hover:underline mb-1">← Back</button>
-        <h1 className="text-3xl font-bold text-gray-900">{isEdit ? '✏️ Edit Certificate' : '📄 New Product Receipt Certificate'}</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{isEdit ? 'Edit Certificate' : 'New Product Receipt Certificate'}</h1>
       </div>
 
       {fromStc && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm">
-          <span>✅</span> Pre-filled from Shore Tank Calculation. Review and confirm before saving.
+          Pre-filled from Shore Tank Calculation. Review and confirm before saving.
         </div>
       )}
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm"><span>⚠️</span>{error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm">{error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <Section title="📋 Certificate Header">
+        <Section title="Certificate Header">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Vessel Name<span className="text-red-500 ml-1">*</span></label>
@@ -187,25 +187,24 @@ export const ProductReceiptCertificateFormPage = () => {
           </div>
         </Section>
 
-        <Section title="📦 Delivered / Received Quantities">
+        <Section title="Delivered / Received Quantities">
           <div className="space-y-3 mb-3">
             <div className="grid grid-cols-5 gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
-              <span>Tank No.</span><span>Product</span><span>Weight (t)</span><span>Volume (L)</span><span></span>
-            </div>
+              <span>Tank No.</span><span>Product</span><span>Weight (t)</span><span>Volume (L)</span></div>
             {formData.items.map((item, i) => (
               <div key={i} className="grid grid-cols-5 gap-2">
                 <input type="text" placeholder="Tank No." value={item.tank_no} onChange={e=>handleItemChange(i,'tank_no',e.target.value)} className={inputCls} />
                 <ProductSelect value={item.product_name} onChange={v=>handleItemChange(i,'product_name',v)} inputCls={inputCls} required />
                 <input type="number" step="0.001" min="0" placeholder="0.000" value={item.weight_tonnage} onChange={e=>handleItemChange(i,'weight_tonnage',e.target.value)} required className={inputCls} />
                 <input type="number" step="0.001" min="0" placeholder="0.000" value={item.volume_liters} onChange={e=>handleItemChange(i,'volume_liters',e.target.value)} required className={inputCls} />
-                <button type="button" onClick={() => setFormData(prev=>({...prev,items:prev.items.filter((_,idx)=>idx!==i)}))} disabled={formData.items.length===1} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40">✕</button>
+                <button type="button" onClick={() => setFormData(prev=>({...prev,items:prev.items.filter((_,idx)=>idx!==i)}))} disabled={formData.items.length===1} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40">Remove</button>
               </div>
             ))}
           </div>
           <button type="button" onClick={() => setFormData(prev=>({...prev,items:[...prev.items,emptyItem()]}))} className="text-sm text-blue-600 font-semibold hover:underline">+ Add Line</button>
         </Section>
 
-        <Section title="✍️ Signatories">
+        <Section title="Signatories">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[['Terminal Representative Name','terminal_representative_name',true],['PBPA Inspector Name','pbpa_inspector_name',false],['Terminal Representative Signature','terminal_representative_signature',false],['PBPA Inspector Signature','pbpa_inspector_signature',false]].map(([label,name,req]) => (
               <div key={name}>
@@ -222,8 +221,8 @@ export const ProductReceiptCertificateFormPage = () => {
 
         <div className="flex gap-3">
           <button type="submit" disabled={loading} className="gradient-primary text-white px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition disabled:opacity-50">
-            {loading ? 'Saving...' : isEdit ? '💾 Save Changes' : '✅ Create Certificate'}
-          </button>
+            {loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Certificate'}
+</button>
           <button type="button" onClick={() => navigate(isEdit ? `/product-receipt-certificates/${id}` : '/product-receipt-certificates')} className="bg-gray-100 text-gray-700 px-8 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">Cancel</button>
         </div>
       </form>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { inspectionService } from '../services/api';
-import { ChevronLeft, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Trash2, CheckCircle, Clock, AlertCircle, Download, Printer } from 'lucide-react';
 
 const statusConfig = {
   draft:     { label: 'Draft',     icon: Clock,        color: 'gray' },
@@ -90,19 +90,51 @@ export const InspectionDetailPage = () => {
   };
 
   const handleApprove = async () => {
-    try { await inspectionService.approveInspection(id); setActionMsg('Approved ✅'); fetchInspection(); }
-    catch { setActionMsg('Failed to approve ❌'); }
+    try { await inspectionService.approveInspection(id); setActionMsg('Approved'); fetchInspection(); }
+    catch { setActionMsg('Failed to approve'); }
   };
 
   const handleReject = async () => {
     if (!rejectReason.trim()) return;
     try { await inspectionService.rejectInspection(id, { rejection_reason: rejectReason }); setActionMsg('Rejected'); setShowRejectBox(false); fetchInspection(); }
-    catch { setActionMsg('Failed to reject ❌'); }
+    catch { setActionMsg('Failed to reject'); }
   };
 
   const handleSubmitForApproval = async () => {
-    try { await inspectionService.submitInspection(id); setActionMsg('Submitted 📤'); fetchInspection(); }
-    catch { setActionMsg('Failed to submit ❌'); }
+    try { await inspectionService.submitInspection(id); setActionMsg('Submitted'); fetchInspection(); }
+    catch { setActionMsg('Failed to submit'); }
+  };
+
+  const getInspectionPdf = async () => {
+    const res = await inspectionService.generateDocument(id);
+    return new Blob([res.data], { type: 'application/pdf' });
+  };
+
+  const handleDownloadPdf = async () => {
+    try {
+      const blob = await getInspectionPdf();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Dip_Ticket_${inspection.ticket_number || id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch {
+      setError('Failed to download document');
+    }
+  };
+
+  const handlePrintPdf = async () => {
+    try {
+      const blob = await getInspectionPdf();
+      const url = window.URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
+      if (win) win.onload = () => win.print();
+    } catch {
+      setError('Failed to print document');
+    }
   };
 
   if (loading) return (
@@ -117,7 +149,6 @@ export const InspectionDetailPage = () => {
   if (error) return (
     <div className="p-8 max-w-5xl mx-auto">
       <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex gap-2">
-        <span>⚠️</span>
         <span>{error}</span>
       </div>
     </div>
@@ -145,8 +176,8 @@ export const InspectionDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       <div className="mb-8">
         <button onClick={() => navigate('/inspections')} className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm mb-4 transition-colors">
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
+          <ChevronLeft className="w-4 h-4" />Back
+</button>
         
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
@@ -168,18 +199,20 @@ export const InspectionDetailPage = () => {
               ${inspection.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' : ''}
             `}>
               <StatusIcon className="w-4 h-4" /> {sc.label}
-            </span>
+</span>
 
             {inspection.status === 'draft' && (
-              <button onClick={() => navigate(`/inspections/${id}/edit`)} className="px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">
-                ✏️ Edit
-              </button>
+              <button onClick={() => navigate(`/inspections/${id}/edit`)} className="px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">Edit
+</button>
             )}
 
-            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors inline-flex items-center gap-2">
-              <Trash2 className="w-4 h-4" /> Delete
-            </button>
-            <button onClick={async () => {
+            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors inline-flex items-center gap-2">Delete
+</button>
+            <button onClick={handlePrintPdf} className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors inline-flex items-center gap-2">Print PDF
+</button>
+            <button onClick={handleDownloadPdf} className="px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors inline-flex items-center gap-2">Download PDF
+</button>
+            {false && <button onClick={async () => {
               try {
                 const res = await inspectionService.generateDocument(id);
                 const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -188,9 +221,8 @@ export const InspectionDetailPage = () => {
                 document.body.appendChild(a); a.click();
                 window.URL.revokeObjectURL(url); document.body.removeChild(a);
               } catch { setError('Failed to download document'); }
-            }} className="px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors inline-flex items-center gap-2">
-              📄 Download PDF
-            </button>
+            }} className="px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors inline-flex items-center gap-2">Download PDF
+</button>}
           </div>
         </div>
       </div>
@@ -205,7 +237,7 @@ export const InspectionDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* HEADER DETAILS SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Section title="📋 Dip Ticket Header">
+      <Section title="Dip Ticket Header">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Field label="Ticket Number"   value={inspection.ticket_number} highlight />
           <Field label="Vessel"          value={inspection.vessel_name} />
@@ -220,7 +252,7 @@ export const InspectionDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* MEASUREMENTS SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Section title="📏 PBPA Dip Measurements">
+      <Section title="PBPA Dip Measurements">
         <div className="overflow-x-auto -mx-2 md:mx-0">
           <table className="w-full text-sm">
             <thead>
@@ -255,7 +287,7 @@ export const InspectionDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* SEAL & METER SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Section title="🔒 Seal Position & Meter Readings">
+      <Section title="Seal Position & Meter Readings">
         <div className="overflow-x-auto -mx-2 md:mx-0">
           <table className="w-full text-sm">
             <thead>
@@ -285,7 +317,7 @@ export const InspectionDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* INSPECTION DATA SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Section title="📊 Inspection Data">
+      <Section title="Inspection Data">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <Field label="Dip Reading" value={`${inspection.dip_reading} m`} highlight />
           <Field label="Temperature" value={`${inspection.temperature}°C`} />
@@ -304,7 +336,7 @@ export const InspectionDetailPage = () => {
       {/* CALCULATIONS SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
       {inspection.calculation && (
-        <Section title="🧮 Calculations">
+        <Section title="Calculations">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             <Field label="Gross Volume" value={`${inspection.calculation.gross_volume} bbl`} />
             <Field label="Water Volume" value={`${inspection.calculation.water_volume} bbl`} />
@@ -319,22 +351,19 @@ export const InspectionDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* ACTIONS SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Section title="⚡ Actions">
+      <Section title="Actions">
         <div className="flex flex-wrap gap-2.5 mb-4">
           {inspection.status === 'draft' && (
-            <button onClick={handleSubmitForApproval} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">
-              📤 Submit for Approval
-            </button>
+            <button onClick={handleSubmitForApproval} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Submit for Approval
+</button>
           )}
           
           {inspection.status === 'submitted' && userRole === 'supervisor' && (
             <>
-              <button onClick={handleApprove} className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">
-                ✅ Approve
-              </button>
-              <button onClick={() => setShowRejectBox(!showRejectBox)} className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">
-                ❌ Reject
-              </button>
+              <button onClick={handleApprove} className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Approve
+</button>
+              <button onClick={() => setShowRejectBox(!showRejectBox)} className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Reject
+</button>
             </>
           )}
         </div>
@@ -348,9 +377,8 @@ export const InspectionDetailPage = () => {
               onChange={e => setRejectReason(e.target.value)} 
               className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500" 
             />
-            <button onClick={handleReject} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition">
-              Confirm
-            </button>
+            <button onClick={handleReject} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition">Confirm
+</button>
           </div>
         )}
       </Section>

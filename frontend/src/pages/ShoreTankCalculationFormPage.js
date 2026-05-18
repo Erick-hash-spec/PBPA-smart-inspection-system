@@ -30,10 +30,15 @@ const emptyTankItem = () => ({
   remarks: '',
 });
 
-const emptyAstm = () => ({ d20: null, vcf: null, wcf: null, loading: false });
+const emptyAstm = () => ({ d20: null, vcf: null, wcf: null, loading: false, error: '' });
 const opt  = (v) => (v === '' || v == null ? null : Number(v));
 const zero = (v) => Number(v || 0);
 const nv   = (v) => (v == null ? '' : v);
+const toFiniteNumber = (value) => {
+  if (value === '' || value == null) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
 
 const formatApiError = (error) => {
   const data = error.response?.data;
@@ -77,32 +82,56 @@ export const ShoreTankCalculationFormPage = () => {
   const [astmData, setAstmData] = useState([{ initial: emptyAstm(), final: emptyAstm() }]);
   const [finalLabels, setFinalLabels] = useState(['L.DISPL / PROV / FINAL']);
   const timers = useRef({});
+  const lookupCache = useRef({});
+  const lookupSeq = useRef({});
 
   // ── ASTM lookup ──────────────────────────────────────────────────────────
   // defined first so loadExisting can reference it directly
   const triggerAstmLookup = useCallback((itemIndex, state, item) => {
-    const density    = state === 'initial' ? item.density_initial_kg_l   : item.density_final_kg_l;
-    const sampleTemp = item[`sample_temperature_${state}_c`];
-    const tankTemp   = item[`tank_temperature_${state}_c`];
+    const density = toFiniteNumber(state === 'initial' ? item.density_initial_kg_l : item.density_final_kg_l);
+    const sampleTemp = toFiniteNumber(item[`sample_temperature_${state}_c`]);
+    const tankTemp = toFiniteNumber(item[`tank_temperature_${state}_c`]);
 
     if (timers.current[itemIndex]?.[state]) clearTimeout(timers.current[itemIndex][state]);
 
-    if (!density || !sampleTemp || !tankTemp) {
+    if (density == null || sampleTemp == null || tankTemp == null) {
       setAstmData(prev => { const n=[...prev]; n[itemIndex]={...n[itemIndex],[state]:emptyAstm()}; return n; });
       return;
     }
-    setAstmData(prev => { const n=[...prev]; n[itemIndex]={...n[itemIndex],[state]:{...n[itemIndex][state],loading:true}}; return n; });
+
+    const cacheKey = [density, sampleTemp, tankTemp].map(v => Number(v).toFixed(4)).join('|');
+    const cached = lookupCache.current[cacheKey];
+    if (cached) {
+      setAstmData(prev => { const n=[...prev]; n[itemIndex]={...n[itemIndex],[state]:cached}; return n; });
+      return;
+    }
+
+    if (!lookupSeq.current[itemIndex]) lookupSeq.current[itemIndex] = {};
+    const seq = (lookupSeq.current[itemIndex][state] || 0) + 1;
+    lookupSeq.current[itemIndex][state] = seq;
+    setAstmData(prev => { const n=[...prev]; n[itemIndex]={...n[itemIndex],[state]:{...n[itemIndex][state],loading:true,error:''}}; return n; });
 
     if (!timers.current[itemIndex]) timers.current[itemIndex] = {};
     timers.current[itemIndex][state] = setTimeout(async () => {
       try {
-        const res = await astmService.lookup(Number(density), Number(sampleTemp), Number(tankTemp));
+        const res = await astmService.lookup(density, sampleTemp, tankTemp);
+        if (lookupSeq.current[itemIndex]?.[state] !== seq) return;
         const { density_at_20, vcf, wcf } = res.data;
-        setAstmData(prev => { const n=[...prev]; n[itemIndex]={...n[itemIndex],[state]:{d20:density_at_20,vcf,wcf,loading:false}}; return n; });
-      } catch {
-        setAstmData(prev => { const n=[...prev]; n[itemIndex]={...n[itemIndex],[state]:{d20:null,vcf:null,wcf:null,loading:false}}; return n; });
+        const next = {
+          d20: density_at_20,
+          vcf,
+          wcf,
+          loading: false,
+          error: density_at_20 == null || vcf == null || wcf == null ? 'No ASTM value for these inputs' : '',
+        };
+        lookupCache.current[cacheKey] = next;
+        setAstmData(prev => { const n=[...prev]; n[itemIndex]={...n[itemIndex],[state]:next}; return n; });
+      } catch (err) {
+        if (lookupSeq.current[itemIndex]?.[state] !== seq) return;
+        const message = err.response?.data?.detail || 'ASTM lookup failed';
+        setAstmData(prev => { const n=[...prev]; n[itemIndex]={...n[itemIndex],[state]:{...emptyAstm(),error:message}}; return n; });
       }
-    }, 400);
+    }, 150);
   }, []);
 
   useEffect(() => {
@@ -265,11 +294,12 @@ export const ShoreTankCalculationFormPage = () => {
     } finally { setLoading(false); }
   };
 
-  const autoField = (value, isLoading, decimals = 6) => (
+  const autoField = (value, isLoading, decimals = 6, error = '') => (
     <input readOnly
       value={isLoading ? '' : (value != null ? Number(value).toFixed(decimals) : '')}
-      placeholder={isLoading ? 'fetching…' : 'auto'}
-      className={isLoading ? loadingCls : autoCalcCls} />
+      placeholder={isLoading ? 'fetching...' : (error || 'auto')}
+      title={error || undefined}
+      className={error ? `${autoCalcCls} border-red-200 bg-red-50 text-red-700` : (isLoading ? loadingCls : autoCalcCls)} />
   );
 
   const novValue = (item, state) => {
@@ -290,14 +320,14 @@ export const ShoreTankCalculationFormPage = () => {
     <div className="p-6 md:p-8 max-w-6xl mx-auto animate-fade-in">
       <div className="mb-6">
         <button onClick={() => navigate(isEdit ? `/shore-tank-calculations/${id}` : '/shore-tank-calculations')} className="text-sm text-blue-600 hover:underline mb-1">← Back</button>
-        <h1 className="text-3xl font-bold text-gray-900">{isEdit ? '✏️ Edit Shore Tank Calculation' : '📐 New Shore Tank Calculation'}</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{isEdit ? 'Edit Shore Tank Calculation' : 'New Shore Tank Calculation'}</h1>
         <p className="text-xs text-blue-500 mt-1">Density @20°C and VCF are fetched live from ASTM Table 59B / 60B</p>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm"><span>⚠️</span>{error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm">{error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <Section title="📋 Workbook Header">
+        <Section title="Workbook Header">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Vessel Name<span className="text-red-500 ml-1">*</span></label>
@@ -320,15 +350,147 @@ export const ShoreTankCalculationFormPage = () => {
           </div>
         </Section>
 
-        <Section title="🛢️ Tank Measurements">
+        <Section title="Tank Measurements">
           <div className="space-y-4 mb-3">
             {formData.tank_items.map((item, i) => {
               const ai = astmData[i] || { initial: emptyAstm(), final: emptyAstm() };
+              if (item) {
+                const states = ['initial', 'final'];
+                const numberInput = (field, step) => (
+                  <input type="number" step={step} value={item[field]} onChange={e=>handleItemChange(i,field,e.target.value)} className={inputCls} />
+                );
+                const computedStdVol = (state) => {
+                  const n = parseFloat(novValue(item,state));
+                  const v = ai[state].vcf == null ? null : parseFloat(ai[state].vcf.toFixed(4));
+                  return (!n || v == null) ? '' : (n * v).toFixed(3);
+                };
+                const computedWeight = (state) => {
+                  const n = parseFloat(novValue(item,state));
+                  const v = ai[state].vcf == null ? null : parseFloat(ai[state].vcf.toFixed(4));
+                  const w = ai[state].wcf == null ? null : parseFloat(ai[state].wcf.toFixed(4));
+                  return (!n || v == null || w == null) ? '' : (n * v * w).toFixed(3);
+                };
+                const groups = [
+                  {
+                    title: 'Section A - Measured Dips',
+                    rows: [
+                      { label: 'Overall Dip (mm)', fields: { initial: 'overall_dip_initial_mm', final: 'overall_dip_final_mm' }, step: '0.001', type: 'manual' },
+                      { label: 'Water Dip (mm)', fields: { initial: 'water_dip_initial_mm', final: 'water_dip_final_mm' }, step: '0.001', type: 'manual' },
+                      { label: 'Product Dip (mm)', fields: { initial: 'product_dip_initial_mm', final: 'product_dip_final_mm' }, step: '0.001', type: 'manual' },
+                    ],
+                  },
+                  {
+                    title: 'Section B - Temperature & Density',
+                    rows: [
+                      { label: 'Tank Temp (deg C)', fields: { initial: 'tank_temperature_initial_c', final: 'tank_temperature_final_c' }, step: '0.1', type: 'manual' },
+                      { label: 'Sample Temp (deg C)', fields: { initial: 'sample_temperature_initial_c', final: 'sample_temperature_final_c' }, step: '0.1', type: 'manual' },
+                      { label: 'Specific Gravity (kg/L)', fields: { initial: 'density_initial_kg_l', final: 'density_final_kg_l' }, step: '0.0001', type: 'manual' },
+                      { label: 'Density @20 deg C (kg/L)', source: 'd20', decimals: 4, type: 'astm', note: 'ASTM Table 59B' },
+                    ],
+                  },
+                  {
+                    title: 'Section C - Correction Factors',
+                    rows: [
+                      { label: 'VCF', source: 'vcf', decimals: 4, type: 'astm', note: 'ASTM Table 60B' },
+                      { label: 'WCF = D@20 - 0.0011', source: 'wcf', decimals: 4, type: 'astm', note: 'auto' },
+                    ],
+                  },
+                  {
+                    title: 'Section D - Volume Calculations',
+                    rows: [
+                      { label: 'GOV (m3)', fields: { initial: 'gross_observed_initial_m3', final: 'gross_observed_final_m3' }, step: '0.001', type: 'manual' },
+                      { label: 'Roof Displacement (m3)', fields: { initial: 'roof_displacement_initial_m3', final: 'roof_displacement_final_m3' }, step: '0.001', type: 'manual' },
+                      { label: 'Water Volume (m3)', fields: { initial: 'water_volume_initial_m3', final: 'water_volume_final_m3' }, step: '0.001', type: 'manual' },
+                      { label: 'Net Obs Vol (m3) = GOV - Roof - Water', type: 'computed', value: state => novValue(item,state) },
+                      { label: 'Std Vol @20 deg C (m3) = NOV x VCF', type: 'computed', value: computedStdVol },
+                      { label: 'Weight in Air (MT) = StdVol x WCF', type: 'computed', value: computedWeight },
+                    ],
+                  },
+                ];
+                const renderCell = (row, state) => {
+                  if (row.type === 'astm') {
+                    const astate = ai[state];
+                    return autoField(astate[row.source], astate.loading, row.decimals, astate.error);
+                  }
+                  if (row.type === 'computed') {
+                    return <input readOnly value={row.value(state)} className={autoCalcCls} placeholder="auto" />;
+                  }
+                  return numberInput(row.fields[state], row.step);
+                };
+
+                return (
+                  <div key={i} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Tank {i + 1}</p>
+                        <p className="text-base font-extrabold text-slate-900">Measurement Worksheet</p>
+                      </div>
+                      <button type="button" onClick={() => removeTank(i)} disabled={formData.tank_items.length === 1} className="self-start rounded-lg px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-40 md:self-auto">Remove</button>
+                    </div>
+
+                    <div className="p-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(220px,360px)_1fr] md:items-end">
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wide text-slate-500 mb-1.5">Tank No.</label>
+                          <input placeholder="Tank No." value={item.tank_no} onChange={e => handleItemChange(i,'tank_no',e.target.value)} className={inputCls} />
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-xs font-semibold text-slate-500 md:justify-end">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-700"><span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-300" />Manual input</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-blue-700"><span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-400" />Auto calculated</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 overflow-x-auto">
+                        <div className="min-w-[760px] overflow-hidden rounded-2xl border border-slate-200">
+                          <div className="grid grid-cols-[240px_1fr_1fr] bg-slate-900 text-white">
+                            <div className="px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-300">Field</div>
+                            <div className="px-4 py-3 text-sm font-extrabold">INITIAL</div>
+                            <div className="px-4 py-2">
+                              <select
+                                value={finalLabels[i] || 'L.DISPL / PROV / FINAL'}
+                                onChange={e => setFinalLabels(prev => { const n=[...prev]; n[i]=e.target.value; return n; })}
+                                className="w-full rounded-lg border border-white/10 bg-white/10 px-2 py-1.5 text-sm font-extrabold text-white outline-none"
+                              >
+                                <option>L.DISPL / PROV / FINAL</option>
+                                <option>L.DISPL</option>
+                                <option>PROVISIONAL</option>
+                                <option>FINAL</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {groups.map(group => (
+                            <div key={group.title}>
+                              <div className="border-y border-slate-200 bg-slate-100 px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-slate-600">{group.title}</div>
+                              {group.rows.map(row => (
+                                <div key={row.label} className="grid grid-cols-[240px_1fr_1fr] items-center gap-3 border-b border-slate-100 bg-white px-4 py-3 last:border-b-0">
+                                  <div>
+                                    <p className="text-sm font-bold text-slate-700">{row.label}</p>
+                                    {row.note && <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-500">{row.note}</p>}
+                                  </div>
+                                  {states.map(state => (
+                                    <div key={state}>{renderCell(row, state)}</div>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Remarks</label>
+                        <input placeholder="Remarks" value={item.remarks} onChange={e=>handleItemChange(i,'remarks',e.target.value)} className={inputCls} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
               return (
                 <div key={i} className="border border-gray-100 rounded-2xl p-4 bg-gray-50">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-semibold text-gray-700">Tank {i + 1}</span>
-                    <button type="button" onClick={() => removeTank(i)} disabled={formData.tank_items.length === 1} className="text-red-500 hover:text-red-700 text-sm font-semibold disabled:opacity-40">✕ Remove</button>
+                    <button type="button" onClick={() => removeTank(i)} disabled={formData.tank_items.length === 1} className="text-red-500 hover:text-red-700 text-sm font-semibold disabled:opacity-40">Remove</button>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
@@ -383,17 +545,17 @@ export const ShoreTankCalculationFormPage = () => {
                           </div>
                           <div>
                             <label className="block text-xs text-blue-500 mb-1">Density @20°C (kg/L) <span className="text-blue-400">[ASTM Table 59B]</span></label>
-                            {autoField(astate.d20, astate.loading, 4)}
+                            {autoField(astate.d20, astate.loading, 4, astate.error)}
                           </div>
 
                           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide pt-1">Section C – Correction Factors</p>
                           <div>
                             <label className="block text-xs text-blue-500 mb-1">VCF <span className="text-blue-400">[ASTM Table 60B]</span></label>
-                            {autoField(astate.vcf, astate.loading, 4)}
+                            {autoField(astate.vcf, astate.loading, 4, astate.error)}
                           </div>
                           <div>
                             <label className="block text-xs text-blue-500 mb-1">WCF = D@20 − 0.0011 <span className="text-blue-400">[auto]</span></label>
-                            {autoField(astate.wcf, astate.loading, 4)}
+                            {autoField(astate.wcf, astate.loading, 4, astate.error)}
                           </div>
 
                           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide pt-1">Section D – Volume Calculations</p>
@@ -430,7 +592,7 @@ export const ShoreTankCalculationFormPage = () => {
           <button type="button" onClick={addTank} className="text-sm text-blue-600 font-semibold hover:underline">+ Add Tank</button>
         </Section>
 
-        <Section title="⚖️ Vessel and Meter Quantities">
+        <Section title="Vessel and Meter Quantities">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[['Vessel Obs Vol (m³)','vessel_observed_volume_m3'],['Vessel Std Vol (m³)','vessel_standard_volume_m3'],['Vessel Weight in Air (MT)','vessel_weight_air_mt'],['Meter Quantity (m³)','meter_quantity_m3']].map(([label,name]) => (
               <div key={name}>
@@ -441,7 +603,7 @@ export const ShoreTankCalculationFormPage = () => {
           </div>
         </Section>
 
-        <Section title="✍️ Signatories">
+        <Section title="Signatories">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[['PBPA Inspector Name','pbpa_inspector_name'],['Terminal Representative Name','terminal_representative_name']].map(([label,name]) => (
               <div key={name}>
@@ -458,8 +620,8 @@ export const ShoreTankCalculationFormPage = () => {
 
         <div className="flex gap-3">
           <button type="submit" disabled={loading} className="gradient-primary text-white px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition disabled:opacity-50">
-            {loading ? 'Saving...' : isEdit ? '💾 Save Changes' : '✅ Create Calculation'}
-          </button>
+            {loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Calculation'}
+</button>
           <button type="button" onClick={() => navigate(isEdit ? `/shore-tank-calculations/${id}` : '/shore-tank-calculations')} className="bg-gray-100 text-gray-700 px-8 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">Cancel</button>
         </div>
       </form>

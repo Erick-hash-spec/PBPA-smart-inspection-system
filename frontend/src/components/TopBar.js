@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_ORIGIN, authService, submissionService } from '../services/api';
-import { ChevronDown, LayoutDashboard, Settings, LogOut, User, Bell } from 'lucide-react';
+import { API_ORIGIN, authService, rosterService, submissionService } from '../services/api';
+import { ChevronDown, LayoutDashboard, Settings, LogOut, Bell } from 'lucide-react';
 
 const roleBadge = {
   admin:      { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-700 dark:text-purple-300' },
@@ -27,8 +27,13 @@ export const TopBar = () => {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated || !['admin', 'supervisor'].includes(userRole)) return;
-    const fetchCount = () => submissionService.getUnreadCount().then(r => setUnread(r.data.count || 0)).catch(() => {});
+    if (!isAuthenticated || !['admin', 'supervisor', 'inspector'].includes(userRole)) return;
+    const fetchCount = () => {
+      const countRequest = userRole === 'inspector'
+        ? rosterService.getUnreadCount()
+        : submissionService.getUnreadCount();
+      countRequest.then(r => setUnread(r.data.count || 0)).catch(() => {});
+    };
     fetchCount();
     const interval = setInterval(fetchCount, 30000);
     return () => clearInterval(interval);
@@ -40,17 +45,17 @@ export const TopBar = () => {
   const rb = roleBadge[userRole] || { bg: 'bg-gray-100', text: 'text-gray-700' };
 
   return (
-    <header className="fixed top-0 left-0 right-0 md:left-64 z-30 h-14 flex items-center justify-between px-4 md:px-6"
+    <header className="fixed top-0 left-0 right-0 md:left-64 z-30 h-14 flex items-center justify-between pl-16 pr-3 md:px-6"
       style={{background:'rgba(255,255,255,0.85)',backdropFilter:'blur(16px)',borderBottom:'1px solid rgba(0,0,0,0.06)',boxShadow:'0 1px 12px rgba(0,0,0,0.06)'}}>
       <div className="hidden md:block" />
 
       <div className="flex items-center gap-1.5 ml-auto">
         {/* Notification Bell */}
-        {['admin', 'supervisor'].includes(userRole) && (
+        {['admin', 'supervisor', 'inspector'].includes(userRole) && (
           <button
-            onClick={() => navigate('/submissions')}
+            onClick={() => navigate(userRole === 'inspector' ? '/roster' : '/submissions')}
             className="relative p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-all"
-            title="Inspection Reports"
+            title={userRole === 'inspector' ? 'Roster Notifications' : 'Inspection Reports'}
           >
             <Bell className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             {unread > 0 && (
@@ -81,7 +86,7 @@ export const TopBar = () => {
           </button>
 
           {open && (
-            <div className="absolute right-0 mt-2 w-60 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 py-2 animate-fade-in"
+            <div className="absolute right-0 mt-2 w-[min(15rem,calc(100vw-1.5rem))] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 py-2 animate-fade-in"
               style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)'}}>
               {/* Profile header */}
               <div className="px-4 py-3.5 border-b border-gray-100 dark:border-gray-700">

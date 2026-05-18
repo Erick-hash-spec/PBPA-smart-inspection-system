@@ -127,8 +127,8 @@ export const ShoreTankCalculationDetailPage = () => {
     <div className="p-8 max-w-4xl mx-auto">
       <p className="text-red-600 mb-4">{error || 'Calculation not found'}</p>
       <button onClick={() => navigate('/shore-tank-calculations')} className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold">
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
+        <ChevronLeft className="w-4 h-4" />Back
+</button>
     </div>
   );
 
@@ -144,8 +144,8 @@ export const ShoreTankCalculationDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       <div className="mb-8">
         <button onClick={() => navigate('/shore-tank-calculations')} className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm mb-4 transition-colors">
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
+          <ChevronLeft className="w-4 h-4" />Back
+</button>
         
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
@@ -161,48 +161,42 @@ export const ShoreTankCalculationDetailPage = () => {
           {/* Status & Actions */}
           <div className="flex items-center gap-2 flex-wrap">
             {isFinal ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200">
-                <CheckCircle className="w-4 h-4" /> Finalized
-              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200">Finalized
+</span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                <Clock className="w-4 h-4" /> Draft
-              </span>
+                Draft
+</span>
             )}
 
             {isDraft && (
-              <button onClick={() => navigate(`/shore-tank-calculations/${id}/edit`)} className="px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">
-                ✏️ Edit
-              </button>
+              <button onClick={() => navigate(`/shore-tank-calculations/${id}/edit`)} className="px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">Edit
+</button>
             )}
             
             {isDraft && (
               <button onClick={handleFinalize} disabled={finalizing} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-colors">
-                {finalizing ? '⏳ Finalizing…' : '✓ Finalize'}
-              </button>
+                {finalizing ? 'Finalizing…' : 'Finalize'}
+</button>
             )}
 
             {isFinal && (
               <button
                 onClick={() => navigate(`/product-receipt-certificates/new?from_stc=${id}`)}
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors inline-flex items-center gap-2"
-              >
-                <FilePlus className="w-4 h-4" /> Create Certificate
-              </button>
+              >Create Certificate
+</button>
             )}
 
-            <button onClick={handleDoc} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors inline-flex items-center gap-2">
-              <FileText className="w-4 h-4" /> Document
-            </button>
+            <button onClick={handleDoc} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors inline-flex items-center gap-2">Document
+</button>
 
             {!calc.is_signed ? (
-              <button onClick={handleSign} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 transition-colors inline-flex items-center gap-2">
-                <Download className="w-4 h-4" /> Sign
-              </button>
+              <button onClick={handleSign} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 transition-colors inline-flex items-center gap-2">Sign
+</button>
             ) : (
-              <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 cursor-help" title={`Signed by ${calc.signed_by_name || 'PBPA'} on ${calc.signed_at ? new Date(calc.signed_at).toLocaleString() : ''}`}>
-                🔐 Signed
-              </span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 cursor-help" title={`Signed by ${calc.signed_by_name || 'PBPA'} on ${calc.signed_at ? new Date(calc.signed_at).toLocaleString() : ''}`}>Signed
+</span>
             )}
           </div>
         </div>
@@ -210,15 +204,14 @@ export const ShoreTankCalculationDetailPage = () => {
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">
-          ⚠️ {error}
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">{error}
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* WORKBOOK HEADER SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Card title="📋 Workbook Header">
+      <Card title="Workbook Header">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <HField label="Calculation No." value={calc.calculation_number} />
           <HField label="Date" value={calc.calculation_date} />
@@ -258,7 +251,7 @@ export const ShoreTankCalculationDetailPage = () => {
         ];
 
         return (
-          <Card key={item.id} title={`🛢️ Tank ${idx + 1}`} subtitle={item.tank_no ? `Tank ID: ${item.tank_no}` : undefined}>
+          <Card key={item.id} title={`Tank ${idx + 1}`} subtitle={item.tank_no ? `Tank ID: ${item.tank_no}` : undefined}>
             {/* Measurements Table */}
             <div className="overflow-x-auto mb-6 -mx-2 md:mx-0">
               <table className="w-full text-sm">
@@ -317,7 +310,7 @@ export const ShoreTankCalculationDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* SUMMARY SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Card title="📊 Summary">
+      <Card title="Summary">
         <div className="overflow-x-auto -mx-2 md:mx-0 mb-6">
           <table className="w-full text-sm">
             <thead>
@@ -370,7 +363,7 @@ export const ShoreTankCalculationDetailPage = () => {
       {/* REMARKS SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
       {calc.remarks && (
-        <Card title="📝 Remarks">
+        <Card title="Remarks">
           <p className="text-gray-700 leading-relaxed">{calc.remarks}</p>
         </Card>
       )}

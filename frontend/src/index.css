@@ -503,6 +503,233 @@ tbody td { padding: 0.875rem 1rem; font-size: 1rem; color: #334155; }
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(126, 34, 206, 0.1) 100%);
   border: 1px solid rgba(168, 85, 247, 0.4);
 }
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-main {
+  min-width: 0;
+}
+
+.app-main * {
+  min-width: 0;
+}
+
+.app-main img,
+.app-main svg,
+.app-main canvas,
+.app-main video {
+  max-width: 100%;
+}
+
+.overflow-x-auto {
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+}
+
+.overflow-x-auto table,
+.overflow-x-auto [style*="minWidth"],
+.overflow-x-auto [class*="min-w-"] {
+  max-width: none;
+}
+
+@media (max-width: 767px) {
+  body {
+    background: #f6f8fb;
+    line-height: 1.55;
+  }
+
+  .dark body {
+    background: #0f172a;
+  }
+
+  .app-main {
+    padding-top: 4rem;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  .app-main > div {
+    width: 100%;
+    max-width: 100vw !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .app-main > div[class*="p-"],
+  .app-main > div[class*="md:p-"] {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  header.fixed {
+    height: 3.75rem;
+    padding-left: 4.25rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  h1,
+  .page-title {
+    line-height: 1.18;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  p {
+    overflow-wrap: anywhere;
+  }
+
+  .app-main > div > .flex.items-center.justify-between,
+  .app-main > div > .flex.items-start.justify-between {
+    align-items: flex-start;
+    gap: 0.875rem;
+    flex-wrap: wrap;
+  }
+
+  .app-main > div > .flex.items-center.justify-between > button,
+  .app-main > div > .flex.items-start.justify-between > button,
+  .app-main > div > .flex.items-center.justify-between > a,
+  .app-main > div > .flex.items-start.justify-between > a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .card,
+  .section-card,
+  .app-main .rounded-2xl {
+    border-radius: 0.875rem;
+  }
+
+  .app-main .p-16 {
+    padding: 2rem 1rem !important;
+  }
+
+  .app-main .p-8 {
+    padding: 1.25rem !important;
+  }
+
+  .app-main .p-6 {
+    padding: 1rem !important;
+  }
+
+  .app-main .gap-6 {
+    gap: 1rem !important;
+  }
+
+  .app-main .gap-5 {
+    gap: 0.875rem !important;
+  }
+
+  .app-main .grid {
+    max-width: 100%;
+  }
+
+  .app-main .grid-cols-2:not(.sm\:grid-cols-2):not(.md\:grid-cols-2),
+  .app-main .grid-cols-3,
+  .app-main .grid-cols-4,
+  .app-main .grid-cols-5 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .app-main .grid-cols-2.md\:grid-cols-3,
+  .app-main .grid-cols-2.md\:grid-cols-4,
+  .app-main .grid-cols-2.sm\:grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .app-main input,
+  .app-main select,
+  .app-main textarea,
+  .app-main button,
+  .app-main a[role="button"] {
+    min-height: 2.75rem;
+  }
+
+  .app-main input,
+  .app-main select,
+  .app-main textarea {
+    font-size: 16px;
+  }
+
+  .app-main button {
+    white-space: normal;
+  }
+
+  .app-main form > .flex.gap-3,
+  .app-main form > .flex.gap-2 {
+    flex-direction: column;
+  }
+
+  .app-main form > .flex.gap-3 > button,
+  .app-main form > .flex.gap-2 > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .app-main .overflow-x-auto {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-bottom: 0.35rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-main .overflow-x-auto table {
+    font-size: 0.8125rem;
+  }
+
+  .app-main table th,
+  .app-main table td {
+    padding: 0.65rem 0.75rem;
+    vertical-align: middle;
+  }
+
+  .app-main [class*="min-w-[700px]"],
+  .app-main [class*="min-w-[760px]"],
+  .app-main [class*="min-w-[900px]"],
+  .app-main [class*="min-w-[1100px]"] {
+    min-width: min(920px, 245vw) !important;
+  }
+
+  .app-main .flex.items-center.gap-2.shrink-0,
+  .app-main .flex.items-center.gap-2.flex-wrap,
+  .app-main .flex.gap-2.flex-wrap,
+  .app-main .flex.items-center.gap-1\.5 {
+    width: 100%;
+  }
+
+  .app-main .flex.items-center.gap-2.shrink-0 > button,
+  .app-main .flex.items-center.gap-2.flex-wrap > button,
+  .app-main .flex.gap-2.flex-wrap > button,
+  .app-main .flex.items-center.gap-1\.5 > button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .app-main .fixed.inset-0 {
+    padding: 0.75rem;
+  }
+
+  .app-main .fixed.inset-0 > div {
+    max-height: calc(100dvh - 1.5rem);
+    overflow-y: auto;
+  }
+
+  .filter-badge {
+    min-height: 2.5rem;
+    border-radius: 0.75rem;
+  }
+
+  .stat-card,
+  .app-main [class*="min-h-[112px]"] {
+    min-height: 6.5rem !important;
+  }
+}
 .banner-warning { @apply flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-sm; }
 
 /* ── Glassmorphism ──────────────────────────────────────────────────────── */
@@ -653,4 +880,110 @@ tbody td { padding: 0.875rem 1rem; font-size: 1rem; color: #334155; }
 
   /* TopBar mobile spacing */
   header.fixed { padding-left: 3.5rem; }
+}
+
+/* Final phone layout pass: keep these after legacy mobile rules. */
+@media (max-width: 767px) {
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+  }
+
+  body {
+    background: #f6f8fb;
+  }
+
+  .dark body {
+    background: #0f172a;
+  }
+
+  .app-main {
+    padding-top: 4rem;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  header.fixed {
+    height: 3.75rem;
+    padding-left: 4.25rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .app-main > div {
+    max-width: 100vw !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .app-main > div[class*="p-"],
+  .app-main > div[class*="md:p-"] {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .app-main .rounded-2xl,
+  .card,
+  .section-card {
+    border-radius: 0.875rem;
+  }
+
+  .app-main input,
+  .app-main select,
+  .app-main textarea {
+    font-size: 16px;
+  }
+
+  .app-main input,
+  .app-main select,
+  .app-main textarea,
+  .app-main button {
+    min-height: 2.75rem;
+  }
+
+  .app-main .overflow-x-auto {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-bottom: 0.35rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-main table th,
+  .app-main table td {
+    padding: 0.65rem 0.75rem;
+    vertical-align: middle;
+  }
+
+  .app-main form > .flex.gap-3,
+  .app-main form > .flex.gap-2 {
+    flex-direction: column;
+  }
+
+  .app-main form > .flex.gap-3 > button,
+  .app-main form > .flex.gap-2 > button,
+  .app-main > div > .flex.items-center.justify-between > button,
+  .app-main > div > .flex.items-start.justify-between > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .app-main > div > .flex.items-center.justify-between,
+  .app-main > div > .flex.items-start.justify-between {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .app-main .grid-cols-2:not(.sm\:grid-cols-2):not(.md\:grid-cols-2),
+  .app-main .grid-cols-3,
+  .app-main .grid-cols-4,
+  .app-main .grid-cols-5 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .app-main .grid-cols-2.md\:grid-cols-3,
+  .app-main .grid-cols-2.md\:grid-cols-4,
+  .app-main .grid-cols-2.sm\:grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }

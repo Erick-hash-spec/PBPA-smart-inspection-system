@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { stockReportService } from '../services/api';
 import { TERMINAL_OPTIONS, PRODUCT_OPTIONS } from '../components/FormOptions';
 import { SubmitModal } from '../components/SubmitModal';
-import { Plus, Download, CheckCircle, Clock, Eye, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:bg-white text-sm transition';
 
@@ -72,27 +72,23 @@ export const StockReportListPage = () => {
       )}
       <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">📦 Stock Reports</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Stock Reports</h1>
           <p className="text-gray-500 text-sm mt-1">PBPA daily petroleum stock reports</p>
         </div>
         <button onClick={() => navigate('/stock-reports/new')}
           className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition">
-          <Plus className="w-4 h-4" /> New Stock Report
-        </button>
+          <Plus className="w-4 h-4" />New Stock Report
+</button>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 text-sm">⚠️ {error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 text-sm">{error}</div>}
 
       {loading ? (
         <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-gray-100 border-t-[#8B1A1A] rounded-full animate-spin" /></div>
       ) : reports.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm p-16 text-center">
-          <p className="text-5xl mb-4">📦</p>
+          <p className="text-5xl mb-4"></p>
           <p className="text-gray-500 font-semibold">No stock reports yet</p>
-          <button onClick={() => navigate('/stock-reports/new')}
-            className="mt-4 bg-[#8B1A1A] text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-[#7a1717] transition">
-            + New Stock Report
-          </button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -102,43 +98,36 @@ export const StockReportListPage = () => {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold text-gray-900">#{r.report_number}</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${r.status === 'final' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                    {r.status === 'final' ? '✅ Final' : '📝 Draft'}
-                  </span>
+                    {r.status === 'final' ? 'Final' : 'Draft'}
+</span>
                 </div>
                 <p className="text-sm text-gray-500">Date: {r.report_date} · Total: {Number(r.total_ltrs || 0).toLocaleString()} Ltrs</p>
                 <p className="text-xs text-gray-400">By {r.created_by_name || 'Inspector'}</p>
               </div>
               <div className="flex gap-2 flex-wrap">
                 <button onClick={() => navigate(`/stock-reports/${r.id}`)}
-                  className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition">
-                  <Eye className="w-3.5 h-3.5" /> View
-                </button>
+                  className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition">View
+</button>
                 {r.status === 'draft' && (
                   <button onClick={() => navigate(`/stock-reports/${r.id}/edit`)}
-                    className="bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-amber-100 transition">
-                    ✏️ Edit
-                  </button>
+                    className="bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-amber-100 transition">Edit
+</button>
                 )}
                 <button onClick={() => handleDownload(r)}
-                  className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition">
-                  <Download className="w-3.5 h-3.5" /> PDF
-                </button>
+                  className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition">PDF
+</button>
                 {r.status === 'final' && (
                     submittedIds.has(r.id) ? (
-                      <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-green-200">
-                        ✓ Submitted
-                      </span>
+                      <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-green-200">Submitted
+</span>
                     ) : (
                       <button onClick={() => setSubmitTarget(r)}
-                        className="bg-[#8B1A1A] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-[#7a1717] transition">
-                        ✉ Submit
-                      </button>
+                        className="bg-[#8B1A1A] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-[#7a1717] transition">Submit
+</button>
                     )
                   )}
                 <button onClick={() => handleDelete(r.id)}
-                  className="inline-flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-100 transition">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
               </div>
             </div>
           ))}
@@ -210,10 +199,10 @@ export const StockReportFormPage = () => {
     <div className="p-4 md:p-6 max-w-full mx-auto animate-fade-in">
       <div className="mb-5">
         <button onClick={() => navigate('/stock-reports')} className="text-sm text-blue-600 hover:underline mb-2">← Back</button>
-        <h1 className="text-2xl font-bold text-gray-900">{isEdit ? '✏️ Edit Stock Report' : '📦 New Stock Report'}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{isEdit ? 'Edit Stock Report' : 'New Stock Report'}</h1>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">⚠️ {error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">{error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Header */}
@@ -299,7 +288,7 @@ export const StockReportFormPage = () => {
                     </td>
                     <td className="px-1 py-1 border border-gray-200 text-center">
                       <button type="button" onClick={() => removeRow(i)} disabled={items.length === 1}
-                        className="text-red-500 hover:text-red-700 disabled:opacity-30 font-bold text-sm">✕</button>
+                        className="text-red-500 hover:text-red-700 disabled:opacity-30 font-bold text-sm">Remove</button>
                     </td>
                   </tr>
                 ))}
@@ -318,16 +307,16 @@ export const StockReportFormPage = () => {
           <div className="p-4">
             <button type="button" onClick={addRow}
               className="inline-flex items-center gap-2 text-sm text-blue-600 font-semibold hover:underline">
-              <Plus className="w-4 h-4" /> Add Row
-            </button>
+              <Plus className="w-4 h-4" />Add Row
+</button>
           </div>
         </div>
 
         <div className="flex gap-3">
           <button type="submit" disabled={loading}
             className="bg-[#8B1A1A] hover:bg-[#7a1717] text-white px-8 py-3 rounded-xl font-semibold disabled:opacity-50 transition">
-            {loading ? 'Saving…' : isEdit ? '💾 Save Changes' : '✅ Create Report'}
-          </button>
+            {loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Report'}
+</button>
           <button type="button" onClick={() => navigate('/stock-reports')}
             className="bg-gray-100 text-gray-700 px-8 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">Cancel</button>
         </div>
@@ -391,25 +380,23 @@ export const StockReportDetailPage = () => {
         </div>
         <div className="flex gap-2 flex-wrap">
           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${report.status === 'final' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-            {report.status === 'final' ? <><CheckCircle className="w-4 h-4" /> Final</> : <><Clock className="w-4 h-4" /> Draft</>}
-          </span>
+            {report.status === 'final' ? <>Final</> : <>Draft</>}
+</span>
           {report.status === 'draft' && (
             <>
               <button onClick={() => navigate(`/stock-reports/${id}/edit`)}
-                className="bg-amber-50 text-amber-700 border border-amber-200 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-100 transition">✏️ Edit</button>
+                className="bg-amber-50 text-amber-700 border border-amber-200 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-100 transition">Edit</button>
               <button onClick={handleFinalize}
-                className="bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition">✓ Finalize</button>
+                className="bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition">Finalize</button>
             </>
           )}
           <button onClick={handleDownload}
-            className="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-            <Download className="w-4 h-4" /> Download PDF
-          </button>
+            className="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Download PDF
+</button>
           {report.status === 'final' && (
             <button onClick={() => setSubmitOpen(true)}
-              className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-              ✉ Submit
-            </button>
+              className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Submit
+</button>
           )}
         </div>
       </div>

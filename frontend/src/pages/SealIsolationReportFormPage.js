@@ -95,13 +95,13 @@ export const SealIsolationReportFormPage = () => {
     <div className="p-6 md:p-8 max-w-4xl mx-auto animate-fade-in">
       <div className="mb-6">
         <button onClick={() => navigate(isEdit ? `/seal-isolation-reports/${id}` : '/seal-isolation-reports')} className="text-sm text-blue-600 hover:underline mb-1">← Back</button>
-        <h1 className="text-3xl font-bold text-gray-900">{isEdit ? '✏️ Edit Seal & Isolation Report' : '🔒 New Sealing and Isolation Report'}</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{isEdit ? 'Edit Seal & Isolation Report' : 'New Sealing and Isolation Report'}</h1>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm"><span>⚠️</span>{error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm">{error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <Section title="📋 Report Header">
+        <Section title="Report Header">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Vessel Name<span className="text-red-500 ml-1">*</span></label>
@@ -122,24 +122,23 @@ export const SealIsolationReportFormPage = () => {
           </div>
         </Section>
 
-        <Section title="🔐 Location and Seal Numbers">
+        <Section title="Location and Seal Numbers">
           <div className="space-y-3 mb-3">
             <div className="grid grid-cols-4 gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
-              <span>Location</span><span>Seal Number</span><span>Remarks</span><span></span>
-            </div>
+              <span>Location</span><span>Seal Number</span><span>Remarks</span></div>
             {formData.entries.map((entry, i) => (
               <div key={i} className="grid grid-cols-4 gap-2">
                 <input placeholder="Location" value={entry.location} onChange={e=>handleEntryChange(i,'location',e.target.value)} className={inputCls} />
                 <input placeholder="Seal Number" value={entry.seal_number} onChange={e=>handleEntryChange(i,'seal_number',e.target.value)} className={inputCls} />
                 <input placeholder="Remarks" value={entry.remarks} onChange={e=>handleEntryChange(i,'remarks',e.target.value)} className={inputCls} />
-                <button type="button" onClick={() => setFormData(prev=>({...prev,entries:prev.entries.filter((_,idx)=>idx!==i)}))} disabled={formData.entries.length===1} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40">✕</button>
+                <button type="button" onClick={() => setFormData(prev=>({...prev,entries:prev.entries.filter((_,idx)=>idx!==i)}))} disabled={formData.entries.length===1} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40">Remove</button>
               </div>
             ))}
           </div>
           <button type="button" onClick={() => setFormData(prev=>({...prev,entries:[...prev.entries,emptyEntry()]}))} className="text-sm text-blue-600 font-semibold hover:underline">+ Add Row</button>
         </Section>
 
-        <Section title="✍️ Signatories">
+        <Section title="Signatories">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[['Terminal Representative Name','terminal_representative_name'],['PBPA Inspector Name','pbpa_inspector_name'],['Terminal Representative Signature','terminal_representative_signature'],['PBPA Inspector Signature','pbpa_inspector_signature']].map(([label,name]) => (
               <div key={name}>
@@ -156,8 +155,8 @@ export const SealIsolationReportFormPage = () => {
 
         <div className="flex gap-3">
           <button type="submit" disabled={loading} className="gradient-primary text-white px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition disabled:opacity-50">
-            {loading ? 'Saving...' : isEdit ? '💾 Save Changes' : '✅ Create Report'}
-          </button>
+            {loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Report'}
+</button>
           <button type="button" onClick={() => navigate(isEdit ? `/seal-isolation-reports/${id}` : '/seal-isolation-reports')} className="bg-gray-100 text-gray-700 px-8 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">Cancel</button>
         </div>
       </form>
