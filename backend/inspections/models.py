@@ -187,6 +187,13 @@ class Inspection(models.Model):
     def __str__(self):
         return f"Inspection {self.id} - {self.tank.tank_name} ({self.inspection_date.date()})"
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new and not self.ticket_number:
+            self.ticket_number = f"DIP-{self.pk:08d}"
+            super().save(update_fields=['ticket_number'])
+
     @staticmethod
     def _average(values):
         numeric_values = [value for value in values if value is not None]

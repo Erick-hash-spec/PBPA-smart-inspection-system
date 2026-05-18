@@ -5,13 +5,16 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.http import HttpResponse
 from django.contrib.auth.models import User
+from django.conf import settings
+from django.db.models import F
 from django.utils import timezone
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 import logging
 import io
+import json
 
 sec_log = logging.getLogger('inspections.security')
 
@@ -101,6 +104,105 @@ def filter_queryset_by_period(queryset, period, date_field):
         f'{date_field}__gte': start_date,
         f'{date_field}__lte': today,
     })
+
+
+def period_start_datetime(period):
+    """Return a timezone-aware datetime for log/date-time activity filters."""
+    start_date = period_start_date(period)
+    if not start_date:
+        return None
+    return timezone.make_aware(datetime.combine(start_date, time.min), timezone.get_current_timezone())
+
+
+def count_log_entries(log_name, tokens, period=None):
+    """Best-effort count of already-recorded security/audit log events."""
+    log_path = getattr(settings, 'LOG_DIR', None)
+    if not log_path:
+        return 0
+    log_file = log_path / log_name
+    if not log_file.exists():
+        return 0
+
+    start_at = period_start_datetime(period)
+    total = 0
+    try:
+        with log_file.open('r', encoding='utf-8', errors='ignore') as handle:
+            for line in handle:
+                if not all(token in line for token in tokens):
+                    continue
+                if start_at:
+                    event_at = parse_log_datetime(line)
+                    if event_at and event_at < start_at:
+                        continue
+                total += 1
+    except OSError:
+        return 0
+    return total
+
+
+def parse_log_datetime(line):
+    """Parse either JSON or verbose Django log timestamps."""
+    try:
+        payload = json.loads(line)
+        value = payload.get('asctime') or payload.get('timestamp')
+        if value:
+            parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            return parsed if timezone.is_aware(parsed) else timezone.make_aware(parsed)
+    except (ValueError, TypeError):
+        pass
+
+    parts = line.split()
+    if len(parts) >= 3:
+        try:
+            parsed = datetime.fromisoformat(f'{parts[1]} {parts[2].split(",")[0]}')
+            return timezone.make_aware(parsed, timezone.get_current_timezone())
+        except (ValueError, TypeError):
+            return None
+    return None
+
+
+def build_activity_overview(period=None):
+    """Build admin/supervisor activity metrics for dashboard charts."""
+    report_models = (
+        Inspection,
+        ProductReceiptCertificate,
+        SealIsolationReport,
+        ShoreTankCalculation,
+        StockReport,
+        ProvisionalOuturnReport,
+        VesselReport,
+    )
+
+    report_creation = sum(
+        filter_queryset_by_period(model.objects.all(), period, 'created_at').count()
+        for model in report_models
+    )
+    report_editing = sum(
+        filter_queryset_by_period(model.objects.filter(updated_at__gt=F('created_at') + timedelta(seconds=2)), period, 'updated_at').count()
+        for model in report_models
+    )
+    file_uploads = filter_queryset_by_period(InspectionReport.objects.all(), period, 'generated_at').count()
+
+    failed_login_attempts = count_log_entries('security.log', ['Unauthorized access attempt'], period)
+    auth_attempts = count_log_entries('security.log', ['Authentication attempt'], period)
+    password_changes = count_log_entries('security.log', ['reset password'], period)
+    admin_actions = (
+        count_log_entries('security.log', ['Admin '], period)
+        + filter_queryset_by_period(User.objects.filter(is_staff=True), period, 'date_joined').count()
+    )
+    report_deletion = count_log_entries('audit.log', ['DELETE request'], period)
+
+    rows = [
+        {'activity': 'User login/logout', 'value': max(auth_attempts - failed_login_attempts, 0), 'why': 'Security', 'color': '#2563eb'},
+        {'activity': 'Report creation', 'value': report_creation, 'why': 'Usage monitoring', 'color': '#16a34a'},
+        {'activity': 'Report editing', 'value': report_editing, 'why': 'Audit trail', 'color': '#f59e0b'},
+        {'activity': 'Report deletion', 'value': report_deletion, 'why': 'Accountability', 'color': '#ef4444'},
+        {'activity': 'Password changes', 'value': password_changes, 'why': 'Security tracking', 'color': '#7c3aed'},
+        {'activity': 'Failed login attempts', 'value': failed_login_attempts, 'why': 'Detect attacks', 'color': '#dc2626'},
+        {'activity': 'File uploads', 'value': file_uploads, 'why': 'Monitor storage use', 'color': '#0891b2'},
+        {'activity': 'Admin actions', 'value': admin_actions, 'why': 'Transparency', 'color': '#4f46e5'},
+    ]
+    return rows
 
 
 # ========== USER VIEWSETS ==========
@@ -585,6 +687,7 @@ class InspectionViewSet(viewsets.ModelViewSet):
         profile = get_or_create_user_profile(user)
 
         inspections_qs = filter_queryset_by_period(Inspection.objects.all(), period, 'inspection_date')
+        product_receipts_qs = filter_queryset_by_period(ProductReceiptCertificate.objects.all(), period, 'receipt_date')
         seal_reports_qs = filter_queryset_by_period(SealIsolationReport.objects.all(), period, 'report_date')
         shore_calcs_qs = filter_queryset_by_period(ShoreTankCalculation.objects.all(), period, 'calculation_date')
         stock_reports_qs = filter_queryset_by_period(StockReport.objects.all(), period, 'report_date')
@@ -593,6 +696,7 @@ class InspectionViewSet(viewsets.ModelViewSet):
 
         document_counts = {
             'inspections': inspections_qs.count(),
+            'product_receipt_certificates': product_receipts_qs.count(),
             'seal_isolation_reports': seal_reports_qs.count(),
             'shore_tank_calculations': shore_calcs_qs.count(),
             'stock_reports': stock_reports_qs.count(),
@@ -626,6 +730,7 @@ class InspectionViewSet(viewsets.ModelViewSet):
             total_pending = inspections.count()
             approved = inspections_qs.filter(supervisor=user, status='approved').count()
             status_counts = get_status_counts(inspections_qs)
+            activity_overview = build_activity_overview(period)
             
             return Response({
                 'role': 'supervisor',
@@ -634,12 +739,14 @@ class InspectionViewSet(viewsets.ModelViewSet):
                 'awaiting_review': total_pending,
                 **status_counts,
                 'document_counts': document_counts,
+                'activity_overview': activity_overview,
             })
         
         elif profile.role == 'admin':
             total_inspections = inspections_qs.count()
             total_tanks = Tank.objects.filter(is_active=True).count()
             status_counts = get_status_counts(inspections_qs)
+            activity_overview = build_activity_overview(period)
             
             return Response({
                 'role': 'admin',
@@ -647,6 +754,7 @@ class InspectionViewSet(viewsets.ModelViewSet):
                 'total_tanks': total_tanks,
                 **status_counts,
                 'document_counts': document_counts,
+                'activity_overview': activity_overview,
             })
         
         return Response({'detail': 'Unknown role'}, status=status.HTTP_400_BAD_REQUEST)
