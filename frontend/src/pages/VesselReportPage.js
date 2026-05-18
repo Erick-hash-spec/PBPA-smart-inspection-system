@@ -9,13 +9,13 @@ import {
   productReceiptCertificateService,
 } from '../services/api';
 import { Ship, Plus, Zap, Search } from 'lucide-react';
-import { useDarkMode } from '../contexts/DarkModeContext';
 
-const inputCls = 'w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-slate-700 dark:text-white focus:bg-white dark:focus:bg-slate-600 text-sm transition';
+const inputCls = 'w-full min-w-0 px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-slate-600 text-base sm:text-sm leading-6 transition';
+const actionButtonCls = 'inline-flex min-w-0 items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold leading-tight transition whitespace-normal break-words';
 
 const Section = ({ title, children }) => (
-  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover-lift">
-    <h2 className="text-base font-bold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">{title}</h2>
+  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-lg border border-gray-100 dark:border-gray-700 p-4 sm:p-6 hover-lift min-w-0">
+    <h2 className="text-base font-bold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 break-words">{title}</h2>
     {children}
   </div>
 );
@@ -45,7 +45,6 @@ const printBlob = (blob) => {
 /* ─── List Page ─────────────────────────────────────────────────────────── */
 export const VesselReportListPage = () => {
   const navigate = useNavigate();
-  const { isDarkMode } = useDarkMode();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,15 +80,15 @@ export const VesselReportListPage = () => {
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto animate-fade-in">
       <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Ship className="w-8 h-8 text-[#8B1A1A]" />
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2 break-words">
+            <Ship className="w-7 h-7 sm:w-8 sm:h-8 text-[#8B1A1A] shrink-0" />
             Vessel Reports
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Discharge summary reports per vessel</p>
+          <p className="text-gray-600 dark:text-gray-300 text-sm mt-1 break-words">Discharge summary reports per vessel</p>
         </div>
-        <button onClick={() => navigate('/vessel-reports/new')} className="inline-flex items-center gap-2 bg-gradient-to-r from-[#8B1A1A] to-[#a52020] hover:shadow-lg text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition hover-lift">
-          <Plus className="w-4 h-4" />New Report
+        <button onClick={() => navigate('/vessel-reports/new')} className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#8B1A1A] to-[#a52020] hover:shadow-lg text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition hover-lift whitespace-normal">
+          <Plus className="w-4 h-4 shrink-0" />New Report
 </button>
       </div>
 
@@ -101,27 +100,27 @@ export const VesselReportListPage = () => {
           placeholder="Search by vessel, report, terminal, or product..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-[#8B1A1A] dark:focus:border-[#a52020] transition"
+          className="w-full min-w-0 pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-base sm:text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-[#8B1A1A] dark:focus:border-[#a52020] transition"
         />
       </div>
 
       {loading ? (
         <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-blue-100 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin" /></div>
       ) : filteredReports.length === 0 ? (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-lg border border-gray-100 dark:border-gray-700 p-16 text-center hover-lift">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-lg border border-gray-100 dark:border-gray-700 p-8 sm:p-16 text-center hover-lift">
           <Ship className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">No vessel reports found</p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{searchQuery ? 'No matching results' : 'Create your first vessel report to get started'}</p>
+          <p className="text-gray-600 dark:text-gray-300 font-semibold text-lg break-words">No vessel reports found</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 break-words">{searchQuery ? 'No matching results' : 'Create your first vessel report to get started'}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredReports.map(r => (
-            <div key={r.id} className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl shadow-sm dark:shadow-lg border border-blue-200 dark:border-blue-700 p-6 hover-lift cursor-pointer group" onClick={() => navigate(`/vessel-reports/${r.id}`)}>
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8B1A1A] to-[#a52020] flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div key={r.id} className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl shadow-sm dark:shadow-lg border border-blue-200 dark:border-blue-700 p-4 sm:p-6 hover-lift cursor-pointer group min-w-0" onClick={() => navigate(`/vessel-reports/${r.id}`)}>
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8B1A1A] to-[#a52020] flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
                   <Ship className="w-6 h-6 text-white" />
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1 text-center leading-tight ${
                   r.status === 'final'
                     ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
                     : r.status === 'cancelled'
@@ -131,29 +130,29 @@ export const VesselReportListPage = () => {
                   {r.status === 'final' ? <>Final</> : r.status === 'cancelled' ? <>Cancelled</> : <>Draft</>}
 </span>
               </div>
-              <div className="mb-3">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{r.vessel_name}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">#{r.report_number}</p>
+              <div className="mb-3 min-w-0">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1 break-words">{r.vessel_name}</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 break-words">#{r.report_number}</p>
               </div>
-              <div className="space-y-2 text-sm">
-                <p className="text-gray-700 dark:text-gray-300"><strong>Terminal:</strong> {r.terminal}</p>
-                <p className="text-gray-700 dark:text-gray-300"><strong>Product:</strong> {r.product_name}</p>
-                <p className="text-gray-700 dark:text-gray-300"><strong>Date:</strong> {r.discharge_date}</p>
-                <p className="text-gray-600 dark:text-gray-400 text-xs"><strong>Weight:</strong> {r.total_weight_mt} MT · <strong>Volume:</strong> {r.total_volume_m3} m³</p>
+              <div className="space-y-2 text-sm min-w-0">
+                <p className="text-gray-800 dark:text-gray-200 break-words"><strong>Terminal:</strong> {r.terminal}</p>
+                <p className="text-gray-800 dark:text-gray-200 break-words"><strong>Product:</strong> {r.product_name}</p>
+                <p className="text-gray-800 dark:text-gray-200 break-words"><strong>Date:</strong> {r.discharge_date}</p>
+                <p className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm break-words"><strong>Weight:</strong> {r.total_weight_mt} MT / <strong>Volume:</strong> {r.total_volume_m3} m3</p>
               </div>
-              <div className="flex gap-2 mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
-                <button onClick={(e) => {e.stopPropagation();navigate(`/vessel-reports/${r.id}`);}} className="flex-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition hover-scale">View
+              <div className="grid grid-cols-1 sm:flex gap-2 mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
+                <button onClick={(e) => {e.stopPropagation();navigate(`/vessel-reports/${r.id}`);}} className={`${actionButtonCls} w-full sm:flex-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50 hover-scale`}>View
 </button>
-                <button onClick={(e) => {e.stopPropagation();handleDownloadPdf(r);}} className="flex-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition hover-scale">Download
+                <button onClick={(e) => {e.stopPropagation();handleDownloadPdf(r);}} className={`${actionButtonCls} w-full sm:flex-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-200 border-green-200 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900/50 hover-scale`}>Download
 </button>
-                <button onClick={(e) => {e.stopPropagation();handlePrintPdf(r);}} className="flex-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition hover-scale">Print
+                <button onClick={(e) => {e.stopPropagation();handlePrintPdf(r);}} className={`${actionButtonCls} w-full sm:flex-1 bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-slate-600 hover-scale`}>Print
 </button>
                 {r.status === 'draft' && (
-                  <button onClick={(e) => {e.stopPropagation();navigate(`/vessel-reports/${r.id}/edit`);}} className="flex-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition hover-scale">Edit
+                  <button onClick={(e) => {e.stopPropagation();navigate(`/vessel-reports/${r.id}/edit`);}} className={`${actionButtonCls} w-full sm:flex-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200 border-amber-200 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-900/50 hover-scale`}>Edit
 </button>
                 )}
                 {r.status !== 'cancelled' && (
-                  <button onClick={(e) => {e.stopPropagation();handleCancelReport(r);}} className="flex-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition hover-scale">Cancel
+                  <button onClick={(e) => {e.stopPropagation();handleCancelReport(r);}} className={`${actionButtonCls} w-full sm:flex-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-200 border-red-200 dark:border-red-700 hover:bg-red-200 dark:hover:bg-red-900/50 hover-scale`}>Cancel
 </button>
                 )}
               </div>
@@ -170,7 +169,6 @@ export const VesselReportFormPage = () => {
   const navigate = useNavigate();
   const { id }   = useParams();
   const isEdit   = Boolean(id);
-  const { isDarkMode } = useDarkMode();
 
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading]         = useState(false);
@@ -323,17 +321,17 @@ export const VesselReportFormPage = () => {
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto animate-fade-in">
-      <div className="mb-6">
-        <button onClick={() => navigate('/vessel-reports')} className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-2 flex items-center gap-1">← Back to Reports</button>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">{isEdit ? 'Edit Vessel Report' : 'New Vessel Report'}</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Create a discharge summary report after a vessel completes its discharge</p>
+      <div className="mb-6 min-w-0">
+        <button onClick={() => navigate('/vessel-reports')} className="text-sm text-blue-700 dark:text-blue-300 hover:underline mb-2 flex items-center gap-1 whitespace-normal text-left">Back to Reports</button>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2 break-words">{isEdit ? 'Edit Vessel Report' : 'New Vessel Report'}</h1>
+        <p className="text-gray-600 dark:text-gray-300 text-sm mt-1 break-words">Create a discharge summary report after a vessel completes its discharge</p>
       </div>
 
-      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded-xl mb-5 text-sm flex gap-2 hover-lift">{error}</div>}
+      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded-xl mb-5 text-sm flex gap-2 hover-lift break-words">{error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <Section title="Link Submitted Documents">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Select the submitted documents for this vessel, then click <strong>Auto-Fill</strong> to populate vessel details automatically:</p>
+          <p className="text-xs text-gray-600 dark:text-gray-300 mb-4 break-words">Select the submitted documents for this vessel, then click <strong>Auto-Fill</strong> to populate vessel details automatically:</p>
           {[
             ['dip_ticket',      'Dip Tickets'],
             ['seal_isolation',  'Seal & Isolation Reports'],
@@ -345,25 +343,27 @@ export const VesselReportFormPage = () => {
             if (docs.length === 0) return null;
             return (
               <div key={type} className="mb-4">
-                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">{label}</p>
+                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2 break-words">{label}</p>
                 <div className="space-y-1.5">
                   {docs.map(sub => (
-                    <label key={sub.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition">
-                      <input type="checkbox" checked={form[field].includes(sub.doc_id)} onChange={() => toggleId(field, sub.doc_id)} className="w-4 h-4 accent-[#8B1A1A]" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">#{sub.doc_number} — {sub.vessel_name}</span>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">{new Date(sub.submitted_at).toLocaleDateString()}</span>
+                    <label key={sub.id} className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition min-w-0">
+                      <input type="checkbox" checked={form[field].includes(sub.doc_id)} onChange={() => toggleId(field, sub.doc_id)} className="w-4 h-4 mt-1 shrink-0 accent-[#8B1A1A]" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm text-gray-800 dark:text-gray-200 break-words">#{sub.doc_number} - {sub.vessel_name}</span>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400 break-words">{new Date(sub.submitted_at).toLocaleDateString()}</span>
+                      </span>
                     </label>
                   ))}
                 </div>
               </div>
             );
           })}
-          {submissions.length === 0 && <p className="text-sm text-gray-400 dark:text-gray-500 italic">No submitted documents found.</p>}
+          {submissions.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400 italic break-words">No submitted documents found.</p>}
         </Section>
 
         <Section title="Vessel Details">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <p className="text-xs text-gray-400 dark:text-gray-500">Link documents first, then click Auto-Fill to populate fields automatically.</p>
+          <div className="flex items-start sm:items-center justify-between mb-4 flex-wrap gap-2">
+            <p className="text-xs text-gray-600 dark:text-gray-300 break-words flex-1">Link documents first, then click Auto-Fill to populate fields automatically.</p>
             <button
               type="button"
               onClick={handleAutoFill}
@@ -373,39 +373,39 @@ export const VesselReportFormPage = () => {
                 form.shore_calc_ids.length === 0 &&
                 form.cert_ids.length === 0
               )}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:shadow-lg disabled:opacity-40 text-white text-xs font-semibold px-4 py-2 rounded-lg transition hover-lift"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:shadow-lg disabled:opacity-40 text-white text-xs font-semibold px-4 py-2 rounded-lg transition hover-lift whitespace-normal"
             >
-              <Zap className="w-3.5 h-3.5" />
-              {autoFilling ? 'Filling…' : 'Auto-Fill'}
+              <Zap className="w-3.5 h-3.5 shrink-0" />
+              {autoFilling ? 'Filling...' : 'Auto-Fill'}
 </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[['Vessel Name','vessel_name','text',true],['Terminal','terminal','text',true],['Product','product_name','text',false],['Discharge Date','discharge_date','date',true]].map(([label,name,type,req]) => (
               <div key={name}>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">{label}{req && <span className="text-red-500 ml-1">*</span>}</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5 uppercase tracking-wide break-words">{label}{req && <span className="text-red-500 dark:text-red-300 ml-1">*</span>}</label>
                 <input type={type} name={name} value={form[name]} onChange={handleChange} required={req} className={inputCls} />
               </div>
             ))}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Total Weight (MT)</label>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5 uppercase tracking-wide break-words">Total Weight (MT)</label>
               <input type="number" step="0.001" name="total_weight_mt" value={form.total_weight_mt} onChange={handleChange} className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Total Volume (m³)</label>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5 uppercase tracking-wide break-words">Total Volume (m3)</label>
               <input type="number" step="0.001" name="total_volume_m3" value={form.total_volume_m3} onChange={handleChange} className={inputCls} />
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Remarks</label>
+            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5 uppercase tracking-wide break-words">Remarks</label>
             <textarea name="remarks" value={form.remarks} onChange={handleChange} rows="3" className={inputCls} />
           </div>
         </Section>
 
         <div className="flex gap-3">
-          <button type="submit" disabled={loading} className="bg-gradient-to-r from-[#8B1A1A] to-[#a52020] hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold disabled:opacity-50 transition hover-lift">
-            {loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Report'}
+          <button type="submit" disabled={loading} className="bg-gradient-to-r from-[#8B1A1A] to-[#a52020] hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold disabled:opacity-50 transition hover-lift whitespace-normal">
+            {loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Report'}
 </button>
-          <button type="button" onClick={() => navigate('/vessel-reports')} className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-8 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</button>
+          <button type="button" onClick={() => navigate('/vessel-reports')} className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-8 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition whitespace-normal">Cancel</button>
         </div>
       </form>
     </div>
@@ -416,7 +416,6 @@ export const VesselReportFormPage = () => {
 export const VesselReportDetailPage = () => {
   const navigate = useNavigate();
   const { id }   = useParams();
-  const { isDarkMode } = useDarkMode();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -446,32 +445,32 @@ export const VesselReportDetailPage = () => {
   };
 
   if (loading) return <div className="flex justify-center items-center min-h-screen"><div className="w-10 h-10 border-4 border-blue-100 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin" /></div>;
-  if (!report) return <div className="p-8 text-gray-500 dark:text-gray-400">Report not found</div>;
+  if (!report) return <div className="p-8 text-gray-600 dark:text-gray-300 break-words">Report not found</div>;
 
   const Field = ({ label, value }) => (
-    <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-sm font-bold text-gray-900 dark:text-white">{value || '—'}</p>
+    <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700 min-w-0">
+      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 break-words">{label}</p>
+      <p className="text-sm font-bold text-gray-900 dark:text-white break-words">{value || '-'}</p>
     </div>
   );
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto animate-fade-in">
-      <button onClick={() => navigate('/vessel-reports')} className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 flex items-center gap-1">← Back to Reports</button>
+      <button onClick={() => navigate('/vessel-reports')} className="text-sm text-blue-700 dark:text-blue-300 hover:underline mb-4 flex items-center gap-1 whitespace-normal text-left">Back to Reports</button>
       <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Ship className="w-8 h-8 text-[#8B1A1A]" />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2 break-words">
+            <Ship className="w-7 h-7 sm:w-8 sm:h-8 text-[#8B1A1A] shrink-0" />
             Vessel Report
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">#{report.report_number} · {report.vessel_name}</p>
+          <p className="text-gray-600 dark:text-gray-300 text-sm mt-1 break-words">#{report.report_number} / {report.vessel_name}</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={handleDownloadPdf} className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition hover-lift">Download
+        <div className="grid grid-cols-1 sm:flex gap-2 flex-wrap w-full sm:w-auto">
+          <button onClick={handleDownloadPdf} className={`${actionButtonCls} w-full sm:w-auto bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-200 border-green-200 dark:border-green-700 text-sm hover:bg-green-200 dark:hover:bg-green-900/50 hover-lift`}>Download
 </button>
-          <button onClick={handlePrintPdf} className="inline-flex items-center gap-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition hover-lift">Print
+          <button onClick={handlePrintPdf} className={`${actionButtonCls} w-full sm:w-auto bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-600 text-sm hover:bg-gray-200 dark:hover:bg-slate-600 hover-lift`}>Print
 </button>
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${
+          <span className={`inline-flex min-w-0 items-center justify-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold text-center leading-tight break-words ${
             report.status === 'final'
               ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
               : report.status === 'cancelled'
@@ -482,45 +481,45 @@ export const VesselReportDetailPage = () => {
 </span>
           {report.status === 'draft' && (
             <>
-              <button onClick={() => navigate(`/vessel-reports/${id}/edit`)} className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition hover-lift">Edit</button>
-              <button onClick={handleFinalize} className="bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:shadow-lg transition hover-lift">Finalize</button>
+              <button onClick={() => navigate(`/vessel-reports/${id}/edit`)} className={`${actionButtonCls} w-full sm:w-auto bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200 border-amber-200 dark:border-amber-700 text-sm hover:bg-amber-200 dark:hover:bg-amber-900/50 hover-lift`}>Edit</button>
+              <button onClick={handleFinalize} className={`${actionButtonCls} w-full sm:w-auto bg-gradient-to-r from-green-600 to-green-700 text-white border-green-700 text-sm hover:shadow-lg hover-lift`}>Finalize</button>
             </>
           )}
           {report.status !== 'cancelled' && (
-            <button onClick={handleCancelReport} className="inline-flex items-center gap-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition hover-lift">Cancel
+            <button onClick={handleCancelReport} className={`${actionButtonCls} w-full sm:w-auto bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-200 border-red-200 dark:border-red-700 text-sm hover:bg-red-200 dark:hover:bg-red-900/50 hover-lift`}>Cancel
 </button>
           )}
         </div>
       </div>
 
       <Section title="Vessel Details">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <Field label="Vessel Name"    value={report.vessel_name} />
           <Field label="Terminal"       value={report.terminal} />
           <Field label="Product"        value={report.product_name} />
           <Field label="Discharge Date" value={report.discharge_date} />
           <Field label="Total Weight"   value={`${report.total_weight_mt} MT`} />
-          <Field label="Total Volume"   value={`${report.total_volume_m3} m³`} />
+          <Field label="Total Volume"   value={`${report.total_volume_m3} m3`} />
         </div>
         {report.remarks && (
-          <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">Remarks</p>
-            <p className="text-sm text-blue-900 dark:text-blue-100">{report.remarks}</p>
+          <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 min-w-0">
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1 break-words">Remarks</p>
+            <p className="text-sm text-blue-900 dark:text-blue-100 break-words">{report.remarks}</p>
           </div>
         )}
       </Section>
 
       <Section title="Linked Documents">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {[
             {label: 'Dip Tickets', ids: report.dip_ticket_ids, color: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20'},
             {label: 'Seal Reports', ids: report.seal_report_ids, color: 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20'},
             {label: 'Shore Calcs', ids: report.shore_calc_ids, color: 'from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'},
             {label: 'Certificates', ids: report.cert_ids, color: 'from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'}
           ].map(({label, ids, color}) => (
-            <div key={label} className={`bg-gradient-to-br ${color} rounded-xl p-4 text-center border border-gray-200 dark:border-gray-700 hover-lift`}>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{ids?.length || 0}</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">{label}</p>
+            <div key={label} className={`bg-gradient-to-br ${color} rounded-xl p-4 text-center border border-gray-200 dark:border-gray-700 hover-lift min-w-0`}>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">{ids?.length || 0}</p>
+              <p className="text-xs text-gray-700 dark:text-gray-300 mt-2 break-words">{label}</p>
             </div>
           ))}
         </div>
