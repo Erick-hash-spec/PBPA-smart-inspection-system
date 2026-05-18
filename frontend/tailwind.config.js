@@ -96,6 +96,7 @@ module.exports = {
       backgroundImage: {
         'gradient-brand':   'linear-gradient(135deg, #8B1A1A 0%, #a52020 100%)',
         'gradient-surface': 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0fdf4 100%)',
+        'gradient-dark':    'linear-gradient(135deg, #0f172a 0%, #111827 52%, #0b1220 100%)',
         'gradient-card':    'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
       },
       transitionTimingFunction: {

@@ -1,7 +1,14 @@
 import axios from 'axios';
 import jwtDecode from 'jwt-decode';
 
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const DEFAULT_LOCAL_API_URL = 'http://localhost:8000/api';
+const PRODUCTION_API_URL = 'https://pbpa-smart-inspection-system.onrender.com/api';
+const configuredApiUrl = process.env.REACT_APP_API_URL;
+
+export const API_BASE_URL =
+  process.env.NODE_ENV === 'production' && (!configuredApiUrl || configuredApiUrl === '/api')
+    ? PRODUCTION_API_URL
+    : configuredApiUrl || DEFAULT_LOCAL_API_URL;
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const getStoredValue = (key) => localStorage.getItem(key) || sessionStorage.getItem(key);

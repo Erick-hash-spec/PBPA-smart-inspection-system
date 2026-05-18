@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_ORIGIN, authService, rosterService, submissionService } from '../services/api';
-import { ChevronDown, LayoutDashboard, Settings, LogOut, Bell } from 'lucide-react';
+import { authService, rosterService, submissionService } from '../services/api';
+import { ChevronDown, LayoutDashboard, LogOut, Bell } from 'lucide-react';
 
 const roleBadge = {
   admin:      { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-700 dark:text-purple-300' },
@@ -113,20 +113,6 @@ export const TopBar = () => {
                   </div>
                   Dashboard
                 </button>
-                {userRole === 'admin' && (
-                  <a
-                    href={`${API_ORIGIN}/admin`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition font-medium"
-                    onClick={() => setOpen(false)}
-                  >
-                    <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Settings className="w-3.5 h-3.5 text-gray-500" />
-                    </div>
-                    Admin Panel
-                  </a>
-                )}
               </div>
 
               <div className="border-t border-gray-100 pt-1.5 px-1.5">

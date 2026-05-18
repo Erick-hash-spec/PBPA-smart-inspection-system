@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { provisionalOuturnService } from '../services/api';
-import { ChevronLeft, Download, CheckCircle, Clock } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { SubmitModal } from '../components/SubmitModal';
 
 const f3 = (v) => (v == null ? '—' : Number(v).toFixed(3));
@@ -130,7 +130,7 @@ const ProvisionalOutturnReportDetailPage = () => {
             </>
           )}
           <button onClick={handleDownloadPdf} disabled={downloading}
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">{downloading ? 'Downloading…' : 'Download PDF'}
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">{downloading ? 'Downloading…' : 'Download'}
 </button>
           {isFinal && (
             <button onClick={() => setSubmitOpen(true)}

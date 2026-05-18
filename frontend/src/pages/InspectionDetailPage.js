@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { inspectionService } from '../services/api';
-import { ChevronLeft, Trash2, CheckCircle, Clock, AlertCircle, Download, Printer } from 'lucide-react';
+import { ChevronLeft, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 const statusConfig = {
   draft:     { label: 'Draft',     icon: Clock,        color: 'gray' },
@@ -210,7 +210,7 @@ export const InspectionDetailPage = () => {
 </button>
             <button onClick={handlePrintPdf} className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors inline-flex items-center gap-2">Print PDF
 </button>
-            <button onClick={handleDownloadPdf} className="px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors inline-flex items-center gap-2">Download PDF
+            <button onClick={handleDownloadPdf} className="px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors inline-flex items-center gap-2">Download
 </button>
             {false && <button onClick={async () => {
               try {
@@ -221,7 +221,7 @@ export const InspectionDetailPage = () => {
                 document.body.appendChild(a); a.click();
                 window.URL.revokeObjectURL(url); document.body.removeChild(a);
               } catch { setError('Failed to download document'); }
-            }} className="px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors inline-flex items-center gap-2">Download PDF
+            }} className="px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors inline-flex items-center gap-2">Download
 </button>}
           </div>
         </div>
@@ -240,11 +240,10 @@ export const InspectionDetailPage = () => {
       <Section title="Dip Ticket Header">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Field label="Ticket Number"   value={inspection.ticket_number} highlight />
+          <Field label="Tank No"         value={inspection.tank_no} />
           <Field label="Vessel"          value={inspection.vessel_name} />
           <Field label="Product"         value={inspection.product_name || inspection.tank_detail?.product_type} />
           <Field label="Terminal"        value={inspection.terminal} />
-          <Field label="Tank Name"       value={inspection.tank_detail?.tank_name} highlight />
-          <Field label="Tank ID"         value={inspection.tank_detail?.tank_id} />
           <Field label="Inspection Date" value={new Date(inspection.inspection_date).toLocaleString()} />
         </div>
       </Section>
@@ -317,20 +316,14 @@ export const InspectionDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* INSPECTION DATA SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <Section title="Inspection Data">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <Field label="Dip Reading" value={`${inspection.dip_reading} m`} highlight />
-          <Field label="Temperature" value={`${inspection.temperature}°C`} />
-          <Field label="Water Level" value={`${inspection.water_level} cm`} />
-          <Field label="Condition"   value={inspection.tank_condition} highlight />
-        </div>
-        {inspection.observations && (
+      {inspection.observations && (
+        <Section title="Inspection Data">
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
             <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Observations</p>
             <p className="text-sm text-gray-700 leading-relaxed">{inspection.observations}</p>
           </div>
-        )}
-      </Section>
+        </Section>
+      )}
 
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* CALCULATIONS SECTION */}

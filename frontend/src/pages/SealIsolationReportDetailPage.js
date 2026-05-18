@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { sealIsolationReportService } from '../services/api';
-import { ChevronLeft, Trash2, FileText, Download, CheckCircle, Clock } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 const ConfirmModal = ({ message, onConfirm, onCancel }) => (
   <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -191,7 +191,6 @@ export const SealIsolationReportDetailPage = () => {
                 <TableTH>#</TableTH>
                 <TableTH>Location</TableTH>
                 <TableTH>Seal Number</TableTH>
-                <TableTH>Remarks</TableTH>
               </tr>
             </thead>
             <tbody>
@@ -200,7 +199,6 @@ export const SealIsolationReportDetailPage = () => {
                   <TableTD number>{i + 1}</TableTD>
                   <TableTD highlight>{entry.location || '—'}</TableTD>
                   <TableTD highlight>{entry.seal_number || '—'}</TableTD>
-                  <TableTD>{entry.remarks || '—'}</TableTD>
                 </tr>
               ))}
             </tbody>
@@ -218,7 +216,7 @@ export const SealIsolationReportDetailPage = () => {
 </button>
           )}
 
-          <button onClick={handleDownload} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Word
+          <button onClick={handleDownload} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Download
 </button>
 
           {!report.is_signed ? (

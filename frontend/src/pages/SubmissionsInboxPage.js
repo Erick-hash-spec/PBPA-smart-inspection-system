@@ -9,7 +9,7 @@ import {
   stockReportService,
   submissionService,
 } from '../services/api';
-import { Bell, CheckCheck, Download, Eye, FileText, Lock, Printer, Ruler, ClipboardList, Package, ShipWheel } from 'lucide-react';
+import { Bell, CheckCheck, FileText, Lock, Ruler, ClipboardList, Package, ShipWheel } from 'lucide-react';
 
 const DOC_TYPE_CONFIG = {
   dip_ticket:      { label: 'Dip Ticket',               icon: ClipboardList, color: 'text-blue-600',   bg: 'bg-blue-50',   href: (id) => `/inspections/${id}` },
@@ -190,7 +190,7 @@ export const SubmissionsInboxPage = () => {
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => handleView(sub)} className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition">View
 </button>
-                  <button onClick={() => handleDownload(sub)} className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-green-100 transition">PDF
+                  <button onClick={() => handleDownload(sub)} className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-green-100 transition">Download
 </button>
                   <button onClick={() => handlePrint(sub)} className="inline-flex items-center gap-1.5 bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">Print
 </button>

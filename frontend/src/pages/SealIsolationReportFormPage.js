@@ -11,7 +11,7 @@ const Section = ({ title, children }) => (
   </div>
 );
 
-const emptyEntry = () => ({ location: '', seal_number: '', remarks: '' });
+const emptyEntry = () => ({ location: '', seal_number: '' });
 
 export const SealIsolationReportFormPage = () => {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ export const SealIsolationReportFormPage = () => {
         pbpa_inspector_name:      d.pbpa_inspector_name || '',
         pbpa_inspector_signature: d.pbpa_inspector_signature || '',
         notes: d.notes || '',
-        entries: (d.entries || []).map(e => ({ location: e.location || '', seal_number: e.seal_number || '', remarks: e.remarks || '' })),
+        entries: (d.entries || []).map(e => ({ location: e.location || '', seal_number: e.seal_number || '' })),
       });
     } catch { setError('Failed to load report for editing'); }
     finally { setPageLoading(false); }
@@ -124,13 +124,12 @@ export const SealIsolationReportFormPage = () => {
 
         <Section title="Location and Seal Numbers">
           <div className="space-y-3 mb-3">
-            <div className="grid grid-cols-4 gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
-              <span>Location</span><span>Seal Number</span><span>Remarks</span></div>
+            <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
+              <span>Location</span><span>Seal Number</span><span>Action</span></div>
             {formData.entries.map((entry, i) => (
-              <div key={i} className="grid grid-cols-4 gap-2">
-                <input placeholder="Location" value={entry.location} onChange={e=>handleEntryChange(i,'location',e.target.value)} className={inputCls} />
+              <div key={i} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2">
+                <input placeholder="Tank #01 inlet / manifold / outlet valve" value={entry.location} onChange={e=>handleEntryChange(i,'location',e.target.value)} className={inputCls} />
                 <input placeholder="Seal Number" value={entry.seal_number} onChange={e=>handleEntryChange(i,'seal_number',e.target.value)} className={inputCls} />
-                <input placeholder="Remarks" value={entry.remarks} onChange={e=>handleEntryChange(i,'remarks',e.target.value)} className={inputCls} />
                 <button type="button" onClick={() => setFormData(prev=>({...prev,entries:prev.entries.filter((_,idx)=>idx!==i)}))} disabled={formData.entries.length===1} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40">Remove</button>
               </div>
             ))}

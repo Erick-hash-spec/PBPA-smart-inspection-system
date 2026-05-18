@@ -114,7 +114,7 @@ export const StockReportListPage = () => {
 </button>
                 )}
                 <button onClick={() => handleDownload(r)}
-                  className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition">PDF
+                  className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition">Download
 </button>
                 {r.status === 'final' && (
                     submittedIds.has(r.id) ? (
@@ -391,7 +391,7 @@ export const StockReportDetailPage = () => {
             </>
           )}
           <button onClick={handleDownload}
-            className="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Download PDF
+            className="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Download
 </button>
           {report.status === 'final' && (
             <button onClick={() => setSubmitOpen(true)}

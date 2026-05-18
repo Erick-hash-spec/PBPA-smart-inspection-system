@@ -416,15 +416,15 @@ tbody td { padding: 0.875rem 1rem; font-size: 1rem; color: #334155; }
 /* ─── FILTER BADGE STYLES ──────────────────────────────────────────────── */
 .filter-badge {
   @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold cursor-pointer transition-all duration-200;
-  background: #f1f5f9;
-  color: #64748b;
-  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  border: 2px solid #cbd5e1;
 }
 
 .filter-badge:hover {
   background: #e2e8f0;
-  color: #334155;
-  border-color: #cbd5e1;
+  color: #1e293b;
+  border-color: #94a3b8;
 }
 
 .filter-badge.active {
@@ -871,6 +871,18 @@ body,
 
   /* Filter badges smaller */
   .filter-badge { padding: 0.4rem 0.75rem; font-size: 0.75rem; }
+
+  .dark .dashboard-stat-card {
+    background: #ffffff !important;
+  }
+
+  .dark .dashboard-stat-card p {
+    color: #0f172a !important;
+  }
+
+  .dark .dashboard-stat-card p:first-child {
+    color: #334155 !important;
+  }
 
   /* Card hover effects — disable on touch */
   .card:hover, .hover-lift:hover, .stat-card:hover {

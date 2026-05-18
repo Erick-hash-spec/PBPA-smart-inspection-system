@@ -261,8 +261,8 @@ export const RosterPage = () => {
                   <button
                     onClick={() => handleDownloadPdf(r)}
                     className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-700"
-                    title="Download PDF"
-                  >Download PDF</button>
+                    title="Download"
+                  >Download</button>
                   {isSupervisorOrAdmin && (
                     <>
                       {r.status !== 'cancelled' && (

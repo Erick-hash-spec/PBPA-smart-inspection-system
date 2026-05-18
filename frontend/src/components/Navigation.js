@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { API_ORIGIN, authService } from '../services/api';
+import { authService } from '../services/api';
 import {
   LayoutDashboard, ClipboardList, Shield, Calculator, Award,
-  Settings, Menu, Bell, Ship, FileText, Package,
+  Menu, Bell, Ship, FileText, Package,
   Moon, Sun, LogOut, X, Droplets, Users, CalendarDays,
 } from 'lucide-react';
 import { useDarkMode } from '../contexts/DarkModeContext';
@@ -139,15 +139,6 @@ export const Navigation = () => {
               <Users className="w-4 h-4 shrink-0" />
               <span>User Management</span>
             </NavLink>
-            <a
-              href={`${API_ORIGIN}/admin`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-white/75 hover:bg-white/12 hover:text-white transition-all"
-            >
-              <Settings className="w-4 h-4 shrink-0" />
-              <span>Admin Panel</span>
-            </a>
           </>
         )}
       </nav>

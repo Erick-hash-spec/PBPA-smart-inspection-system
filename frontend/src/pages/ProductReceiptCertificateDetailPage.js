@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { productReceiptCertificateService } from '../services/api';
-import { ChevronLeft, Trash2, FileText, Download, CheckCircle, Clock } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 const ConfirmModal = ({ message, onConfirm, onCancel }) => (
   <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -252,7 +252,7 @@ export const ProductReceiptCertificateDetailPage = () => {
 </button>
           )}
 
-          <button onClick={handleDownloadPdf} className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">PDF
+          <button onClick={handleDownloadPdf} className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Download
 </button>
 
           <button onClick={handleDownloadDoc} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Word
