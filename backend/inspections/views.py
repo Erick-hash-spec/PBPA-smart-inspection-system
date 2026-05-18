@@ -1077,30 +1077,7 @@ class SealIsolationReportViewSet(viewsets.ModelViewSet):
         if report.is_signed:
             return Response({'detail': 'Document is already signed.'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            from reportlab.lib.pagesizes import A4
-            from reportlab.pdfgen import canvas as rl_canvas
-            import io
-            buf = io.BytesIO()
-            c = rl_canvas.Canvas(buf, pagesize=A4)
-            w, h = A4
-            c.setFont('Helvetica-Bold', 14)
-            c.drawCentredString(w/2, h-50, 'PBPA SEAL AND ISOLATION REPORT')
-            c.setFont('Helvetica', 11)
-            c.drawString(50, h-90,  f'Report No: {report.report_number}')
-            c.drawString(50, h-110, f'Vessel: {report.vessel_name}')
-            c.drawString(50, h-130, f'Product: {report.product_name}')
-            c.drawString(50, h-150, f'Terminal: {report.terminal}')
-            c.drawString(50, h-170, f'Date: {report.report_date}')
-            y = h - 210
-            c.setFont('Helvetica-Bold', 11)
-            c.drawString(50, y, 'Location'); c.drawString(300, y, 'Seal Number')
-            y -= 20
-            c.setFont('Helvetica', 10)
-            for entry in report.entries.all():
-                c.drawString(50, y, entry.location or ''); c.drawString(300, y, entry.seal_number or '')
-                y -= 18
-                if y < 80: c.showPage(); y = h - 50
-            c.save()
+            buf = generate_seal_isolation_pdf(report)
             pdf_bytes = buf.getvalue()
             signer_name = request.user.get_full_name() or request.user.username
             signed_bytes = sign_pdf_bytes(pdf_bytes, signer_name=signer_name, reason='PBPA Seal and Isolation Report')

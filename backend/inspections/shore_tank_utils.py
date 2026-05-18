@@ -512,7 +512,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 import io
 
 
-def generate_dip_ticket_pdf(inspection):
+def _generate_dip_ticket_pdf_legacy(inspection):
     """Generate Dip Ticket as PDF using ReportLab."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=10*mm, leftMargin=10*mm, topMargin=10*mm, bottomMargin=10*mm)
@@ -651,111 +651,341 @@ def generate_dip_ticket_pdf(inspection):
     return buffer
 
 
-def generate_seal_isolation_pdf(report):
-    """Generate Seal & Isolation Report as PDF using ReportLab."""
+def generate_dip_ticket_pdf(inspection):
+    """Generate a PBPA dip ticket PDF in the official fixed-sheet format."""
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=10*mm, leftMargin=10*mm, topMargin=10*mm, bottomMargin=10*mm)
-    
-    elements = []
-    styles = getSampleStyleSheet()
-    
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        textColor=colors.HexColor('#1a1a1a'),
-        spaceAfter=6,
-        alignment=TA_CENTER,
-        fontName='Helvetica-Bold'
-    )
-    
-    elements.append(Paragraph("THE UNITED REPUBLIC OF TANZANIA", title_style))
-    elements.append(Paragraph("PBPA SEALING AND ISOLATION REPORT", title_style))
-    elements.append(Spacer(1, 8*mm))
-    
-    # Header info - use Paragraph for HTML support
-    header_style = ParagraphStyle(
-        'HeaderCell',
-        parent=styles['Normal'],
-        fontSize=9,
-        alignment=TA_LEFT
-    )
-    
-    header_data = [
-        [
-            Paragraph(f"<b>Vessel Name:</b> {report.vessel_name}", header_style),
-            Paragraph(f"<b>Product:</b> {report.product_name}", header_style)
-        ],
-        [
-            Paragraph(f"<b>Terminal:</b> {report.terminal}", header_style),
-            Paragraph(f"<b>Date:</b> {report.report_date.strftime('%d-%m-%Y')}", header_style)
-        ],
-        [
-            Paragraph(f"<b>Report No:</b> {report.report_number}", header_style),
-            Paragraph(f"<b>Status:</b> {report.status.upper()}", header_style)
-        ],
+    pdf = rl_canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    margin = 13 * mm
+
+    def draw_text(x, y, value, size=8, bold=False, align='left'):
+        pdf.setFont('Helvetica-Bold' if bold else 'Helvetica', size)
+        value = '' if value is None else str(value)
+        if align == 'center':
+            pdf.drawCentredString(x, y, value)
+        elif align == 'right':
+            pdf.drawRightString(x, y, value)
+        else:
+            pdf.drawString(x, y, value)
+
+    def draw_line(x1, y1, x2, y2, line_width=0.5):
+        pdf.setLineWidth(line_width)
+        pdf.line(x1, y1, x2, y2)
+        pdf.setLineWidth(0.5)
+
+    def draw_rect(x, y, w, h, fill=0):
+        pdf.rect(x, y, w, h, stroke=1, fill=fill)
+
+    def average(values):
+        numeric = [v for v in values if v is not None]
+        return round(sum(numeric) / len(numeric), 3) if numeric else None
+
+    def date_value():
+        return inspection.inspection_date.strftime('%d-%m-%Y') if inspection.inspection_date else ''
+
+    def time_value():
+        return inspection.inspection_time.strftime('%H:%M') if inspection.inspection_time else ''
+
+    def signature_value_line(x, y, w, value):
+        draw_line(x, y - 1.2, x + w, y - 1.2)
+        draw_text(x + 2, y, value or '', 8, bold=True)
+
+    pdf.setLineWidth(0.6)
+
+    # Header mirrors the official PBPA ticket sheet.
+    draw_text(width / 2, height - 18 * mm, 'THE UNITED REPUBLIC OF TANZANIA', 7, align='center')
+    draw_text(width / 2, height - 28 * mm, 'PETROLEUM BULK PROCUREMENT AGENCY', 14, bold=True, align='center')
+    draw_text(width / 2, height - 33 * mm, 'TANZANIA PORTS AUTHORITY, ONE STOP CENTRE BUILDING 11TH FLOOR, SOKOINE DRIVE, PLOT NO. 1/2', 5.5, align='center')
+    draw_text(width / 2, height - 37 * mm, 'P.O. BOX 2314 DAR ES SALAAM, TANZANIA', 5.5, align='center')
+    for logo_x in (margin + 10 * mm, width - margin - 10 * mm):
+        pdf.circle(logo_x, height - 27 * mm, 8 * mm, stroke=1, fill=0)
+        draw_text(logo_x, height - 25 * mm, 'PBPA', 6, bold=True, align='center')
+        draw_text(logo_x, height - 29 * mm, 'LOGO', 5, align='center')
+    draw_line(margin, height - 42 * mm, width - margin, height - 42 * mm, 1.1)
+
+    title_x = margin + 55 * mm
+    title_y = height - 58 * mm
+    title_w = 54 * mm
+    title_h = 13 * mm
+    draw_rect(title_x, title_y, title_w, title_h)
+    pdf.setFillColor(colors.black)
+    pdf.roundRect(title_x + 2 * mm, title_y + 2 * mm, title_w - 4 * mm, title_h - 4 * mm, 2 * mm, fill=1, stroke=0)
+    pdf.setFillColor(colors.white)
+    draw_text(title_x + title_w / 2, title_y + 4.2 * mm, 'DIP TICKET', 15, bold=True, align='center')
+    pdf.setFillColor(colors.black)
+    serial = str(inspection.ticket_number or inspection.id or '').replace('DIP-', '')
+    draw_text(width - margin - 7 * mm, title_y + 4.2 * mm, serial, 12, align='right')
+
+    # Ticket header details.
+    grid_x = margin
+    grid_y = height - 88 * mm
+    grid_w = 152 * mm
+    grid_h = 24 * mm
+    row_h = grid_h / 3
+    col_w = grid_w / 2
+    draw_rect(grid_x, grid_y, grid_w, grid_h)
+    draw_line(grid_x + col_w, grid_y, grid_x + col_w, grid_y + grid_h)
+    for i in range(1, 3):
+        draw_line(grid_x, grid_y + i * row_h, grid_x + grid_w, grid_y + i * row_h)
+    details = [
+        ('Vessel:', inspection.vessel_name or '', 'Product:', inspection.product_name or ''),
+        ('Terminal:', inspection.terminal or '', 'Tank No:', inspection.tank_no or (inspection.tank.tank_id if inspection.tank else '')),
+        ('Date:', date_value(), 'Time:', time_value()),
     ]
-    
-    header_table = Table(header_data, colWidths=[doc.width/2-5*mm, doc.width/2-5*mm])
-    header_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f5f5f5')),
-    ]))
-    elements.append(header_table)
-    elements.append(Spacer(1, 8*mm))
-    
-    # Seals entries table
-    entries_data = [['Location', 'Seal Number']]
-    for entry in report.entries.all():
-        entries_data.append([entry.location or '', entry.seal_number or ''])
-    
-    # Pad with empty rows if fewer than 15
-    while len(entries_data) < 16:
-        entries_data.append(['', ''])
-    
-    entries_table = Table(entries_data, colWidths=[doc.width*0.6, doc.width*0.4])
-    entries_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8B1A1A')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    elements.append(entries_table)
-    elements.append(Spacer(1, 12*mm))
-    
-    # Notes
-    if report.notes:
-        elements.append(Paragraph("<b>Notes:</b>", styles['Normal']))
-        elements.append(Paragraph(report.notes, styles['Normal']))
-        elements.append(Spacer(1, 6*mm))
-    
-    # Signatures
-    sig_data = [
-        ['Terminal Representative', '', 'PBPA Inspector'],
-        ['Name: ' + (report.terminal_representative_name or ''), '', 'Name: ' + (report.pbpa_inspector_name or '')],
-        ['Signature: _____________________', '', 'Signature: _____________________'],
+    for idx, (left_label, left_value, right_label, right_value) in enumerate(details):
+        y = grid_y + grid_h - (idx + 0.68) * row_h
+        draw_text(grid_x + 2 * mm, y, left_label, 7, bold=True)
+        draw_text(grid_x + 20 * mm, y, left_value, 9, bold=True)
+        if right_label:
+            draw_text(grid_x + col_w + 2 * mm, y, right_label, 7, bold=True)
+            draw_text(grid_x + col_w + 22 * mm, y, right_value, 9, bold=True)
+
+    # Measurements table.
+    table_x = margin
+    table_y = height - 170 * mm
+    table_w = width - 2 * margin
+    table_h = 73 * mm
+    header_h = 13 * mm
+    subheader_h = 10 * mm
+    data_h = (table_h - header_h - subheader_h) / 7
+    particulars_w = 52 * mm
+    measurement_w = (table_w - particulars_w) / 4
+    draw_rect(table_x, table_y, table_w, table_h)
+    draw_line(table_x + particulars_w, table_y, table_x + particulars_w, table_y + table_h)
+    draw_line(table_x, table_y + table_h - header_h, table_x + table_w, table_y + table_h - header_h)
+    draw_line(table_x + particulars_w, table_y + table_h - header_h - subheader_h, table_x + table_w, table_y + table_h - header_h - subheader_h)
+    for i in range(1, 4):
+        draw_line(table_x + particulars_w + i * measurement_w, table_y, table_x + particulars_w + i * measurement_w, table_y + table_h - header_h)
+    for i in range(1, 8):
+        draw_line(table_x, table_y + i * data_h, table_x + table_w, table_y + i * data_h)
+
+    draw_text(table_x + particulars_w / 2, table_y + table_h - 8 * mm, 'PARTICULARS', 7, bold=True, align='center')
+    draw_text(table_x + particulars_w + (table_w - particulars_w) / 2, table_y + table_h - 6 * mm, 'MEASUREMENTS', 8, bold=True, align='center')
+    for i, (line_one, line_two) in enumerate((('1st', 'Measurement'), ('2nd', 'Measurement'), ('3rd', 'Measurement'), ('Average', 'Measurement'))):
+        cx = table_x + particulars_w + i * measurement_w + measurement_w / 2
+        draw_text(cx, table_y + table_h - header_h - 4 * mm, line_one, 6, align='center')
+        draw_text(cx, table_y + table_h - header_h - 7.2 * mm, line_two, 5.2, align='center')
+
+    rows = [
+        ('Overall Dip (mm)', [inspection.overall_dip_1_mm, inspection.overall_dip_2_mm, inspection.overall_dip_3_mm], 0),
+        ('Product Dip (mm)', [inspection.product_dip_1_mm, inspection.product_dip_2_mm, inspection.product_dip_3_mm], 0),
+        ('Product Volume (L)', [inspection.product_volume_1_l, inspection.product_volume_2_l, inspection.product_volume_3_l], 0),
+        ('Free Water Dip (L)', [inspection.free_water_volume_1_l, inspection.free_water_volume_2_l, inspection.free_water_volume_3_l], 0),
+        ('Tank Temperature (C)', [inspection.tank_temperature_1_c, inspection.tank_temperature_2_c, inspection.tank_temperature_3_c], 1),
+        ('Specific Gravity (SG)', [inspection.specific_gravity_1, inspection.specific_gravity_2, inspection.specific_gravity_3], 3),
+        ('Sample Temperature (C)', [inspection.sample_temperature_1_c, inspection.sample_temperature_2_c, inspection.sample_temperature_3_c], 1),
     ]
-    
-    sig_table = Table(sig_data, colWidths=[doc.width/3-5*mm, doc.width/3-5*mm, doc.width/3-5*mm])
-    sig_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-    ]))
-    elements.append(sig_table)
-    
-    doc.build(elements)
+    for idx, (label, values, precision) in enumerate(rows):
+        y = table_y + table_h - header_h - subheader_h - (idx + 0.68) * data_h
+        draw_text(table_x + 2 * mm, y, label, 7)
+        for col, value in enumerate(values + [average(values)]):
+            draw_text(table_x + particulars_w + col * measurement_w + measurement_w / 2, y, _f(value, precision), 9, bold=True, align='center')
+
+    # PBPA seal block.
+    seal_x = margin
+    seal_y = height - 205 * mm
+    seal_w = width - 2 * margin
+    seal_h = 28 * mm
+    seal_label_w = 58 * mm
+    seal_number_w = 48 * mm
+    meter_w = (seal_w - seal_label_w - seal_number_w) / 3
+    draw_rect(seal_x, seal_y, seal_w, seal_h)
+    draw_line(seal_x + seal_label_w, seal_y, seal_x + seal_label_w, seal_y + seal_h)
+    draw_line(seal_x + seal_label_w + seal_number_w, seal_y, seal_x + seal_label_w + seal_number_w, seal_y + seal_h)
+    for i in range(1, 3):
+        x = seal_x + seal_label_w + seal_number_w + i * meter_w
+        draw_line(x, seal_y, x, seal_y + seal_h)
+    for i in range(1, 4):
+        draw_line(seal_x, seal_y + i * seal_h / 4, seal_x + seal_w, seal_y + i * seal_h / 4)
+    draw_text(seal_x + 2 * mm, seal_y + seal_h - 5 * mm, 'PBPA SEAL POSITION', 6, bold=True)
+    draw_text(seal_x + seal_label_w + seal_number_w / 2, seal_y + seal_h - 5 * mm, 'PBPA SEAL NUMBER', 6, bold=True, align='center')
+    for idx, heading in enumerate(('OBS', '@20', 'MTS')):
+        x = seal_x + seal_label_w + seal_number_w + idx * meter_w + meter_w / 2
+        draw_text(x, seal_y + seal_h - 5 * mm, heading, 6, bold=True, align='center')
+    for idx, (label, seal_value) in enumerate((
+        ('Outlet valve seal', inspection.outlet_valve_seal_number),
+        ('Water valve seal', inspection.water_valve_seal_number),
+        ('Other branches seal', inspection.other_branches_seal_number),
+    )):
+        y = seal_y + seal_h - (idx + 1.72) * seal_h / 4
+        draw_text(seal_x + 2 * mm, y, label, 7)
+        draw_text(seal_x + seal_label_w + seal_number_w / 2, y, seal_value or '-', 9, bold=True, align='center')
+        meter_values = (
+            _f(inspection.meter_reading_obs) if idx == 0 else '',
+            _f(inspection.meter_reading_at_20) if idx == 1 else '',
+            _f(inspection.meter_reading_mts) if idx == 2 else '',
+        )
+        for col, meter_value in enumerate(meter_values):
+            x = seal_x + seal_label_w + seal_number_w + col * meter_w + meter_w / 2
+            draw_text(x, y, meter_value, 8, bold=True, align='center')
+
+    # Signature area.
+    sig_y = height - 255 * mm
+    left_x = margin + 4 * mm
+    right_x = width / 2 + 15 * mm
+    draw_text(left_x, sig_y + 25 * mm, 'Terminal Representative:', 7, bold=True)
+    draw_text(right_x, sig_y + 25 * mm, 'Petroleum Bulk Procurement Agency Inspector:', 7, bold=True)
+    signature_value_line(left_x + 25 * mm, sig_y + 13 * mm, 45 * mm, inspection.terminal_representative_name)
+    signature_value_line(right_x + 22 * mm, sig_y + 13 * mm, 48 * mm, inspection.pbpa_inspector_name)
+    draw_text(left_x + 42 * mm, sig_y + 8 * mm, 'Name', 6, align='center')
+    draw_text(right_x + 45 * mm, sig_y + 8 * mm, 'Name', 6, align='center')
+    signature_value_line(left_x + 25 * mm, sig_y - 2 * mm, 45 * mm, inspection.terminal_representative_signature)
+    signature_value_line(right_x + 22 * mm, sig_y - 2 * mm, 48 * mm, inspection.pbpa_inspector_signature)
+    draw_text(left_x + 42 * mm, sig_y - 7 * mm, 'Signature', 6, align='center')
+    draw_text(right_x + 45 * mm, sig_y - 7 * mm, 'Signature', 6, align='center')
+    draw_text(margin, 12 * mm, 'QF-17', 5)
+
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+    return buffer
+
+
+def generate_seal_isolation_pdf(report):
+    """Generate the standalone PBPA Sealing and Isolation Report PDF."""
+    buffer = io.BytesIO()
+    pdf = rl_canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    margin = 14 * mm
+    content_w = width - 2 * margin
+
+    def draw_line(x1, y1, x2, y2, lw=0.55):
+        pdf.setLineWidth(lw)
+        pdf.line(x1, y1, x2, y2)
+
+    def draw_rect(x, y, w, h, lw=0.55):
+        pdf.setLineWidth(lw)
+        pdf.rect(x, y, w, h, stroke=1, fill=0)
+
+    def draw_text(x, y, text, size=7, bold=False, align='left'):
+        value = '' if text is None else str(text)
+        pdf.setFont('Helvetica-Bold' if bold else 'Helvetica', size)
+        if align == 'center':
+            pdf.drawCentredString(x, y, value)
+        elif align == 'right':
+            pdf.drawRightString(x, y, value)
+        else:
+            pdf.drawString(x, y, value)
+
+    def draw_wrapped(x, y, text, max_width, size=7, bold=False, line_gap=3.4 * mm):
+        words = ('' if text is None else str(text)).split()
+        lines = []
+        line = ''
+        pdf.setFont('Helvetica-Bold' if bold else 'Helvetica', size)
+        for word in words:
+            candidate = f'{line} {word}'.strip()
+            if pdf.stringWidth(candidate, 'Helvetica-Bold' if bold else 'Helvetica', size) <= max_width:
+                line = candidate
+            else:
+                if line:
+                    lines.append(line)
+                line = word
+        if line:
+            lines.append(line)
+        if not lines:
+            lines = ['']
+        for idx, line_text in enumerate(lines[:2]):
+            draw_text(x, y - idx * line_gap, line_text, size=size, bold=bold)
+
+    def line_field(label, value, x, y, w, size=8):
+        label_text = f'{label}:'
+        draw_text(x, y, label_text, size=size, bold=True)
+        label_w = pdf.stringWidth(label_text, 'Helvetica-Bold', size) + 2 * mm
+        draw_text(x + label_w, y, value or '', size=size)
+        draw_line(x + label_w, y - 1.1 * mm, x + w, y - 1.1 * mm, 0.35)
+
+    y = height - 12 * mm
+
+    # Letterhead and simple official marks.
+    pdf.setStrokeColor(colors.black)
+    left_logo_x = margin
+    left_logo_y = y - 18 * mm
+    draw_rect(left_logo_x, left_logo_y, 12 * mm, 15 * mm, 0.4)
+    draw_line(left_logo_x + 2 * mm, left_logo_y + 4 * mm, left_logo_x + 10 * mm, left_logo_y + 4 * mm, 0.4)
+    draw_text(left_logo_x + 6 * mm, left_logo_y + 7 * mm, 'TZ', size=5.5, bold=True, align='center')
+
+    right_logo_x = width - margin - 6 * mm
+    right_logo_y = y - 10 * mm
+    pdf.circle(right_logo_x, right_logo_y, 6 * mm, stroke=1, fill=0)
+    draw_text(right_logo_x, right_logo_y + 1 * mm, 'PBPA', size=4.4, bold=True, align='center')
+
+    draw_text(width / 2, y, 'THE UNITED REPUBLIC OF TANZANIA', size=6, align='center')
+    y -= 4.8 * mm
+    draw_text(width / 2, y, 'PETROLEUM BULK PROCUREMENT AGENCY', size=11.5, bold=True, align='center')
+    y -= 3.6 * mm
+    draw_text(width / 2, y, 'TANZANIA PORTS AUTHORITY, ONE STOP CENTER BUILDING 11TH FLOOR, SOKOINE DRIVE, PLOT NO:1/2', size=4.4, align='center')
+    y -= 3 * mm
+    draw_text(width / 2, y, 'Tel: +255222129009 / Fax: +255222129093 / info@pbpa.go.tz / WEBSITE: www.pbpa.go.tz / P.O. BOX 2634 Dar es Salaam, TANZANIA', size=4.2, align='center')
+    y -= 2.4 * mm
+    draw_line(margin, y, width - margin, y, 0.7)
+
+    # Header fields and serial number.
+    y -= 6 * mm
+    left_w = 116 * mm
+    date_str = report.report_date.strftime('%d-%m-%Y') if report.report_date else ''
+    line_field('Vessel name', report.vessel_name, margin, y, left_w)
+    draw_text(width - margin - 4 * mm, y - 0.5 * mm, report.report_number or '', size=10.5, align='right')
+    y -= 6 * mm
+    line_field('Product', report.product_name, margin, y, left_w)
+    y -= 6 * mm
+    line_field('Terminal', report.terminal, margin, y, left_w)
+    y -= 6 * mm
+    line_field('Date', date_str, margin, y, left_w)
+
+    # Title.
+    y -= 9 * mm
+    title_w = 72 * mm
+    title_h = 7 * mm
+    title_x = (width - title_w) / 2
+    draw_rect(title_x, y - title_h + 1.5 * mm, title_w, title_h, 1)
+    draw_text(width / 2, y - 3 * mm, 'SEALING AND ISOLATION REPORT', size=9, bold=True, align='center')
+
+    # Entries table.
+    y -= 11 * mm
+    table_x = margin
+    table_w = content_w
+    location_w = table_w * 0.56
+    seal_w = table_w - location_w
+    header_h = 7 * mm
+    row_h = 7 * mm
+    rows = 24
+    table_h = header_h + rows * row_h
+
+    draw_rect(table_x, y - table_h, table_w, table_h, 0.7)
+    draw_line(table_x + location_w, y, table_x + location_w, y - table_h, 0.55)
+    draw_line(table_x, y - header_h, table_x + table_w, y - header_h, 0.55)
+    draw_text(table_x + location_w / 2, y - 4.5 * mm, 'Location', size=7, bold=True, align='center')
+    draw_text(table_x + location_w + seal_w / 2, y - 4.5 * mm, 'Seal Number', size=7, bold=True, align='center')
+
+    for idx in range(rows):
+        row_y = y - header_h - idx * row_h
+        draw_line(table_x, row_y - row_h, table_x + table_w, row_y - row_h, 0.35)
+
+    entries = list(report.entries.all())
+    for idx, entry in enumerate(entries[:rows]):
+        row_top = y - header_h - idx * row_h
+        text_y = row_top - 4.4 * mm
+        draw_wrapped(table_x + 3 * mm, text_y, entry.location or '', location_w - 6 * mm, size=7.5, bold=True)
+        draw_text(table_x + location_w + 3 * mm, text_y, entry.seal_number or '', size=8, bold=True)
+
+    # Signatures.
+    y = y - table_h - 8 * mm
+    block_w = (content_w - 16 * mm) / 2
+    left_x = margin
+    right_x = margin + block_w + 16 * mm
+    draw_text(left_x, y, 'TPA/TIPER/Terminal representative', size=6.5, bold=True)
+    draw_text(right_x, y, 'PBPA Inspector', size=6.5, bold=True)
+    y -= 8 * mm
+    line_field('Name', report.terminal_representative_name, left_x, y, block_w, size=6.5)
+    line_field('Name', report.pbpa_inspector_name, right_x, y, block_w, size=6.5)
+    y -= 10 * mm
+    line_field('Signature', report.terminal_representative_signature, left_x, y, block_w, size=6.5)
+    line_field('Signature', report.pbpa_inspector_signature, right_x, y, block_w, size=6.5)
+
+    draw_text(width - margin, 8 * mm, 'SIR/7', size=5, align='right')
+
+    pdf.showPage()
+    pdf.save()
     buffer.seek(0)
     return buffer
 

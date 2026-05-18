@@ -154,7 +154,7 @@ class InspectionListSerializer(serializers.ModelSerializer):
         model = Inspection
         fields = (
             'id', 'tank', 'tank_name', 'inspector', 'inspector_name',
-            'ticket_number', 'vessel_name', 'product_name', 'terminal',
+            'ticket_number', 'tank_no', 'vessel_name', 'product_name', 'terminal',
             'dip_reading', 'temperature', 'status', 'inspection_date', 'created_at'
         )
         read_only_fields = ('id', 'created_at')
@@ -164,7 +164,7 @@ class InspectionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inspection
         fields = (
-            'id', 'tank', 'ticket_number', 'vessel_name', 'product_name',
+            'id', 'tank', 'ticket_number', 'tank_no', 'vessel_name', 'product_name',
             'terminal', 'inspection_time', 'dip_reading', 'temperature', 'water_level',
             'overall_dip_1_mm', 'overall_dip_2_mm', 'overall_dip_3_mm',
             'product_dip_1_mm', 'product_dip_2_mm', 'product_dip_3_mm',
@@ -207,7 +207,7 @@ class InspectionDetailSerializer(serializers.ModelSerializer):
         model = Inspection
         fields = (
             'id', 'tank', 'tank_detail', 'inspector', 'inspector_name',
-            'supervisor', 'supervisor_name', 'ticket_number', 'vessel_name',
+            'supervisor', 'supervisor_name', 'ticket_number', 'tank_no', 'vessel_name',
             'product_name', 'terminal', 'inspection_time', 'dip_reading', 'temperature',
             'water_level', 'observations', 'tank_condition', 'remarks',
             'overall_dip_1_mm', 'overall_dip_2_mm', 'overall_dip_3_mm', 'overall_dip_average_mm',

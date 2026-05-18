@@ -117,12 +117,13 @@ class Inspection(models.Model):
         ('rejected', 'Rejected'),
     )
     
-    tank = models.ForeignKey(Tank, on_delete=models.CASCADE, related_name='inspections')
+    tank = models.ForeignKey(Tank, on_delete=models.SET_NULL, null=True, blank=True, related_name='inspections')
     inspector = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='inspections_created')
     supervisor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='inspections_approved')
 
     # PBPA Dip Ticket Header
     ticket_number = models.CharField(max_length=30, blank=True)
+    tank_no = models.CharField(max_length=50, blank=True)
     vessel_name = models.CharField(max_length=200, blank=True)
     product_name = models.CharField(max_length=100, blank=True)
     terminal = models.CharField(max_length=200, blank=True)
@@ -185,7 +186,8 @@ class Inspection(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"Inspection {self.id} - {self.tank.tank_name} ({self.inspection_date.date()})"
+        tank_label = self.tank_no or (self.tank.tank_name if self.tank else "Unlinked tank")
+        return f"Inspection {self.id} - {tank_label} ({self.inspection_date.date()})"
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
