@@ -24,11 +24,11 @@ const ConfirmModal = ({ message, onConfirm, onCancel }) => (
 );
 
 const Section = ({ title, subtitle, children }) => (
-  <div className="bg-white rounded-2xl shadow-base p-6 md:p-8 mb-6 animate-slide-up">
+  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-base p-4 sm:p-6 md:p-8 mb-6 animate-slide-up min-w-0 border border-transparent dark:border-slate-700">
     {title && (
       <div className="mb-6 pb-4 border-b border-gray-100">
-        <h2 className="text-sm font-bold text-gray-600 uppercase tracking-widest mb-1">{title}</h2>
-        {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
+        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-widest mb-1 break-words">{title}</h2>
+        {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400 break-words">{subtitle}</p>}
       </div>
     )}
     {children}
@@ -36,9 +36,9 @@ const Section = ({ title, subtitle, children }) => (
 );
 
 const Field = ({ label, value, highlight }) => (
-  <div className={`rounded-lg p-3 transition-colors ${highlight ? 'bg-blue-50 border border-blue-100' : 'bg-gray-50'}`}>
-    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
-    <p className="text-sm font-bold text-gray-900">{value ?? '—'}</p>
+  <div className={`rounded-lg p-3 transition-colors min-w-0 ${highlight ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800' : 'bg-gray-50 dark:bg-slate-700/50'}`}>
+    <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 break-words">{label}</p>
+    <p className="text-sm font-bold text-gray-900 dark:text-white break-words">{value ?? '-'}</p>
   </div>
 );
 
@@ -180,18 +180,18 @@ export const InspectionDetailPage = () => {
 </button>
         
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+          <div className="min-w-0">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 break-words">
               Inspection
             </h1>
-            <p className="text-gray-500 text-sm md:text-base">
+            <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base break-words">
               Ticket #{inspection.ticket_number} • {inspection.vessel_name}
             </p>
-            <p className="text-gray-400 text-xs md:text-sm mt-1">{inspection.terminal}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm mt-1 break-words">{inspection.terminal}</p>
           </div>
 
           {/* Status & Actions */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="grid grid-cols-1 sm:flex gap-2 w-full md:w-auto">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border
               ${inspection.status === 'draft' ? 'bg-gray-100 text-gray-800 border-gray-200' : ''}
               ${inspection.status === 'submitted' ? 'bg-amber-100 text-amber-800 border-amber-200' : ''}
@@ -206,11 +206,11 @@ export const InspectionDetailPage = () => {
 </button>
             )}
 
-            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors inline-flex items-center gap-2">Delete
+            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors inline-flex items-center justify-center gap-2 w-full sm:w-auto">Delete
 </button>
-            <button onClick={handlePrintPdf} className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors inline-flex items-center gap-2">Print PDF
+            <button onClick={handlePrintPdf} className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors inline-flex items-center justify-center gap-2 w-full sm:w-auto">Print PDF
 </button>
-            <button onClick={handleDownloadPdf} className="px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors inline-flex items-center gap-2">Download
+            <button onClick={handleDownloadPdf} className="px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors inline-flex items-center justify-center gap-2 w-full sm:w-auto">Download
 </button>
             {false && <button onClick={async () => {
               try {
@@ -238,7 +238,7 @@ export const InspectionDetailPage = () => {
       {/* HEADER DETAILS SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
       <Section title="Dip Ticket Header">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <Field label="Ticket Number"   value={inspection.ticket_number} highlight />
           <Field label="Tank No"         value={inspection.tank_no} />
           <Field label="Vessel"          value={inspection.vessel_name} />
@@ -330,7 +330,7 @@ export const InspectionDetailPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {inspection.calculation && (
         <Section title="Calculations">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             <Field label="Gross Volume" value={`${inspection.calculation.gross_volume} bbl`} />
             <Field label="Water Volume" value={`${inspection.calculation.water_volume} bbl`} />
             <Field label="Net Volume" value={`${inspection.calculation.net_volume} bbl`} highlight />

@@ -8,7 +8,7 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const SHIFTS = [{ value: 'day', label: 'Day' }, { value: 'night', label: 'Night' }, { value: 'custom', label: 'Custom' }];
 const LOCATIONS = ['KURASINI', 'KIGAMBONI'];
 
-const inputCls = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-slate-700 dark:text-white text-sm focus:bg-white dark:focus:bg-slate-600 transition outline-none';
+const inputCls = 'w-full min-w-0 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white text-base sm:text-sm focus:bg-white dark:focus:bg-slate-600 transition outline-none';
 
 const emptyForm = () => ({
   inspectors: [],
@@ -32,7 +32,6 @@ export const RosterFormPage = () => {
   const [inspectors, setInspectors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyForm());
-  const [selected, setSelected] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [inspectorSearch, setInspectorSearch] = useState('');
@@ -58,7 +57,6 @@ export const RosterFormPage = () => {
     try {
       const res = await rosterService.getRosterById(id);
       const r = res.data;
-      setSelected(r);
       setForm({
         inspectors: [],
         inspector: r.inspector,
@@ -177,15 +175,15 @@ export const RosterFormPage = () => {
           <ArrowLeft className="w-4 h-4" />Back to Roster
 </button>
 
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center">
+        <div className="flex items-start gap-4 min-w-0">
+          <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shrink-0">
             <CalendarDays className="w-6 h-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
               {isEdit ? 'Edit Roster Assignment' : 'New Roster Assignment'}
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-gray-500 dark:text-gray-300 mt-1 break-words">
               {isEdit ? 'Update inspector assignment details' : 'Create a new weekly assignment for inspectors'}
             </p>
           </div>
@@ -203,10 +201,10 @@ export const RosterFormPage = () => {
       {/* Form */}
       <form onSubmit={handleSave} className="space-y-6">
         {/* Section 1: Assignment Details */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 sm:p-6 min-w-0">
           <div className="flex items-center gap-2 mb-6">
             <div className="w-1 h-6 bg-[#8B1A1A] rounded-full" />
-            <p className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">Assignment Details</p>
+            <p className="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest break-words">Assignment Details</p>
           </div>
 
           <div className="space-y-4">
@@ -240,7 +238,7 @@ export const RosterFormPage = () => {
                       setDropdownOpen(o => !o);
                       setInspectorSearch('');
                     }}
-                    className={`w-full min-h-[40px] flex items-center justify-between px-3 py-2 border rounded-xl bg-white dark:bg-slate-700 text-sm transition ${
+                    className={`w-full min-h-[44px] flex items-center justify-between px-3 py-2 border rounded-xl bg-white dark:bg-slate-700 text-sm transition ${
                       dropdownOpen
                         ? 'border-[#8B1A1A] ring-2 ring-[#8B1A1A]/20'
                         : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
@@ -248,7 +246,7 @@ export const RosterFormPage = () => {
                   >
                     <div className="flex-1 flex flex-wrap gap-1.5 min-w-0 mr-2">
                       {form.inspectors.length === 0 ? (
-                        <span className="text-gray-400 text-sm">-- Select Inspectors --</span>
+                        <span className="text-gray-500 dark:text-gray-300 text-sm whitespace-nowrap">Select Inspectors</span>
                       ) : (
                         <>
                           {form.inspectors.slice(0, 3).map(id => {
@@ -421,16 +419,16 @@ export const RosterFormPage = () => {
         </div>
 
         {/* Section 2: Working Days */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 sm:p-6 min-w-0">
           <div className="flex items-center gap-2 mb-6">
             <div className="w-1 h-6 bg-[#8B1A1A] rounded-full" />
-            <p className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">
+            <p className="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest break-words">
               Working Days <span className="text-red-500">*</span>
             </p>
           </div>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-7 gap-2">
+            <div className="roster-days-grid grid gap-2">
               {DAYS.map(d => (
                 <button
                   key={d}
@@ -462,10 +460,10 @@ export const RosterFormPage = () => {
         </div>
 
         {/* Section 3: Shift & Location */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 sm:p-6 min-w-0">
           <div className="flex items-center gap-2 mb-6">
             <div className="w-1 h-6 bg-[#8B1A1A] rounded-full" />
-            <p className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">
+            <p className="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest break-words">
               Shift & Location
             </p>
           </div>
@@ -503,10 +501,10 @@ export const RosterFormPage = () => {
         </div>
 
         {/* Section 4: Vessel & Task */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 sm:p-6 min-w-0">
           <div className="flex items-center gap-2 mb-6">
             <div className="w-1 h-6 bg-[#8B1A1A] rounded-full" />
-            <p className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">
+            <p className="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest break-words">
               Vessel & Task
             </p>
           </div>
@@ -561,10 +559,10 @@ export const RosterFormPage = () => {
 
         {/* Section 5: Status */}
         {!isEdit && (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 sm:p-6 min-w-0">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-1 h-6 bg-[#8B1A1A] rounded-full" />
-              <p className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">Dispatch</p>
+              <p className="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest break-words">Dispatch</p>
             </div>
 
             <div className="flex gap-4 flex-col md:flex-row">

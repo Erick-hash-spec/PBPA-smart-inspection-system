@@ -334,17 +334,17 @@ const ProvisionalOutturnReportFormPage = () => {
         {/* Summary Table */}
         <div className="lg:col-span-2">
           {/* Add Item Section */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Add Terminal/Item</h2>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 sm:p-6 mb-6 min-w-0">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 break-words">Add Terminal/Item</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="sm:col-span-2 min-w-0">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 break-words">
                   Terminal Name
                 </label>
                 <select
                   value={newItem.terminal_name}
                   onChange={(e) => setNewItem({ ...newItem, terminal_name: e.target.value, terminal_custom: '' })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full min-w-0 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 >
                   <option value="">-- Select Terminal --</option>
                   {TERMINAL_OPTIONS.map(t => (
@@ -356,7 +356,7 @@ const ProvisionalOutturnReportFormPage = () => {
                     type="text"
                     value={newItem.terminal_custom}
                     onChange={(e) => setNewItem({ ...newItem, terminal_custom: e.target.value })}
-                    className="w-full mt-2 px-4 py-2 border border-amber-400 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full min-w-0 mt-2 px-4 py-2 border border-amber-400 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                     placeholder="Type custom terminal name"
                     autoFocus
                   />
@@ -364,8 +364,8 @@ const ProvisionalOutturnReportFormPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ship Volume (m³)
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 break-words">
+                  Ship Volume (m3)
                 </label>
                 <input
                   type="number"
@@ -374,12 +374,12 @@ const ProvisionalOutturnReportFormPage = () => {
                   onChange={(e) =>
                     setNewItem({ ...newItem, ship_volume_m3: parseFloat(e.target.value) })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full min-w-0 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 break-words">
                   Ship Weight (MT)
                 </label>
                 <input
@@ -389,13 +389,13 @@ const ProvisionalOutturnReportFormPage = () => {
                   onChange={(e) =>
                     setNewItem({ ...newItem, ship_weight_mt: parseFloat(e.target.value) })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full min-w-0 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Shore Volume (m³)
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 break-words">
+                  Shore Volume (m3)
                 </label>
                 <input
                   type="number"
@@ -404,12 +404,12 @@ const ProvisionalOutturnReportFormPage = () => {
                   onChange={(e) =>
                     setNewItem({ ...newItem, shore_volume_m3: parseFloat(e.target.value) })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full min-w-0 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 break-words">
                   Shore Weight (MT)
                 </label>
                 <input
@@ -419,27 +419,27 @@ const ProvisionalOutturnReportFormPage = () => {
                   onChange={(e) =>
                     setNewItem({ ...newItem, shore_weight_mt: parseFloat(e.target.value) })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full min-w-0 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             <button
               onClick={handleAddItem}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition"
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition"
             >
               + Add Item
 </button>
           </div>
 
           {/* Summary Table */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800">Summary Table</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white break-words">Summary Table</h2>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[900px]">
                 <thead className="bg-amber-700 text-white">
                   <tr>
                     <th className="px-4 py-3 text-left font-semibold">Terminal/Item</th>

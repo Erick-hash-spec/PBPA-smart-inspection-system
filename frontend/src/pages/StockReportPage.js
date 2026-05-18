@@ -5,7 +5,8 @@ import { TERMINAL_OPTIONS, PRODUCT_OPTIONS } from '../components/FormOptions';
 import { SubmitModal } from '../components/SubmitModal';
 import { Plus } from 'lucide-react';
 
-const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:bg-white text-sm transition';
+const inputCls = 'w-full min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:bg-white dark:focus:bg-slate-600 text-base sm:text-sm transition';
+const actionCls = 'inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold leading-tight transition whitespace-normal break-words';
 
 const emptyItem = (sn) => ({
   sn, depot_name: '', date: new Date().toISOString().split('T')[0],
@@ -71,9 +72,9 @@ export const StockReportListPage = () => {
         />
       )}
       <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Stock Reports</h1>
-          <p className="text-gray-500 text-sm mt-1">PBPA daily petroleum stock reports</p>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">Stock Reports</h1>
+          <p className="text-gray-600 dark:text-gray-300 text-sm mt-1 break-words">PBPA daily petroleum stock reports</p>
         </div>
         <button onClick={() => navigate('/stock-reports/new')}
           className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition">
@@ -93,41 +94,41 @@ export const StockReportListPage = () => {
       ) : (
         <div className="space-y-3">
           {reports.map(r => (
-            <div key={r.id} className="bg-white rounded-2xl shadow-sm p-5 flex items-center justify-between gap-4 flex-wrap hover:shadow-md transition">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-bold text-gray-900">#{r.report_number}</span>
+            <div key={r.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:shadow-md transition min-w-0">
+              <div className="min-w-0 w-full sm:w-auto">
+                <div className="flex flex-wrap items-center gap-2 mb-1 min-w-0">
+                  <span className="font-bold text-gray-900 dark:text-white break-words">#{r.report_number}</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${r.status === 'final' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
                     {r.status === 'final' ? 'Final' : 'Draft'}
 </span>
                 </div>
-                <p className="text-sm text-gray-500">Date: {r.report_date} · Total: {Number(r.total_ltrs || 0).toLocaleString()} Ltrs</p>
-                <p className="text-xs text-gray-400">By {r.created_by_name || 'Inspector'}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 break-words">Date: {r.report_date} / Total: {Number(r.total_ltrs || 0).toLocaleString()} Ltrs</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 break-words">By {r.created_by_name || 'Inspector'}</p>
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="grid grid-cols-1 sm:flex gap-2 w-full sm:w-auto">
                 <button onClick={() => navigate(`/stock-reports/${r.id}`)}
-                  className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition">View
+                  className={`${actionCls} w-full sm:w-auto bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/40`}>View
 </button>
                 {r.status === 'draft' && (
                   <button onClick={() => navigate(`/stock-reports/${r.id}/edit`)}
-                    className="bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-amber-100 transition">Edit
+                    className={`${actionCls} w-full sm:w-auto bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-200 border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40`}>Edit
 </button>
                 )}
                 <button onClick={() => handleDownload(r)}
-                  className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition">Download
+                  className={`${actionCls} w-full sm:w-auto bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-200 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40`}>Download
 </button>
                 {r.status === 'final' && (
                     submittedIds.has(r.id) ? (
-                      <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-green-200">Submitted
+                      <span className={`${actionCls} w-full sm:w-auto bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-200 border-green-200 dark:border-green-700`}>Submitted
 </span>
                     ) : (
                       <button onClick={() => setSubmitTarget(r)}
-                        className="bg-[#8B1A1A] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-[#7a1717] transition">Submit
+                        className={`${actionCls} w-full sm:w-auto bg-[#8B1A1A] text-white border-[#8B1A1A] hover:bg-[#7a1717]`}>Submit
 </button>
                     )
                   )}
                 <button onClick={() => handleDelete(r.id)}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
+                  className={`${actionCls} w-full sm:w-auto bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-200 dark:border-red-700`}>Delete</button>
               </div>
             </div>
           ))}
@@ -197,30 +198,30 @@ export const StockReportFormPage = () => {
 
   return (
     <div className="p-4 md:p-6 max-w-full mx-auto animate-fade-in">
-      <div className="mb-5">
+      <div className="mb-5 min-w-0">
         <button onClick={() => navigate('/stock-reports')} className="text-sm text-blue-600 hover:underline mb-2">← Back</button>
-        <h1 className="text-2xl font-bold text-gray-900">{isEdit ? 'Edit Stock Report' : 'New Stock Report'}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white break-words">{isEdit ? 'Edit Stock Report' : 'New Stock Report'}</h1>
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">{error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-sm p-5">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4 sm:p-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Report Date *</label>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5 uppercase tracking-wide break-words">Report Date *</label>
               <input type="date" value={reportDate} onChange={e => setReportDate(e.target.value)} required className={inputCls} />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Notes</label>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5 uppercase tracking-wide break-words">Notes</label>
               <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className={inputCls} placeholder="Optional notes" />
             </div>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs min-w-[1100px]">
               <thead>
@@ -314,11 +315,11 @@ export const StockReportFormPage = () => {
 
         <div className="flex gap-3">
           <button type="submit" disabled={loading}
-            className="bg-[#8B1A1A] hover:bg-[#7a1717] text-white px-8 py-3 rounded-xl font-semibold disabled:opacity-50 transition">
-            {loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Report'}
+            className="bg-[#8B1A1A] hover:bg-[#7a1717] text-white px-8 py-3 rounded-xl font-semibold disabled:opacity-50 transition whitespace-normal">
+            {loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Report'}
 </button>
           <button type="button" onClick={() => navigate('/stock-reports')}
-            className="bg-gray-100 text-gray-700 px-8 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">Cancel</button>
+            className="bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-100 px-8 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition whitespace-normal">Cancel</button>
         </div>
       </form>
     </div>
@@ -358,7 +359,7 @@ export const StockReportDetailPage = () => {
 
   return (
     <div className="p-4 md:p-6 max-w-full mx-auto animate-fade-in">
-      <button onClick={() => navigate('/stock-reports')} className="text-sm text-blue-600 hover:underline mb-4">← Back</button>
+      <button onClick={() => navigate('/stock-reports')} className="text-sm text-blue-700 dark:text-blue-300 hover:underline mb-4">Back</button>
 
       {submitOpen && (
         <SubmitModal
@@ -373,35 +374,35 @@ export const StockReportDetailPage = () => {
         />
       )}
 
-      <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Stock Report #{report.report_number}</h1>
-          <p className="text-gray-500 text-sm mt-1">Date: {report.report_date} · By {report.created_by_name}</p>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white break-words">Stock Report #{report.report_number}</h1>
+          <p className="text-gray-600 dark:text-gray-300 text-sm mt-1 break-words">Date: {report.report_date} / By {report.created_by_name}</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="grid grid-cols-1 sm:flex gap-2 w-full sm:w-auto">
           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${report.status === 'final' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
             {report.status === 'final' ? <>Final</> : <>Draft</>}
 </span>
           {report.status === 'draft' && (
             <>
               <button onClick={() => navigate(`/stock-reports/${id}/edit`)}
-                className="bg-amber-50 text-amber-700 border border-amber-200 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-100 transition">Edit</button>
+                className={`${actionCls} w-full sm:w-auto bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-200 border-amber-200 dark:border-amber-700 text-sm hover:bg-amber-100 dark:hover:bg-amber-900/40`}>Edit</button>
               <button onClick={handleFinalize}
-                className="bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition">Finalize</button>
+                className={`${actionCls} w-full sm:w-auto bg-green-600 text-white border-green-700 text-sm hover:bg-green-700`}>Finalize</button>
             </>
           )}
           <button onClick={handleDownload}
-            className="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Download
+            className={`${actionCls} w-full sm:w-auto bg-indigo-600 text-white border-indigo-700 text-sm hover:bg-indigo-700`}>Download
 </button>
           {report.status === 'final' && (
             <button onClick={() => setSubmitOpen(true)}
-              className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Submit
+              className={`${actionCls} w-full sm:w-auto bg-[#8B1A1A] hover:bg-[#7a1717] text-white border-[#8B1A1A] text-sm`}>Submit
 </button>
           )}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs min-w-[1100px]">
             <thead>
