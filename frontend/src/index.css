@@ -5,7 +5,7 @@
 /* ── Reset ─────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; font-size: 17px; }
+html { scroll-behavior: smooth; font-size: 16px; }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -14,8 +14,8 @@ body {
   background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0fdf4 100%);
   min-height: 100vh;
   color: #1e293b;
-  line-height: 1.65;
-  font-size: 1.0625rem;
+  line-height: 1.5;
+  font-size: 1rem;
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────────────────── */
@@ -1235,5 +1235,49 @@ body,
   .app-main .bg-white.dark\:bg-slate-800.rounded-2xl {
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
+  }
+}
+
+/* Mobile light mode contrast pass. */
+@media (max-width: 767px) {
+  html:not(.dark) .app-main {
+    color: #172033;
+  }
+
+  html:not(.dark) .app-main .text-gray-300,
+  html:not(.dark) .app-main .text-slate-300 {
+    color: #64748b !important;
+  }
+
+  html:not(.dark) .app-main .text-gray-400,
+  html:not(.dark) .app-main .text-slate-400 {
+    color: #475569 !important;
+  }
+
+  html:not(.dark) .app-main .text-gray-500,
+  html:not(.dark) .app-main .text-slate-500 {
+    color: #334155 !important;
+  }
+
+  html:not(.dark) .app-main .text-gray-600,
+  html:not(.dark) .app-main .text-slate-600 {
+    color: #1f2937 !important;
+  }
+
+  html:not(.dark) .app-main .mobile-card-label,
+  html:not(.dark) .app-main .section-title,
+  html:not(.dark) .app-main thead th {
+    color: #475569 !important;
+  }
+
+  html:not(.dark) .app-main .mobile-card-value,
+  html:not(.dark) .app-main tbody td {
+    color: #1f2937 !important;
+  }
+
+  html:not(.dark) .app-main input::placeholder,
+  html:not(.dark) .app-main textarea::placeholder {
+    color: #64748b !important;
+    opacity: 1;
   }
 }
