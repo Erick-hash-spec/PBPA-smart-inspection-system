@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { inspectionService } from '../services/api';
 import {
   FileText, XCircle, ClipboardList,
-  Moon, Sun, TrendingUp, Calendar, Activity, Shield, Calculator, Package, Ship, Award
+  TrendingUp, Calendar, Activity, Shield, Calculator, Package, Ship, Award
 } from 'lucide-react';
-import { useDarkMode } from '../contexts/DarkModeContext';
 
 const StatCard = ({ icon: Icon, title, value, accent, onClick }) => {
   const CardTag = onClick ? 'button' : 'div';
@@ -55,7 +54,6 @@ const documentCountCards = [
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
-  const { isDarkMode, setIsDarkMode } = useDarkMode();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -104,7 +102,7 @@ export const DashboardPage = () => {
     <div className="p-6 md:p-8 max-w-7xl mx-auto animate-fade-in">
       
       {/* ────────────────────────────────────────────────────────────────── */}
-      {/* HEADER SECTION WITH DARK MODE TOGGLE */}
+      {/* HEADER SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -116,17 +114,6 @@ export const DashboardPage = () => {
             {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="self-start p-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover-scale sm:self-auto"
-          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        >
-          {isDarkMode ? (
-            <Sun className="w-5 h-5 text-yellow-500" />
-          ) : (
-            <Moon className="w-5 h-5 text-gray-600" />
-          )}
-</button>
       </div>
 
       {/* ────────────────────────────────────────────────────────────────── */}

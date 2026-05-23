@@ -4,9 +4,8 @@ import { authService } from '../services/api';
 import {
   LayoutDashboard, ClipboardList, Shield, Calculator, Award,
   Menu, Bell, Ship, FileText, Package,
-  Moon, Sun, LogOut, X, Droplets, Users, CalendarDays,
+  LogOut, X, Droplets, Users, CalendarDays,
 } from 'lucide-react';
-import { useDarkMode } from '../contexts/DarkModeContext';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,7 +30,6 @@ const adminNavItems = [
 
 export const Navigation = () => {
   const navigate = useNavigate();
-  const { isDarkMode, setIsDarkMode } = useDarkMode();
   const [open, setOpen] = useState(false);
   const isAuthenticated = authService.isAuthenticated();
   const userRole = localStorage.getItem('user_role');
@@ -154,14 +152,6 @@ export const Navigation = () => {
             <p className="text-white/40 text-[10px] capitalize">{userRole}</p>
           </div>
         </div>
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-white/75 hover:bg-white/12 hover:text-white transition-all"
-        >
-          {isDarkMode
-            ? <><Sun className="w-4 h-4 text-yellow-300" /><span>Light Mode</span></>
-            : <><Moon className="w-4 h-4 text-blue-200" /><span>Dark Mode</span></>}
-        </button>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-white/75 hover:bg-red-500/20 hover:text-white transition-all"
