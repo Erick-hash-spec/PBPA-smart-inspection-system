@@ -53,7 +53,7 @@ export const Navigation = () => {
       <div className="px-4 pt-5 pb-4 border-b border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-inner" style={{background:'rgba(255,255,255,0.2)'}}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-inner" style={{background:'rgba(255,255,255,0.2)'}}>
               <Droplets className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -68,7 +68,7 @@ export const Navigation = () => {
       </div>
 
       {/* Nav Links */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-1">
+      <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-0.5">
         {/* General */}
         <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5 mt-1">General</p>
         {navItems.map(({ to, label, icon: Icon }) => (
@@ -175,7 +175,7 @@ export const Navigation = () => {
       </button>
 
       {/* Desktop sidebar */}
-      <aside className="gradient-primary fixed inset-y-0 left-0 z-40 hidden md:flex flex-col w-60 shadow-xl">
+      <aside className="gradient-primary fixed inset-y-0 left-0 z-40 hidden md:flex flex-col w-64 shadow-2xl">
         <SidebarContent />
       </aside>
 

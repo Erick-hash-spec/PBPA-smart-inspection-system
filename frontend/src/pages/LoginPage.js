@@ -40,21 +40,21 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] overflow-y-auto px-4 py-4 sm:py-6 lg:py-8" style={{background:'linear-gradient(135deg,#4a0e0e 0%,#6b1414 35%,#8B1A1A 65%,#a52020 100%)'}}>
+    <div className="min-h-screen overflow-y-auto px-4 py-6 sm:py-8 lg:py-10" style={{background:'linear-gradient(135deg,#4a0e0e 0%,#6b1414 35%,#8B1A1A 65%,#a52020 100%)'}}>
       <div className="pointer-events-none fixed inset-0 opacity-5" style={{backgroundImage:'linear-gradient(rgba(255,255,255,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.18) 1px,transparent 1px)',backgroundSize:'40px 40px'}} />
 
-      <div className="relative mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-md flex-col justify-center sm:min-h-[calc(100dvh-3rem)] lg:min-h-[calc(100dvh-4rem)]">
+      <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-md flex-col justify-center sm:min-h-[calc(100vh-4rem)]">
         {/* Brand header */}
-        <div className="text-center mb-4 sm:mb-5">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl mb-3 shadow-2xl" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,0.25)'}}>
-            <Droplets className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+        <div className="text-center mb-5 sm:mb-7">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl mb-4 shadow-2xl" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,0.25)'}}>
+            <Droplets className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-1 tracking-tight">Smart Reporting</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2 tracking-tight">Smart Reporting</h1>
           <p className="text-white/70 text-xs sm:text-sm font-medium tracking-wide uppercase">PBPA Petroleum Inspection System</p>
         </div>
 
         {/* Feature pills */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
           {[{icon:Zap,label:'Real-time'},{icon:Shield,label:'Secure'},{icon:Droplets,label:'Petroleum'}].map(({icon:Icon,label})=>(
             <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/85" style={{background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.15)'}}>
               <Icon className="w-3 h-3" />{label}
@@ -63,9 +63,9 @@ export const LoginPage = () => {
         </div>
 
         {/* Glass card */}
-        <div className="rounded-2xl shadow-2xl p-5 sm:p-6" style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)'}}>
+        <div className="rounded-2xl shadow-2xl p-5 sm:p-8" style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)'}}>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
-          <p className="text-gray-500 text-sm mb-4 sm:mb-5">Sign in to access your dashboard</p>
+          <p className="text-gray-500 text-sm mb-5 sm:mb-7">Sign in to access your dashboard</p>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl mb-5 flex items-start gap-2.5 text-sm">
@@ -74,14 +74,14 @@ export const LoginPage = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Username</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all sm:py-3.5"
                 placeholder="Enter your username"
                 required
                 disabled={loading}
@@ -95,7 +95,7 @@ export const LoginPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all pr-12"
+                  className="w-full px-4 py-3 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:bg-white text-gray-900 text-sm transition-all pr-12 sm:py-3.5"
                   placeholder="Enter your password"
                   required
                   disabled={loading}
@@ -113,7 +113,7 @@ export const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full text-white font-bold py-3.5 rounded-2xl transition-all disabled:opacity-50 mt-2 text-sm tracking-wide shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
+              className="w-full text-white font-bold py-3.5 rounded-2xl transition-all disabled:opacity-50 mt-2 text-sm tracking-wide shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 sm:py-4"
               style={{background:'linear-gradient(135deg,#8B1A1A 0%,#a52020 100%)'}}
             >
               {loading ? (
