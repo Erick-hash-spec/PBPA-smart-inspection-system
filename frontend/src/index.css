@@ -454,6 +454,65 @@ tbody td { padding: 0.875rem 1rem; font-size: 1rem; color: #334155; }
 }
 
 /* ─── STAT CARD GRADIENTS ──────────────────────────────────────────────– */
+/* Light mode readability: keep muted text readable now that the app is light-only. */
+html:not(.dark) {
+  color-scheme: light;
+}
+
+html:not(.dark) body {
+  color: #172033;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #667085;
+  opacity: 1;
+}
+
+html:not(.dark) .text-gray-400,
+html:not(.dark) .text-slate-400 {
+  color: #64748b !important;
+}
+
+html:not(.dark) .text-gray-500,
+html:not(.dark) .text-slate-500 {
+  color: #475569 !important;
+}
+
+html:not(.dark) .text-gray-600,
+html:not(.dark) .text-slate-600 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .gradient-primary [class*="text-white/30"],
+html:not(.dark) .gradient-primary [class*="text-white/40"],
+html:not(.dark) .gradient-primary [class*="text-white/50"] {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+html:not(.dark) .gradient-primary [class*="text-white/60"],
+html:not(.dark) .gradient-primary [class*="text-white/70"],
+html:not(.dark) .gradient-primary [class*="text-white/75"],
+html:not(.dark) .gradient-primary [class*="text-white/85"] {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+html:not(.dark) [style*="#4a0e0e"] [class*="text-white/70"],
+html:not(.dark) [style*="#4a0e0e"] [class*="text-white/85"] {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+html:not(.dark) .gradient-primary .text-white,
+html:not(.dark) [style*="#4a0e0e"] .text-white {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .bg-white,
+html:not(.dark) .card,
+html:not(.dark) .section-card {
+  color: #172033;
+}
+
 .stat-gradient-blue {
   background: linear-gradient(135deg, rgba(30, 144, 255, 0.1) 0%, rgba(0, 150, 255, 0.05) 100%);
   border: 1px solid rgba(30, 144, 255, 0.2);
