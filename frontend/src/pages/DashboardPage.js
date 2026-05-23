@@ -13,7 +13,7 @@ const StatCard = ({ icon: Icon, title, value, accent, onClick }) => {
   <CardTag
     type={onClick ? 'button' : undefined}
     onClick={onClick}
-    className={`dashboard-stat-card relative w-full min-h-[104px] sm:min-h-[112px] text-left rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 group overflow-hidden border bg-white dark:bg-slate-800 ${onClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900' : ''}`}
+    className={`dashboard-stat-card group ${onClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900' : ''}`}
     style={{
       borderColor: `${accent}66`,
       boxShadow: `0 10px 28px ${accent}18`,
@@ -36,7 +36,7 @@ const StatCard = ({ icon: Icon, title, value, accent, onClick }) => {
 };
 
 const FilterBadge = ({ label, isActive, onClick }) => (
-  <button onClick={onClick} className={`filter-badge ${isActive ? 'active' : ''}`}>
+  <button onClick={onClick} className={`filter-badge dashboard-filter-badge ${isActive ? 'active' : ''}`}>
     <Calendar className="w-4 h-4" />
     {label}
 </button>
@@ -99,12 +99,12 @@ export const DashboardPage = () => {
     );
 
   return (
-    <div className="p-5 md:p-6 max-w-7xl mx-auto animate-fade-in">
+    <div className="dashboard-page animate-fade-in">
       
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* HEADER SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="dashboard-header">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Welcome back, {username}
@@ -119,12 +119,12 @@ export const DashboardPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* TIME FILTER SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="dashboard-filter-section">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
           <TrendingUp className="w-4 h-4" />
           <span>Filter by Period:</span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="dashboard-filter-list">
           <FilterBadge label="All Time" isActive={timeFilter === 'all'} onClick={() => setTimeFilter('all')} />
           <FilterBadge label="Daily" isActive={timeFilter === 'daily'} onClick={() => setTimeFilter('daily')} />
           <FilterBadge label="Weekly" isActive={timeFilter === 'weekly'} onClick={() => setTimeFilter('weekly')} />
@@ -142,7 +142,7 @@ export const DashboardPage = () => {
             <Activity className="w-4 h-4" />
             Overview
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 mb-8">
+          <div className="dashboard-card-grid">
             {documentCountCards.map(({ key, title, href, icon, accent }) => (
               <StatCard
                 key={key}
