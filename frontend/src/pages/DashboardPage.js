@@ -13,7 +13,7 @@ const StatCard = ({ icon: Icon, title, value, accent, onClick }) => {
   <CardTag
     type={onClick ? 'button' : undefined}
     onClick={onClick}
-    className={`dashboard-stat-card relative w-full min-h-[112px] sm:min-h-[124px] text-left rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 group overflow-hidden border bg-white dark:bg-slate-800 ${onClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900' : ''}`}
+    className={`dashboard-stat-card relative w-full min-h-[104px] sm:min-h-[112px] text-left rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 group overflow-hidden border bg-white dark:bg-slate-800 ${onClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900' : ''}`}
     style={{
       borderColor: `${accent}66`,
       boxShadow: `0 10px 28px ${accent}18`,
@@ -24,10 +24,10 @@ const StatCard = ({ icon: Icon, title, value, accent, onClick }) => {
     <div className="absolute -right-10 -bottom-12 w-28 h-28 rounded-full opacity-10" style={{ background: accent }} />
     <div className="relative flex h-full items-start justify-between gap-3">
       <div className="flex min-w-0 flex-1 flex-col justify-between">
-        <p className="text-[11px] sm:text-[11px] font-extrabold text-slate-700 dark:text-slate-200 mb-3 uppercase leading-snug">{title}</p>
-        <p className="text-3xl sm:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-none">{value ?? '--'}</p>
+        <p className="text-[11px] font-extrabold text-slate-700 dark:text-slate-200 mb-3 uppercase leading-snug">{title}</p>
+        <p className="text-3xl font-black text-slate-950 dark:text-white tracking-tight leading-none">{value ?? '--'}</p>
       </div>
-      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform" style={{background:accent}}>
+      <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform" style={{background:accent}}>
         <Icon className="w-5 h-5 text-white" />
       </div>
     </div>
@@ -99,14 +99,14 @@ export const DashboardPage = () => {
     );
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto animate-fade-in">
+    <div className="p-5 md:p-6 max-w-7xl mx-auto animate-fade-in">
       
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* HEADER SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Welcome back, {username}
           </h1>
           <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base flex items-center gap-2">
@@ -119,7 +119,7 @@ export const DashboardPage = () => {
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* TIME FILTER SECTION */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
           <TrendingUp className="w-4 h-4" />
           <span>Filter by Period:</span>
@@ -142,7 +142,7 @@ export const DashboardPage = () => {
             <Activity className="w-4 h-4" />
             Overview
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3 sm:gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 mb-8">
             {documentCountCards.map(({ key, title, href, icon, accent }) => (
               <StatCard
                 key={key}

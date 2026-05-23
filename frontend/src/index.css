@@ -1000,3 +1000,254 @@ body,
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Final responsive polish for deployed laptop and mobile layouts. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  background: #f4f7fb;
+}
+
+.app-main {
+  padding-top: 3.25rem;
+  background: #f4f7fb;
+}
+
+.app-main > [class*="max-w-"] {
+  max-width: min(100%, 1500px) !important;
+  width: 100%;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.app-main > div[class*="p-"],
+.app-main > div[class*="md:p-"] {
+  padding: clamp(1rem, 1.4vw, 1.5rem) !important;
+}
+
+.app-main .rounded-2xl,
+.card,
+.section-card {
+  border-radius: 0.875rem;
+}
+
+.app-main .shadow-2xl,
+.app-main .shadow-xl {
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08) !important;
+}
+
+.app-main .shadow-lg,
+.app-main .shadow-md,
+.app-main .shadow-sm,
+.card,
+.section-card {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06) !important;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-title,
+.app-main h1 {
+  font-size: clamp(1.45rem, 2.25vw, 2rem);
+  letter-spacing: 0;
+}
+
+.app-main h2 {
+  font-size: clamp(1.15rem, 1.6vw, 1.5rem);
+  letter-spacing: 0;
+}
+
+.app-main p,
+.app-main td,
+.app-main th {
+  line-height: 1.45;
+}
+
+.app-main .p-16 {
+  padding: clamp(2rem, 4vw, 3rem) !important;
+}
+
+.dashboard-stat-card {
+  min-height: 6.5rem !important;
+  border-radius: 0.875rem !important;
+}
+
+.filter-badge {
+  border-radius: 0.875rem;
+  min-height: 2.5rem;
+}
+
+.overflow-x-auto {
+  max-width: 100%;
+}
+
+.app-main table {
+  font-size: 0.875rem;
+}
+
+.app-main table th,
+.app-main table td {
+  padding: 0.75rem 0.875rem;
+}
+
+@media (min-width: 768px) and (max-width: 1439px) {
+  .app-main > div[class*="p-"],
+  .app-main > div[class*="md:p-"] {
+    padding: 1.25rem !important;
+  }
+
+  .app-main .grid {
+    gap: 1rem;
+  }
+
+  .app-main .p-8 {
+    padding: 1.25rem !important;
+  }
+
+  .app-main .p-6 {
+    padding: 1rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    line-height: 1.45;
+  }
+
+  .app-main {
+    padding-top: 3.75rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  header.fixed {
+    height: 3.5rem !important;
+    padding-left: 4rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .app-main > [class*="max-w-"],
+  .app-main > div {
+    max-width: 100% !important;
+    width: 100%;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .app-main > div[class*="p-"],
+  .app-main > div[class*="md:p-"] {
+    padding: 0.875rem !important;
+  }
+
+  .page-header,
+  .app-main > div > .flex.items-center.justify-between,
+  .app-main > div > .flex.items-start.justify-between {
+    margin-bottom: 1rem;
+  }
+
+  .app-main h1,
+  .page-title {
+    font-size: 1.375rem;
+    line-height: 1.18;
+  }
+
+  .app-main h2 {
+    font-size: 1.125rem;
+  }
+
+  .app-main .rounded-2xl,
+  .app-main .rounded-xl,
+  .card,
+  .section-card {
+    border-radius: 0.75rem;
+  }
+
+  .app-main .p-16,
+  .app-main .p-8,
+  .app-main .p-6,
+  .app-main .p-5,
+  .app-main .p-4 {
+    padding: 0.875rem !important;
+  }
+
+  .app-main .gap-6,
+  .app-main .gap-5,
+  .app-main .gap-4 {
+    gap: 0.875rem !important;
+  }
+
+  .app-main .grid-cols-2,
+  .app-main .grid-cols-3,
+  .app-main .grid-cols-4,
+  .app-main .grid-cols-5,
+  .app-main .sm\:grid-cols-2,
+  .app-main .md\:grid-cols-2,
+  .app-main .md\:grid-cols-3,
+  .app-main .md\:grid-cols-4,
+  .app-main .xl\:grid-cols-3,
+  .app-main .xl\:grid-cols-4 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .app-main .grid-cols-\[1fr_1fr_auto\],
+  .app-main .md\:grid-cols-\[1fr_1fr_auto\],
+  .app-main .grid-cols-\[240px_1fr_1fr\] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .app-main input,
+  .app-main select,
+  .app-main textarea {
+    font-size: 16px;
+    min-height: 2.75rem;
+  }
+
+  .app-main button,
+  .app-main a[role="button"] {
+    min-height: 2.5rem;
+  }
+
+  .app-main .overflow-x-auto {
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-main table {
+    font-size: 0.8125rem;
+  }
+
+  .app-main table th,
+  .app-main table td {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .app-main [class*="min-w-[700px]"],
+  .app-main [class*="min-w-[760px]"],
+  .app-main [class*="min-w-[900px]"],
+  .app-main [class*="min-w-[1100px]"] {
+    min-width: min(860px, 230vw) !important;
+  }
+
+  .filter-badge {
+    flex: 1 1 calc(50% - 0.5rem);
+    justify-content: center;
+    min-width: 8rem;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .dashboard-stat-card {
+    min-height: 5.75rem !important;
+  }
+}

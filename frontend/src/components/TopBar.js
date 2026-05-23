@@ -45,7 +45,7 @@ export const TopBar = () => {
   const rb = roleBadge[userRole] || { bg: 'bg-gray-100', text: 'text-gray-700' };
 
   return (
-    <header className="fixed top-0 left-0 right-0 md:left-64 z-30 h-14 flex items-center justify-between pl-16 pr-3 md:px-6"
+    <header className="fixed top-0 left-0 right-0 md:left-60 z-30 h-13 flex items-center justify-between pl-16 pr-3 md:px-5"
       style={{background:'rgba(255,255,255,0.85)',backdropFilter:'blur(16px)',borderBottom:'1px solid rgba(0,0,0,0.06)',boxShadow:'0 1px 12px rgba(0,0,0,0.06)'}}>
       <div className="hidden md:block" />
 
