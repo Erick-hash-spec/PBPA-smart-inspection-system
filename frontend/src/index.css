@@ -1281,3 +1281,12 @@ body,
     opacity: 1;
   }
 }
+
+/* Dark mode mobile: ensure all page title headings are visible */
+@media (max-width: 767px) {
+  html.dark .app-main h1,
+  html.dark .app-main h2,
+  html.dark .app-main h3 {
+    color: #f1f5f9 !important;
+  }
+}

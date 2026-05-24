@@ -130,7 +130,7 @@ export const SubmissionsInboxPage = () => {
       <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-3xl font-bold text-gray-900">Inspection Reports</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Inspection Reports</h1>
             {unread > 0 && (
               <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">{unread}</span>
             )}

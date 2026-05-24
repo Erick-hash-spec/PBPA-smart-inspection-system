@@ -44,7 +44,7 @@ export const TankListPage = () => {
     <div className="p-6 md:p-8 max-w-7xl mx-auto animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tanks</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tanks</h1>
           <p className="text-gray-500 mt-1">{tanks.length} tank{tanks.length !== 1 ? 's' : ''} registered</p>
         </div>
       </div>

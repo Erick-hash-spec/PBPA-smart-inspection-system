@@ -46,24 +46,24 @@ export const LoginPage = () => {
       <div className="relative mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-md flex-col justify-center sm:min-h-[calc(100dvh-2.5rem)] lg:min-h-[calc(100dvh-3rem)]">
         {/* Brand header */}
         <div className="text-center mb-4 sm:mb-5">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl mb-3 shadow-2xl" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,0.25)'}}>
-            <Droplets className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-2xl mb-3 shadow-2xl" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,0.25)'}}>
+            <Droplets className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-1 tracking-tight">Smart Reporting</h1>
-          <p className="text-white/70 text-xs sm:text-sm font-medium tracking-wide uppercase">PBPA Petroleum Inspection System</p>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-2 tracking-tight whitespace-nowrap">Smart Reporting</h1>
+          <p className="text-white/70 text-sm sm:text-base lg:text-lg font-medium tracking-wide uppercase">PBPA Petroleum Inspection System</p>
         </div>
 
         {/* Feature pills */}
         <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4 sm:mb-5">
           {[{icon:Zap,label:'Real-time'},{icon:Shield,label:'Secure'},{icon:Droplets,label:'Petroleum'}].map(({icon:Icon,label})=>(
-            <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/85" style={{background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.15)'}}>
-              <Icon className="w-3 h-3" />{label}
+            <div key={label} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm sm:text-base font-semibold text-white/85" style={{background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.15)'}}>
+              <Icon className="w-4 h-4 sm:w-5 sm:h-5" />{label}
             </div>
           ))}
         </div>
 
         {/* Glass card */}
-        <div className="rounded-2xl shadow-2xl p-5 sm:p-6" style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)'}}>
+        <div className="rounded-2xl shadow-2xl p-7 sm:p-9 lg:p-10" style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)'}}>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
           <p className="text-gray-500 text-sm mb-4 sm:mb-5">Sign in to access your dashboard</p>
 
@@ -106,7 +106,7 @@ export const LoginPage = () => {
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-</button>
+                </button>
               </div>
             </div>
 
@@ -120,9 +120,9 @@ export const LoginPage = () => {
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Signing in...
-</span>
+                </span>
               ) : 'Sign In →'}
-</button>
+            </button>
           </form>
 
         </div>
