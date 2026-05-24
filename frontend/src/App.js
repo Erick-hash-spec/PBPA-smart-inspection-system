@@ -54,7 +54,7 @@ function App() {
   return (
     <DarkModeProvider>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <div className="min-h-screen overflow-x-hidden bg-gradient-surface dark:bg-gradient-dark">
+        <div className="min-h-screen overflow-x-hidden bg-gradient-surface">
           <Navigation />
           <TopBar />
           <main className={isAuthenticated ? 'app-main min-h-screen pt-14 md:ml-64' : 'min-h-screen overflow-x-hidden'}>

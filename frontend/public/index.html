@@ -4,7 +4,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#8B1A1A" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
     <meta name="description" content="Smart Petroleum Reporting System - Inspection and reporting platform for PBPA" />
+    <script>
+      document.documentElement.classList.remove('dark');
+      document.documentElement.style.colorScheme = 'light';
+      try { localStorage.setItem('darkMode', 'false'); } catch (e) {}
+    </script>
+    <style>
+      html,
+      body,
+      #root {
+        background-color: #ffffff;
+        color-scheme: light;
+      }
+    </style>
     
     <!-- Security Headers -->
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
