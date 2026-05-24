@@ -1307,6 +1307,13 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(submitted_by=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        """Only admins and supervisors can delete submissions."""
+        profile = get_or_create_user_profile(request.user)
+        if profile.role not in ('admin', 'supervisor'):
+            return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=False, methods=['get'])
     def unread_count(self, request):
         profile = get_or_create_user_profile(request.user)

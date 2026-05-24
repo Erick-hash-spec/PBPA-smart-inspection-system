@@ -9,7 +9,7 @@ import {
   stockReportService,
   submissionService,
 } from '../services/api';
-import { Bell, CheckCheck, FileText, Lock, Ruler, ClipboardList, Package, ShipWheel } from 'lucide-react';
+import { Bell, CheckCheck, FileText, Lock, Ruler, ClipboardList, Package, ShipWheel, Trash2 } from 'lucide-react';
 
 const DOC_TYPE_CONFIG = {
   dip_ticket:      { label: 'Dip Ticket',               icon: ClipboardList, color: 'text-blue-600',   bg: 'bg-blue-50',   href: (id) => `/inspections/${id}` },
@@ -47,6 +47,8 @@ export const SubmissionsInboxPage = () => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [filter, setFilter]           = useState('');
+  const userRole = localStorage.getItem('user_role');
+  const canDelete = ['admin', 'supervisor'].includes(userRole);
 
   useEffect(() => { fetchSubmissions(); }, []);
 
@@ -122,6 +124,16 @@ export const SubmissionsInboxPage = () => {
     }
   };
 
+  const handleDelete = async (sub) => {
+    if (!window.confirm(`Delete submission #${sub.doc_number} (${sub.doc_type})? This cannot be undone.`)) return;
+    try {
+      await submissionService.deleteSubmission(sub.id);
+      setSubmissions(prev => prev.filter(s => s.id !== sub.id));
+    } catch {
+      window.alert('Failed to delete this submission.');
+    }
+  };
+
   const filtered = filter ? submissions.filter(s => s.doc_type === filter) : submissions;
   const unread   = submissions.filter(s => !s.is_read).length;
 
@@ -172,28 +184,35 @@ export const SubmissionsInboxPage = () => {
             const cfg = DOC_TYPE_CONFIG[sub.doc_type] || DOC_TYPE_CONFIG.dip_ticket;
             const Icon = cfg.icon;
             return (
-              <div key={sub.id} className={`bg-white rounded-2xl shadow-sm p-4 flex items-center gap-4 transition hover:shadow-md ${!sub.is_read ? 'border-l-4 border-[#8B1A1A]' : ''}`}>
-                <div className={`w-10 h-10 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0`}>
-                  <Icon className={`w-5 h-5 ${cfg.color}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-gray-900">{cfg.label}</span>
-                    <span className="text-xs text-gray-400">#{sub.doc_number}</span>
-                    {!sub.is_read && <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">New</span>}
+              <div key={sub.id} className={`bg-white rounded-2xl shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-4 transition hover:shadow-md ${!sub.is_read ? 'border-l-4 border-[#8B1A1A]' : ''}`}>
+                <div className="flex items-start gap-3 md:items-center flex-1 min-w-0">
+                  <div className={`w-10 h-10 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0`}>
+                    <Icon className={`w-5 h-5 ${cfg.color}`} />
                   </div>
-                  <p className="text-sm text-gray-600 truncate">{sub.vessel_name} {sub.terminal ? `— ${sub.terminal}` : ''}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Submitted by {sub.submitted_by_name || 'Inspector'} · {new Date(sub.submitted_at).toLocaleString()}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-bold text-gray-900">{cfg.label}</span>
+                      <span className="text-xs text-gray-400">#{sub.doc_number}</span>
+                      {!sub.is_read && <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">New</span>}
+                    </div>
+                    <p className="text-sm text-gray-600 truncate">{sub.vessel_name} {sub.terminal ? `— ${sub.terminal}` : ''}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Submitted by {sub.submitted_by_name || 'Inspector'} · {new Date(sub.submitted_at).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 flex-wrap md:shrink-0">
                   <button onClick={() => handleView(sub)} className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition">View
 </button>
                   <button onClick={() => handleDownload(sub)} className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-green-100 transition">Download
 </button>
                   <button onClick={() => handlePrint(sub)} className="inline-flex items-center gap-1.5 bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">Print
 </button>
+                  {canDelete && (
+                    <button onClick={() => handleDelete(sub)} title="Delete submission" className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-100 transition">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );

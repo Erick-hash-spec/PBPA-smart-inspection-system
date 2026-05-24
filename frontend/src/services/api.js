@@ -243,6 +243,7 @@ export const submissionService = {
   markRead: (id) => axiosInstance.post(`/submissions/${id}/mark_read/`),
   markAllRead: () => axiosInstance.post('/submissions/mark_all_read/'),
   getUnreadCount: () => axiosInstance.get('/submissions/unread_count/'),
+  deleteSubmission: (id) => axiosInstance.delete(`/submissions/${id}/`),
 };
 
 // ========== VESSEL REPORT SERVICE ==========

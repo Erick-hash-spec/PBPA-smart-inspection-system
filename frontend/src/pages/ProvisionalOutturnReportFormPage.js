@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { provisionalOuturnService } from '../services/api';
+import { Trash2 } from 'lucide-react';
 
 const PORT_OPTIONS = ['KOJ1', 'KOJ2', 'SBM', 'Mtwara', 'Tanga'];
 
@@ -23,9 +24,6 @@ const TERMINAL_OPTIONS = [
   'SAHARA',
   'PUMA',
   'TOTAL',
-  'ENGEN',
-  'SHELL',
-  'CALTEX',
   'Other (type below)',
 ];
 
@@ -569,8 +567,11 @@ const ProvisionalOutturnReportFormPage = () => {
                         <td className="px-4 py-3 text-center border-l-2 border-gray-400">
                           <button
                             onClick={() => handleDeleteItem(idx)}
-                            className="text-red-600 hover:text-red-800 font-medium"
-                          >Remove</button>
+                            title="Delete row"
+                            className="inline-flex items-center justify-center text-red-600 hover:text-red-700 transition"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </td>
                       </tr>
                     );

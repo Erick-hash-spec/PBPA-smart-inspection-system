@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { sealIsolationReportService } from '../services/api';
 import { TerminalSelect, ProductSelect } from '../components/FormOptions';
+import { Trash2 } from 'lucide-react';
 
-const inputCls = 'w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white text-sm transition';
+const inputCls = 'w-full min-w-0 px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white text-sm transition';
 const Section = ({ title, children }) => (
   <div className="bg-white rounded-2xl shadow-sm p-6">
     <h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">{title}</h2>
@@ -124,13 +125,15 @@ export const SealIsolationReportFormPage = () => {
 
         <Section title="Location and Seal Numbers">
           <div className="space-y-3 mb-3">
-            <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
-              <span>Location</span><span>Seal Number</span><span>Action</span></div>
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.5rem] gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
+              <span>Location</span><span>Seal Number</span><span className="text-center">Action</span></div>
             {formData.entries.map((entry, i) => (
-              <div key={i} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2">
+              <div key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.5rem] items-center gap-2">
                 <input placeholder="Tank #01 inlet / manifold / outlet valve" value={entry.location} onChange={e=>handleEntryChange(i,'location',e.target.value)} className={inputCls} />
                 <input placeholder="Seal Number" value={entry.seal_number} onChange={e=>handleEntryChange(i,'seal_number',e.target.value)} className={inputCls} />
-                <button type="button" onClick={() => setFormData(prev=>({...prev,entries:prev.entries.filter((_,idx)=>idx!==i)}))} disabled={formData.entries.length===1} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40">Remove</button>
+                <button type="button" onClick={() => setFormData(prev=>({...prev,entries:prev.entries.filter((_,idx)=>idx!==i)}))} disabled={formData.entries.length===1} title="Delete row" className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-40 transition">
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>

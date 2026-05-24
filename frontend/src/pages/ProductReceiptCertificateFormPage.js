@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { productReceiptCertificateService, tankService, shoreTankCalculationService } from '../services/api';
 import { TerminalSelect, ProductSelect } from '../components/FormOptions';
+import { Trash2 } from 'lucide-react';
 
-const inputCls = 'w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white text-sm transition';
+const inputCls = 'w-full min-w-0 px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white text-sm transition';
 const Section = ({ title, children }) => (
   <div className="bg-white rounded-2xl shadow-sm p-6">
     <h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">{title}</h2>
@@ -189,15 +190,29 @@ export const ProductReceiptCertificateFormPage = () => {
 
         <Section title="Delivered / Received Quantities">
           <div className="space-y-3 mb-3">
-            <div className="grid grid-cols-5 gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
-              <span>Tank No.</span><span>Product</span><span>Weight (t)</span><span>Volume (L)</span></div>
+            <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_2.5rem] gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">
+              <span>Tank No.</span><span>Product</span><span>Weight (t)</span><span>Volume (L)</span><span className="text-center">Action</span></div>
             {formData.items.map((item, i) => (
-              <div key={i} className="grid grid-cols-5 gap-2">
-                <input type="text" placeholder="Tank No." value={item.tank_no} onChange={e=>handleItemChange(i,'tank_no',e.target.value)} className={inputCls} />
-                <ProductSelect value={item.product_name} onChange={v=>handleItemChange(i,'product_name',v)} inputCls={inputCls} required />
-                <input type="number" step="0.001" min="0" placeholder="0.000" value={item.weight_tonnage} onChange={e=>handleItemChange(i,'weight_tonnage',e.target.value)} required className={inputCls} />
-                <input type="number" step="0.001" min="0" placeholder="0.000" value={item.volume_liters} onChange={e=>handleItemChange(i,'volume_liters',e.target.value)} required className={inputCls} />
-                <button type="button" onClick={() => setFormData(prev=>({...prev,items:prev.items.filter((_,idx)=>idx!==i)}))} disabled={formData.items.length===1} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40">Remove</button>
+              <div key={i} className="relative grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 pr-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_2.5rem] md:items-center md:gap-2 md:border-0 md:bg-transparent md:p-0 md:pr-0">
+                <label className="min-w-0">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">Tank No.</span>
+                  <input type="text" placeholder="Tank No." value={item.tank_no} onChange={e=>handleItemChange(i,'tank_no',e.target.value)} className={inputCls} />
+                </label>
+                <label className="min-w-0">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">Product</span>
+                  <ProductSelect value={item.product_name} onChange={v=>handleItemChange(i,'product_name',v)} inputCls={inputCls} required />
+                </label>
+                <label className="min-w-0">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">Weight (t)</span>
+                  <input type="number" step="0.001" min="0" placeholder="0.000" value={item.weight_tonnage} onChange={e=>handleItemChange(i,'weight_tonnage',e.target.value)} required className={inputCls} />
+                </label>
+                <label className="min-w-0">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">Volume (L)</span>
+                  <input type="number" step="0.001" min="0" placeholder="0.000" value={item.volume_liters} onChange={e=>handleItemChange(i,'volume_liters',e.target.value)} required className={inputCls} />
+                </label>
+                <button type="button" onClick={() => setFormData(prev=>({...prev,items:prev.items.filter((_,idx)=>idx!==i)}))} disabled={formData.items.length===1} title="Delete row" className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-40 transition md:static md:h-10 md:w-10">
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>
