@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService, notifyAuthChanged } from '../services/api';
-import { Eye, EyeOff, AlertCircle, Droplets, Zap, Shield } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Droplets } from 'lucide-react';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -51,15 +51,6 @@ export const LoginPage = () => {
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-2 tracking-tight whitespace-nowrap">Smart Reporting</h1>
           <p className="text-white/70 text-sm sm:text-base lg:text-lg font-medium tracking-wide uppercase">PBPA Petroleum Inspection System</p>
-        </div>
-
-        {/* Feature pills */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4 sm:mb-5">
-          {[{icon:Zap,label:'Real-time'},{icon:Shield,label:'Secure'},{icon:Droplets,label:'Petroleum'}].map(({icon:Icon,label})=>(
-            <div key={label} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm sm:text-base font-semibold text-white/85" style={{background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.15)'}}>
-              <Icon className="w-4 h-4 sm:w-5 sm:h-5" />{label}
-            </div>
-          ))}
         </div>
 
         {/* Glass card */}
