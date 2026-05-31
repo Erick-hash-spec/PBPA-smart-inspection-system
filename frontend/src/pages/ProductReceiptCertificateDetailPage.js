@@ -59,9 +59,9 @@ export const ProductReceiptCertificateDetailPage = () => {
     finally { setLoading(false); }
   };
 
-  const handleIssue = async () => {
+  const handleSubmitCertificate = async () => {
     try { const res = await productReceiptCertificateService.issueCertificate(id); setCertificate(res.data); }
-    catch (err) { setError(err.response?.data?.detail || 'Failed to issue certificate'); }
+    catch (err) { setError(err.response?.data?.detail || 'Failed to submit certificate'); }
   };
 
   const handleDelete = async () => {
@@ -248,8 +248,7 @@ export const ProductReceiptCertificateDetailPage = () => {
       <Section title="Actions">
         <div className="flex flex-wrap gap-2.5">
           {isDraft && (
-            <button onClick={handleIssue} className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Issue Certificate
-</button>
+            <button onClick={handleSubmitCertificate} className="report-action inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Submit</button>
           )}
 
           <button onClick={handleDownloadPdf} className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Download

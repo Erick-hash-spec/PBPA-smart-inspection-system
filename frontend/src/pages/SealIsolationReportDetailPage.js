@@ -59,9 +59,9 @@ export const SealIsolationReportDetailPage = () => {
     finally { setLoading(false); }
   };
 
-  const handleIssue = async () => {
+  const handleSubmitReport = async () => {
     try { const res = await sealIsolationReportService.issueReport(id); setReport(res.data); }
-    catch (err) { setError(err.response?.data?.detail || 'Failed to issue'); }
+    catch (err) { setError(err.response?.data?.detail || 'Failed to submit'); }
   };
 
   const handleDelete = async () => {
@@ -212,8 +212,7 @@ export const SealIsolationReportDetailPage = () => {
       <Section title="Actions">
         <div className="flex flex-wrap gap-2.5">
           {isDraft && (
-            <button onClick={handleIssue} className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Issue Report
-</button>
+            <button onClick={handleSubmitReport} className="seal-report-detail-action inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Submit</button>
           )}
 
           <button onClick={handleDownload} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Download

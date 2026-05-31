@@ -140,29 +140,29 @@ export const ShoreTankCalculationListPage = () => {
                     <td className="px-5 py-3.5 text-gray-700 dark:text-gray-300 font-medium">{Number(calc.terminal_weight_air_mt || 0).toFixed(3)}</td>
                     <td className="px-5 py-3.5"><StatusBadge status={calc.status} /></td>
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                      <div className="report-actions" onClick={e => e.stopPropagation()}>
                         <button onClick={() => navigate(`/shore-tank-calculations/${calc.id}`)} title="View"
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
+                          className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
                         {calc.status === 'draft' && (
                           <button onClick={() => navigate(`/shore-tank-calculations/${calc.id}/edit`)} title="Edit"
-                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
+                            className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
                         )}
                         {calc.status === 'draft' && (
                           <button onClick={() => handleFinalize(calc.id)} title="Finalize"
-                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700">Finalize</button>
+                            className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700">Finalize</button>
                         )}
                         {calc.status === 'final' && (
                           <button onClick={() => handleDownloadDoc(calc)} title="Download"
-                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-700">Download</button>
+                            className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-700">Download</button>
                         )}
                         {calc.status === 'final' && (
                           submittedIds.has(calc.id)
-                            ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>
+                            ? <span className="report-action inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>
                             : <button onClick={() => setSubmitTarget(calc)} title="Submit"
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit</button>
+                                className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit</button>
                         )}
                         <button onClick={() => setDeleteTarget(calc)} title="Delete"
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
+                          className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
                       </div>
                     </td>
                   </tr>

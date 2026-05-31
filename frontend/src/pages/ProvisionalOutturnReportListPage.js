@@ -112,19 +112,19 @@ const ProvisionalOutturnReportListPage = () => {
                     <td className="px-5 py-3.5 text-gray-500 dark:text-gray-500 whitespace-nowrap">{new Date(r.report_date).toLocaleDateString()}</td>
                     <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                      <div className="report-actions" onClick={e => e.stopPropagation()}>
                         <button onClick={() => navigate(`/provisional-outturn-reports/${r.id}`)} title="View"
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
+                          className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
                         <button onClick={() => navigate(`/provisional-outturn-reports/${r.id}/edit`)} title="Edit"
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
+                          className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
                         {r.status === 'final' && (
                           submittedIds.has(r.id)
-                            ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>
+                            ? <span className="report-action inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>
                             : <button onClick={() => setSubmitTarget(r)} title="Submit"
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit</button>
+                                className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit</button>
                         )}
                         <button onClick={() => handleDelete(r.id)} title="Delete"
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
+                          className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
                       </div>
                     </td>
                   </tr>

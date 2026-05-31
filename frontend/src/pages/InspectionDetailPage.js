@@ -100,7 +100,7 @@ export const InspectionDetailPage = () => {
     catch { setActionMsg('Failed to reject'); }
   };
 
-  const handleSubmitForApproval = async () => {
+  const handleSubmit = async () => {
     try { await inspectionService.submitInspection(id); setActionMsg('Submitted'); fetchInspection(); }
     catch { setActionMsg('Failed to submit'); }
   };
@@ -347,8 +347,9 @@ export const InspectionDetailPage = () => {
       <Section title="Actions">
         <div className="flex flex-wrap gap-2.5 mb-4">
           {inspection.status === 'draft' && (
-            <button onClick={handleSubmitForApproval} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Submit for Approval
-</button>
+            <button onClick={handleSubmit} className="inspection-submit-action inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">
+              <span>Submit (PBPA, Terminal representative)</span>
+            </button>
           )}
           
           {inspection.status === 'submitted' && userRole === 'supervisor' && (

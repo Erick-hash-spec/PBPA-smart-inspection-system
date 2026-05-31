@@ -156,21 +156,21 @@ export const InspectionListPage = () => {
                     <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">{new Date(insp.inspection_date).toLocaleDateString()}</td>
                     <td className="px-5 py-3.5"><StatusBadge status={insp.status} /></td>
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                      <div className="report-actions" onClick={e => e.stopPropagation()}>
                         <button onClick={() => navigate(`/inspections/${insp.id}`)} title="View"
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
+                          className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
                         {insp.status === 'draft' && (
                           <button onClick={() => navigate(`/inspections/${insp.id}/edit`)} title="Edit"
-                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
+                            className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
                         )}
                         {insp.status === 'approved' && (
                           submittedIds.has(insp.id)
-                            ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>
+                            ? <span className="report-action inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>
                             : <button onClick={() => setSubmitTarget(insp)} title="Submit"
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit</button>
+                                className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit</button>
                         )}
                         <button onClick={() => setDeleteTarget(insp)} title="Delete"
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
+                          className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
                       </div>
                     </td>
                   </tr>
@@ -193,11 +193,11 @@ export const InspectionListPage = () => {
                   <span>{insp.terminal || '—'}</span>
                   <span>{new Date(insp.inspection_date).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center gap-2 mt-3" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => navigate(`/inspections/${insp.id}`)} className="bg-blue-50 text-blue-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-blue-200">View</button>
-                  {insp.status === 'draft' && <button onClick={() => navigate(`/inspections/${insp.id}/edit`)} className="bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200">Edit</button>}
-                  {insp.status === 'approved' && (submittedIds.has(insp.id) ? <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-green-200">Sent</span> : <button onClick={() => setSubmitTarget(insp)} className="bg-[#8B1A1A] text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Submit</button>)}
-                  <button onClick={() => setDeleteTarget(insp)} className="bg-red-50 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200">Delete</button>
+                <div className="report-actions mt-3" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => navigate(`/inspections/${insp.id}`)} className="report-action bg-blue-50 text-blue-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-blue-200">View</button>
+                  {insp.status === 'draft' && <button onClick={() => navigate(`/inspections/${insp.id}/edit`)} className="report-action bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200">Edit</button>}
+                  {insp.status === 'approved' && (submittedIds.has(insp.id) ? <span className="report-action bg-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-green-200">Sent</span> : <button onClick={() => setSubmitTarget(insp)} className="report-action bg-[#8B1A1A] text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Submit</button>)}
+                  <button onClick={() => setDeleteTarget(insp)} className="report-action bg-red-50 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200">Delete</button>
                 </div>
               </div>
             ))}

@@ -8,11 +8,11 @@ import {
   shoreTankCalculationService,
   productReceiptCertificateService,
 } from '../services/api';
-import { Ship, Plus, Zap, Search, Trash2 } from 'lucide-react';
+import { Ban, Download as DownloadIcon, Eye, Pencil, Printer, Ship, Plus, Search, Trash2, Zap } from 'lucide-react';
 
 const inputCls = 'w-full min-w-0 px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:bg-white dark:focus:bg-slate-600 text-base sm:text-sm leading-6 transition';
 const actionButtonCls = 'inline-flex min-w-0 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold leading-tight transition whitespace-normal break-words';
-const listActionButtonCls = 'inline-flex min-w-0 flex-1 basis-0 items-center justify-center gap-1 rounded-lg border px-1.5 py-2 text-[10px] font-semibold leading-tight transition sm:gap-2 sm:px-3 sm:text-xs';
+const listActionButtonCls = 'report-action vessel-report-action inline-flex min-w-0 flex-1 basis-0 items-center justify-center gap-1 rounded-lg border px-1.5 py-2 text-[10px] font-semibold leading-tight transition whitespace-nowrap sm:gap-2 sm:px-3 sm:text-xs';
 
 const Section = ({ title, children }) => (
   <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-lg border border-gray-100 dark:border-gray-700 p-4 sm:p-6 hover-lift min-w-0">
@@ -154,26 +154,36 @@ export const VesselReportListPage = () => {
                 <p className="text-gray-800 dark:text-gray-200 break-words"><strong>Date:</strong> {r.discharge_date}</p>
                 <p className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm break-words"><strong>Weight:</strong> {r.total_weight_mt} MT / <strong>Volume:</strong> {r.total_volume_m3} m3</p>
               </div>
-              <div className="flex flex-nowrap gap-1.5 sm:gap-2 mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
-                <button onClick={(e) => {e.stopPropagation();navigate(`/vessel-reports/${r.id}`);}} className={`${listActionButtonCls} bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50 hover-scale`}>View
-</button>
-                <button onClick={(e) => {e.stopPropagation();handleDownloadPdf(r);}} className={`${listActionButtonCls} bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-200 border-green-200 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900/50 hover-scale`}>Download
-</button>
-                <button onClick={(e) => {e.stopPropagation();handlePrintPdf(r);}} className={`${listActionButtonCls} bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-slate-600 hover-scale`}>Print
-</button>
+              <div className="report-actions vessel-report-actions grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:gap-2 mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
+                <button onClick={(e) => {e.stopPropagation();navigate(`/vessel-reports/${r.id}`);}} className={`${listActionButtonCls} bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50 hover-scale`} title="View">
+                  <Eye className="w-3 h-3 shrink-0 sm:w-3.5 sm:h-3.5" />
+                  <span>View</span>
+                </button>
+                <button onClick={(e) => {e.stopPropagation();handleDownloadPdf(r);}} className={`${listActionButtonCls} bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-200 border-green-200 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900/50 hover-scale`} title="Download">
+                  <DownloadIcon className="w-3 h-3 shrink-0 sm:w-3.5 sm:h-3.5" />
+                  <span>Download</span>
+                </button>
+                <button onClick={(e) => {e.stopPropagation();handlePrintPdf(r);}} className={`${listActionButtonCls} bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-slate-600 hover-scale`} title="Print">
+                  <Printer className="w-3 h-3 shrink-0 sm:w-3.5 sm:h-3.5" />
+                  <span>Print</span>
+                </button>
                 {r.status === 'draft' && (
-                  <button onClick={(e) => {e.stopPropagation();navigate(`/vessel-reports/${r.id}/edit`);}} className={`${listActionButtonCls} bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200 border-amber-200 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-900/50 hover-scale`}>Edit
-</button>
+                  <button onClick={(e) => {e.stopPropagation();navigate(`/vessel-reports/${r.id}/edit`);}} className={`${listActionButtonCls} bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-200 border-amber-200 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-900/50 hover-scale`} title="Edit">
+                    <Pencil className="w-3 h-3 shrink-0 sm:w-3.5 sm:h-3.5" />
+                    <span>Edit</span>
+                  </button>
                 )}
                 {r.status !== 'cancelled' && (
-                  <button onClick={(e) => {e.stopPropagation();handleCancelReport(r);}} className={`${listActionButtonCls} bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-200 border-red-200 dark:border-red-700 hover:bg-red-200 dark:hover:bg-red-900/50 hover-scale`}>Cancel
-</button>
+                  <button onClick={(e) => {e.stopPropagation();handleCancelReport(r);}} className={`${listActionButtonCls} bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-200 border-red-200 dark:border-red-700 hover:bg-red-200 dark:hover:bg-red-900/50 hover-scale`} title="Cancel">
+                    <Ban className="w-3 h-3 shrink-0 sm:w-3.5 sm:h-3.5" />
+                    <span>Cancel</span>
+                  </button>
                 )}
                 <button
                   onClick={(e) => {e.stopPropagation();handleDeleteReport(r);}}
                   aria-label="Delete vessel report"
                   title="Delete vessel report"
-                  className={`${listActionButtonCls} max-w-10 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/40 hover-scale`}
+                  className={`${listActionButtonCls} vessel-report-delete-action max-w-10 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/40 hover-scale`}
                 >
                   <Trash2 className="w-3 h-3 shrink-0 sm:w-3.5 sm:h-3.5" />
 </button>
