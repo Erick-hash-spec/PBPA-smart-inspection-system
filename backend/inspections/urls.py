@@ -13,6 +13,7 @@ from .views import (
     SubmissionViewSet, VesselReportViewSet, RosterAssignmentViewSet,
     ProvisionalOuturnReportViewSet,
     StockReportViewSet,
+    SamplingFormViewSet,
 )
 
 router = DefaultRouter()
@@ -33,6 +34,7 @@ router.register(r'submissions', SubmissionViewSet, basename='submission')
 router.register(r'vessel-reports', VesselReportViewSet, basename='vessel-report')
 router.register(r'provisional-outturn-reports', ProvisionalOuturnReportViewSet, basename='provisional-outturn-report')
 router.register(r'stock-reports', StockReportViewSet, basename='stock-report')
+router.register(r'sampling-forms', SamplingFormViewSet, basename='sampling-form')
 
 urlpatterns = [
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

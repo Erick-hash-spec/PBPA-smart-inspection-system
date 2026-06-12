@@ -792,6 +792,62 @@ class ProvisionalOuturnItem(models.Model):
         return round(self.diff_weight_mt / self.ship_weight_mt * 100, 3)
 
 
+class SamplingForm(models.Model):
+    """PBPA Sampling Form — records petroleum sample details drawn from a vessel's cargo tanks."""
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('issued', 'Issued'),
+    )
+
+    form_number                       = models.CharField(max_length=30, unique=True, blank=True)
+    vessel_name                       = models.CharField(max_length=200)
+    product_name                      = models.CharField(max_length=100)
+    terminal                          = models.CharField(max_length=200)
+    sampling_date                     = models.DateField(default=timezone.localdate)
+    sampling_time                     = models.TimeField(null=True, blank=True)
+    voyage_no                         = models.CharField(max_length=100, blank=True)
+    bill_of_lading_no                 = models.CharField(max_length=100, blank=True)
+    cargo_tank_no                     = models.CharField(max_length=100, blank=True, help_text='Vessel cargo tank number(s)')
+    sample_location                   = models.CharField(max_length=200, blank=True, help_text='e.g. Upper, Middle, Lower, Bottom, Composite, Manifold')
+    sample_reference                  = models.CharField(max_length=100, blank=True)
+    sample_quantity                   = models.CharField(max_length=100, blank=True, help_text='e.g. 1 Litre composite')
+    sample_container                  = models.CharField(max_length=200, blank=True, help_text='e.g. 1L glass bottle')
+    number_of_samples                 = models.PositiveIntegerField(null=True, blank=True)
+    seal_number_before                = models.CharField(max_length=50, blank=True)
+    seal_number_after                 = models.CharField(max_length=50, blank=True)
+    temperature                       = models.FloatField(null=True, blank=True, help_text='Sample temperature in Celsius')
+    density_observed                  = models.FloatField(null=True, blank=True, help_text='Observed density kg/L')
+    colour                            = models.CharField(max_length=100, blank=True)
+    appearance                        = models.CharField(max_length=200, blank=True)
+    sampled_by                        = models.CharField(max_length=200, blank=True)
+    witnessed_by                      = models.CharField(max_length=200, blank=True)
+    remarks                           = models.TextField(blank=True)
+    terminal_representative_name      = models.CharField(max_length=200, blank=True)
+    terminal_representative_signature = models.CharField(max_length=200, blank=True)
+    pbpa_inspector_name               = models.CharField(max_length=200, blank=True)
+    pbpa_inspector_signature          = models.CharField(max_length=200, blank=True)
+    status                            = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    created_by                        = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sampling_forms')
+    issued_at                         = models.DateTimeField(null=True, blank=True)
+    created_at                        = models.DateTimeField(auto_now_add=True)
+    updated_at                        = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Sampling Form'
+        verbose_name_plural = 'Sampling Forms'
+
+    def __str__(self):
+        return f'SF {self.form_number or "Draft"} — {self.vessel_name}'
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new and not self.form_number:
+            self.form_number = f'SF-{self.pk:06d}'
+            super().save(update_fields=['form_number'])
+
+
 class ShoreTankCalculationItem(models.Model):
     """Initial/final tank measurement pair from the shore tank calculation sheet."""
     calculation = models.ForeignKey(ShoreTankCalculation, on_delete=models.CASCADE, related_name='tank_items')

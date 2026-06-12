@@ -29,6 +29,7 @@ import { StockReportListPage, StockReportFormPage, StockReportDetailPage } from 
 import { UserManagementPage } from './pages/UserManagementPage';
 import { RosterPage } from './pages/RosterPage';
 import { RosterFormPage } from './pages/RosterFormPage';
+import { SamplingFormListPage, SamplingFormFormPage, SamplingFormDetailPage } from './pages/SamplingFormPage';
 import './index.css';
 
 const ProtectedRoute = ({ children, isAuthenticated }) => {
@@ -111,6 +112,12 @@ function App() {
             <Route path="/roster"           element={<P><RosterPage /></P>} />
             <Route path="/roster/new"       element={<P><RosterFormPage /></P>} />
             <Route path="/roster/:id/edit"  element={<P><RosterFormPage /></P>} />
+
+            {/* Sampling Forms */}
+            <Route path="/sampling-forms"          element={<P><SamplingFormListPage /></P>} />
+            <Route path="/sampling-forms/new"      element={<P><SamplingFormFormPage /></P>} />
+            <Route path="/sampling-forms/:id"      element={<P><SamplingFormDetailPage /></P>} />
+            <Route path="/sampling-forms/:id/edit" element={<P><SamplingFormFormPage /></P>} />
 
             {/* User Management (Admin only) */}
             <Route path="/users" element={<P><UserManagementPage /></P>} />

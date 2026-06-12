@@ -2,7 +2,7 @@
 
 A comprehensive web-based inspection and reporting platform for petroleum storage facilities.
 
-## 🎯 Overview
+##  Overview
 
 This system digitizes petroleum tank inspection processes, replacing manual paperwork with:
 - Real-time inspection data capture
@@ -13,7 +13,7 @@ This system digitizes petroleum tank inspection processes, replacing manual pape
 
 ---
 
-## 📋 Project Structure
+##  Project Structure
 
 ```
 SMART REPORTING SYSTEM/
@@ -41,7 +41,7 @@ SMART REPORTING SYSTEM/
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 - Python 3.10+
@@ -125,7 +125,7 @@ App will be available at: http://localhost:3000
 
 ---
 
-## 📚 API Documentation
+## API Documentation
 
 ### Authentication
 
@@ -257,7 +257,7 @@ Authorization: Bearer {access_token}
 
 ---
 
-## 🔐 User Roles & Permissions
+##  User Roles & Permissions
 
 ### Inspector
 - Create inspections
@@ -280,7 +280,7 @@ Authorization: Bearer {access_token}
 
 ---
 
-## 🧮 Calculation Engine
+##  Calculation Engine
 
 The system automatically calculates:
 
@@ -301,7 +301,7 @@ The system automatically calculates:
 
 ---
 
-## 📊 Database Models
+##  Database Models
 
 ### Users
 - `User` - Django auth user
@@ -319,7 +319,7 @@ The system automatically calculates:
 
 ---
 
-## 🛠️ Configuration
+##  Configuration
 
 ### Database Connection
 Edit `backend/config/settings.py`:
@@ -359,7 +359,7 @@ SIMPLE_JWT = {
 
 ---
 
-## 📝 Common Tasks
+##  Common Tasks
 
 ### Add a Tank
 ```bash
@@ -388,7 +388,7 @@ python manage.py dumpdata inspections > backup.json
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Run Tests
 ```bash
@@ -402,7 +402,7 @@ python manage.py test inspections.tests.InspectionTestCase
 
 ---
 
-## 📦 Deployment
+##  Deployment
 
 ### Using Gunicorn
 ```bash
@@ -414,7 +414,7 @@ See `Dockerfile` and `docker-compose.yml`
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Database Connection Error
 - Ensure PostgreSQL is running
@@ -445,8 +445,9 @@ For issues or questions, contact:
 
 ---
 
-## 📄 License
+##  License
 
 © 2024 PBPA Smart Reporting System
-#   P B P A - s m a r t - i n s p e c t i o n - s y s t e m  
+#   P B P A - s m a r t - i n s p e c t i o n - s y s t e m 
+ 
  

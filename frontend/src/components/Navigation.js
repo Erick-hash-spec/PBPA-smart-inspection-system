@@ -4,7 +4,7 @@ import { authService } from '../services/api';
 import {
   LayoutDashboard, ClipboardList, Shield, Calculator, Award,
   Menu, Bell, Ship, FileText, Package,
-  LogOut, X, Droplets, Users, CalendarDays,
+  LogOut, X, Droplets, Users, CalendarDays, FlaskConical,
 } from 'lucide-react';
 
 const navItems = [
@@ -19,6 +19,7 @@ const operationsNavItems = [
   { to: '/provisional-outturn-reports',  label: 'Provisional Outturn Report',  icon: FileText },
   { to: '/stock-reports',                label: 'Stock Report',                icon: Package },
   { to: '/vessel-reports',               label: 'Vessel Reports',              icon: Ship },
+  { to: '/sampling-forms',               label: 'Sampling Form',               icon: FlaskConical },
 ];
 
 const adminNavItems = [

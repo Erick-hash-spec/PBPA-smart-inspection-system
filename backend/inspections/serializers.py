@@ -13,6 +13,7 @@ from .models import (
     Submission, VesselReport, RosterAssignment,
     ProvisionalOuturnReport, ProvisionalOuturnItem,
     StockReport, StockReportItem,
+    SamplingForm,
 )
 from .calculations import (
     SHORE_TANK_ITEM_VALIDATION_FIELDS,
@@ -755,3 +756,25 @@ class StockReportSerializer(serializers.ModelSerializer):
         if items_data is not None:
             self._sync_items(instance, items_data)
         return instance
+
+
+# ========== SAMPLING FORM ==========
+class SamplingFormSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+
+    class Meta:
+        model = SamplingForm
+        fields = (
+            'id', 'form_number', 'vessel_name', 'product_name', 'terminal',
+            'sampling_date', 'sampling_time', 'voyage_no', 'bill_of_lading_no',
+            'cargo_tank_no', 'sample_location', 'sample_reference', 'sample_quantity',
+            'sample_container', 'number_of_samples',
+            'seal_number_before', 'seal_number_after',
+            'temperature', 'density_observed', 'colour', 'appearance',
+            'sampled_by', 'witnessed_by', 'remarks',
+            'terminal_representative_name', 'terminal_representative_signature',
+            'pbpa_inspector_name', 'pbpa_inspector_signature',
+            'status', 'created_by', 'created_by_name', 'issued_at',
+            'created_at', 'updated_at',
+        )
+        read_only_fields = ('id', 'form_number', 'created_by', 'created_by_name', 'issued_at', 'created_at', 'updated_at')

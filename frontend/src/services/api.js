@@ -236,6 +236,17 @@ export const provisionalOuturnService = {
   generateDocx: (id) => axiosInstance.get(`/provisional-outturn-reports/${id}/docx/`, { responseType: 'blob' }).then(r => r.data),
 };
 
+// ========== SAMPLING FORM SERVICE ==========
+export const samplingFormService = {
+  getForms:    (params = {}) => axiosInstance.get('/sampling-forms/', { params }),
+  getFormById: (id) => axiosInstance.get(`/sampling-forms/${id}/`),
+  createForm:  (data) => axiosInstance.post('/sampling-forms/', data),
+  updateForm:  (id, data) => axiosInstance.put(`/sampling-forms/${id}/`, data),
+  deleteForm:  (id) => axiosInstance.delete(`/sampling-forms/${id}/`),
+  issueForm:   (id) => axiosInstance.post(`/sampling-forms/${id}/issue/`),
+  downloadPdf: (id) => axiosInstance.get(`/sampling-forms/${id}/pdf/`, { responseType: 'blob' }),
+};
+
 // ========== SUBMISSION SERVICE ==========
 export const submissionService = {
   getSubmissions: (params = {}) => axiosInstance.get('/submissions/', { params }),

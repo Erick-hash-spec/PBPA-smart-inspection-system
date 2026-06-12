@@ -31,6 +31,7 @@ from .models import (
     Submission, VesselReport, RosterAssignment,
     ProvisionalOuturnReport, ProvisionalOuturnItem,
     StockReport,
+    SamplingForm,
 )
 from .serializers import (
     UserSerializer, UserProfileSerializer, UserRegistrationSerializer,
@@ -48,6 +49,7 @@ from .serializers import (
     SubmissionSerializer, VesselReportSerializer, RosterAssignmentSerializer,
     ProvisionalOuturnReportSerializer,
     StockReportSerializer,
+    SamplingFormSerializer,
 )
 from .permissions import IsInspector, IsSupervisor, IsAdmin
 from .calculations import InspectionCalculationEngine, ShoreTankCalculationEngine
@@ -2074,3 +2076,254 @@ def csrf_failure(request, reason=""):
         status=403,
         content_type='text/html'
     )
+
+
+class SamplingFormViewSet(viewsets.ModelViewSet):
+    """CRUD + official PBPA PDF for Sampling Forms."""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = SamplingFormSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['form_number', 'vessel_name', 'product_name', 'terminal', 'pbpa_inspector_name']
+    ordering_fields = ['created_at', 'sampling_date', 'form_number', 'status']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        qs = SamplingForm.objects.select_related('created_by')
+        profile = get_or_create_user_profile(self.request.user)
+        if profile.role == 'inspector':
+            qs = qs.filter(created_by=self.request.user)
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        period = self.request.query_params.get('period')
+        return filter_queryset_by_period(qs, period, 'sampling_date')
+
+    def perform_create(self, serializer):
+        full_name = self.request.user.get_full_name() or self.request.user.username
+        serializer.save(
+            created_by=self.request.user,
+            pbpa_inspector_name=serializer.validated_data.get('pbpa_inspector_name') or full_name,
+        )
+
+    @action(detail=True, methods=['post'])
+    def issue(self, request, pk=None):
+        form = self.get_object()
+        if form.status == 'issued':
+            return Response({'detail': 'Form has already been issued.'}, status=status.HTTP_400_BAD_REQUEST)
+        form.status = 'issued'
+        form.issued_at = timezone.now()
+        form.save(update_fields=['status', 'issued_at', 'updated_at'])
+        return Response(SamplingFormSerializer(form, context={'request': request}).data)
+
+    @action(detail=True, methods=['get'])
+    def pdf(self, request, pk=None):
+        form = self.get_object()
+        buf = self._build_pdf(form)
+        response = HttpResponse(buf.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="Sampling_Form_{form.form_number}.pdf"'
+        return response
+
+    # ------------------------------------------------------------------
+    # Official PBPA Vessel Sampling Form PDF
+    # ------------------------------------------------------------------
+    def _build_pdf(self, form):
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.lib.units import mm
+
+        buf = io.BytesIO()
+        W, H = A4
+        pdf = canvas.Canvas(buf, pagesize=A4)
+        M = 15 * mm
+        TW = W - 2 * M
+
+        y = H - 10 * mm
+
+        # ── Letterhead ────────────────────────────────────────────────
+        pdf.setFont("Helvetica", 9)
+        pdf.drawCentredString(W / 2, y, "THE UNITED REPUBLIC OF TANZANIA")
+        y -= 7 * mm
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawCentredString(W / 2, y, "PETROLEUM BULK PROCUREMENT AGENCY")
+        y -= 5 * mm
+        pdf.setFont("Helvetica", 6.5)
+        pdf.drawCentredString(W / 2, y,
+            "TANZANIA PORTS AUTHORITY, ONE STOP CENTER BUILDING, 11TH FLOOR, SOKOINE DRIVE, PLOT NO:1/2")
+        y -= 4 * mm
+        pdf.drawCentredString(W / 2, y,
+            "Tel: +255222129009 / Fax: +255222129093 / Email: info@pbpa.go.tz / WEBSITE: www.pbpa.go.tz / P.O. Box 2634 Dar es Salaam, TANZANIA")
+        y -= 8 * mm
+
+        # ── Title box ─────────────────────────────────────────────────
+        box_h = 11 * mm
+        box_x = M + 8 * mm
+        box_w = TW - 16 * mm
+        pdf.setLineWidth(2.5)
+        pdf.rect(box_x, y - box_h, box_w, box_h, fill=0, stroke=1)
+        pdf.setLineWidth(0.5)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawCentredString(W / 2, y - box_h + 3.5 * mm, "VESSEL SAMPLING FORM")
+        y -= box_h + 5 * mm
+
+        # Form number top-right
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawRightString(W - M, y + 6 * mm, form.form_number or "")
+
+        # ── Field helpers ──────────────────────────────────────────────
+        def ufield(label, value, y_pos, label_w=38 * mm, line_end=None):
+            le = line_end if line_end else (W - M)
+            pdf.setFont("Helvetica", 9)
+            pdf.drawString(M, y_pos, label)
+            lx = M + label_w
+            pdf.setDash(1, 2)
+            pdf.line(lx, y_pos - 1, le, y_pos - 1)
+            pdf.setDash()
+            if value:
+                pdf.setFont("Helvetica-Bold", 9)
+                pdf.drawString(lx + 1, y_pos, str(value))
+
+        def row2(lbl1, val1, lbl2, val2, y_pos, lw1=38 * mm, lw2=40 * mm):
+            half = TW / 2
+            ufield(lbl1, val1, y_pos, lw1, M + half - 4 * mm)
+            rx = M + half + 4 * mm
+            pdf.setFont("Helvetica", 9)
+            pdf.drawString(rx, y_pos, lbl2)
+            llx = rx + lw2
+            pdf.setDash(1, 2)
+            pdf.line(llx, y_pos - 1, W - M, y_pos - 1)
+            pdf.setDash()
+            if val2:
+                pdf.setFont("Helvetica-Bold", 9)
+                pdf.drawString(llx + 1, y_pos, str(val2))
+
+        lg = 8 * mm
+
+        # ── Section header helper ──────────────────────────────────────
+        def section_hdr(label, y_pos):
+            pdf.setFillColor(colors.HexColor('#f0f0f0'))
+            pdf.setStrokeColor(colors.black)
+            pdf.setLineWidth(0.6)
+            pdf.rect(M, y_pos - 5 * mm, TW, 6 * mm, fill=1, stroke=1)
+            pdf.setFillColor(colors.black)
+            pdf.setFont("Helvetica-Bold", 8)
+            pdf.drawString(M + 2 * mm, y_pos - 2 * mm, label)
+
+        # ── VESSEL INFORMATION ─────────────────────────────────────────
+        section_hdr("VESSEL INFORMATION", y)
+        y -= 7 * mm
+
+        ufield("Vessel Name:", form.vessel_name, y)
+        y -= lg
+        row2("Terminal:", form.terminal,
+             "Date:", form.sampling_date.strftime("%d - %m - %Y") if form.sampling_date else "", y)
+        y -= lg
+        row2("Product:", form.product_name,
+             "Time:", form.sampling_time.strftime("%H:%M") + " Hrs" if form.sampling_time else "", y)
+        y -= lg
+        row2("Voyage No.:", form.voyage_no,
+             "Bill of Lading No.:", form.bill_of_lading_no, y, 32 * mm, 46 * mm)
+        y -= lg + 3 * mm
+
+        # ── SAMPLING DETAILS ───────────────────────────────────────────
+        section_hdr("SAMPLING DETAILS", y)
+        y -= 7 * mm
+
+        row2("Cargo Tank No.:", form.cargo_tank_no,
+             "Sample Location:", form.sample_location, y, 36 * mm, 40 * mm)
+        y -= lg
+        row2("Sample Reference:", form.sample_reference,
+             "No. of Samples:", str(form.number_of_samples) if form.number_of_samples else "", y, 40 * mm, 36 * mm)
+        y -= lg
+        row2("Sample Quantity:", form.sample_quantity,
+             "Sample Container:", form.sample_container, y, 38 * mm, 40 * mm)
+        y -= lg
+        row2("Seal No. Before Sampling:", form.seal_number_before,
+             "Seal No. After Sampling:", form.seal_number_after, y, 54 * mm, 50 * mm)
+        y -= lg + 3 * mm
+
+        # ── PHYSICAL PROPERTIES ────────────────────────────────────────
+        section_hdr("PHYSICAL PROPERTIES", y)
+        y -= 7 * mm
+
+        row2("Temperature (°C):",
+             f"{form.temperature:.2f}" if form.temperature is not None else "",
+             "Observed Density (kg/L):",
+             f"{form.density_observed:.4f}" if form.density_observed is not None else "",
+             y, 42 * mm, 52 * mm)
+        y -= lg
+        row2("Colour:", form.colour, "Appearance:", form.appearance, y, 22 * mm, 28 * mm)
+        y -= lg
+
+        # Remarks
+        pdf.setFont("Helvetica", 8)
+        pdf.drawString(M, y, "Remarks:")
+        pdf.setDash(1, 2)
+        pdf.line(M + 22 * mm, y - 1, W - M - 2 * mm, y - 1)
+        pdf.setDash()
+        if form.remarks:
+            pdf.setFont("Helvetica-Bold", 8)
+            pdf.drawString(M + 23 * mm, y, form.remarks[:95])
+        y -= lg + 2 * mm
+
+        # ── SAMPLED / WITNESSED BY ─────────────────────────────────────
+        row2("Sampled By:", form.sampled_by,
+             "Witnessed By:", form.witnessed_by, y, 28 * mm, 32 * mm)
+        y -= lg + 4 * mm
+
+        # ── Certification statement ────────────────────────────────────
+        pdf.setLineWidth(0.5)
+        pdf.rect(M, y - 14 * mm, TW, 15 * mm, fill=0, stroke=1)
+        pdf.setFont("Helvetica", 8)
+        stmt = (
+            "We, the undersigned, hereby confirm that the above sample(s) were drawn in our joint presence "
+            "from the above-mentioned vessel cargo tank(s) in accordance with standard petroleum sampling "
+            "procedures, and that the sample containers were sealed with the seal numbers stated above."
+        )
+        tw = pdf.beginText(M + 2 * mm, y - 3 * mm)
+        tw.setFont("Helvetica", 8)
+        words, line = stmt.split(), ""
+        for w in words:
+            test = (line + " " + w).strip()
+            if pdf.stringWidth(test, "Helvetica", 8) > TW - 4 * mm:
+                tw.textLine(line)
+                line = w
+            else:
+                line = test
+        if line:
+            tw.textLine(line)
+        pdf.drawText(tw)
+        y -= 17 * mm
+
+        # ── Signature block ───────────────────────────────────────────
+        col = TW / 2 - 4 * mm
+        rx = M + col + 8 * mm
+
+        pdf.setFont("Helvetica-Bold", 9)
+        pdf.drawString(M, y, "Terminal / Ship Representative:")
+        pdf.drawString(rx, y, "PBPA Inspector:")
+        y -= 7 * mm
+
+        pdf.setFont("Helvetica", 9)
+        pdf.drawString(M, y, f"Name: {form.terminal_representative_name or ''}")
+        pdf.drawString(rx, y, f"Name: {form.pbpa_inspector_name or ''}")
+        y -= 10 * mm
+
+        pdf.setLineWidth(0.8)
+        pdf.line(M, y, M + col, y)
+        pdf.line(rx, y, rx + col, y)
+        y -= 5 * mm
+
+        pdf.setFont("Helvetica", 9)
+        pdf.drawString(M, y, f"Signature: {form.terminal_representative_signature or ''}")
+        pdf.drawString(rx, y, f"Signature: {form.pbpa_inspector_signature or ''}")
+
+        # ── Footer ────────────────────────────────────────────────────
+        pdf.setFont("Helvetica", 7)
+        pdf.setFillColor(colors.grey)
+        pdf.drawCentredString(W / 2, M + 4 * mm,
+            f"PBPA Vessel Sampling Form {form.form_number or ''} | Generated: {timezone.localtime().strftime('%d-%b-%Y %H:%M')}")
+
+        pdf.showPage()
+        pdf.save()
+        buf.seek(0)
+        return buf
