@@ -1,12 +1,13 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.conf import settings
-from django.db.models import F
+from django.db.models import F, Q
 from django.utils import timezone
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -28,10 +29,13 @@ from .models import (
     ProductReceiptCertificate,
     SealIsolationReport,
     ShoreTankCalculation,
-    Submission, VesselReport, RosterAssignment,
+    Submission, VesselReport, RosterAssignment, ActivityLog,
     ProvisionalOuturnReport, ProvisionalOuturnItem,
     StockReport,
     SamplingForm,
+    ServiceRequest,
+    ServiceRequestMessage,
+    Notification,
 )
 from .serializers import (
     UserSerializer, UserProfileSerializer, UserRegistrationSerializer,
@@ -50,8 +54,12 @@ from .serializers import (
     ProvisionalOuturnReportSerializer,
     StockReportSerializer,
     SamplingFormSerializer,
+    ServiceRequestSerializer,
+    ServiceRequestMessageSerializer,
+    NotificationSerializer,
+    ActivityLogSerializer,
 )
-from .permissions import IsInspector, IsSupervisor, IsAdmin
+from .permissions import IsInspector, IsTerminalRep, IsAdmin
 from .calculations import InspectionCalculationEngine, ShoreTankCalculationEngine
 from .shore_tank_utils import (
     ShoreTankDocumentGenerator,
@@ -63,15 +71,108 @@ from .shore_tank_utils import (
     generate_seal_isolation_pdf,
     generate_shore_tank_pdf,
 )
-from .astm_tables import density_at_20_from_table, vcf_from_table, wcf_from_density, table_range
+from .astm_tables import density_at_20_from_table, density_at_20_formula, vcf_from_table, vcf_formula, wcf_from_density, table_range
 from .signing import sign_pdf_bytes, get_signature_info, compute_document_hash
 
+
+def overlay_signature_image(pdf_bytes: bytes, sig_b64: str, x: float, y: float, w: float = 120, h: float = 40) -> bytes:
+    """
+    Overlay a base64 PNG signature image onto a PDF using ReportLab + pypdf.
+    Returns new PDF bytes with the signature image drawn at (x, y) in mm from bottom-left.
+    """
+    import base64, io as _io
+    from reportlab.pdfgen import canvas as rl_canvas
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from pypdf import PdfWriter, PdfReader
+
+    if ',' in sig_b64:
+        sig_b64 = sig_b64.split(',', 1)[1]
+    img_bytes = base64.b64decode(sig_b64)
+
+    from reportlab.lib.utils import ImageReader
+    overlay_buf = _io.BytesIO()
+    c = rl_canvas.Canvas(overlay_buf, pagesize=A4)
+    c.drawImage(ImageReader(_io.BytesIO(img_bytes)), x * mm, y * mm, width=w * mm, height=h * mm, mask='auto', preserveAspectRatio=True)
+    c.save()
+    overlay_buf.seek(0)
+
+    base_reader    = PdfReader(_io.BytesIO(pdf_bytes))
+    overlay_reader = PdfReader(overlay_buf)
+    writer = PdfWriter()
+
+    for i, page in enumerate(base_reader.pages):
+        if i == 0:
+            page.merge_page(overlay_reader.pages[0])
+        writer.add_page(page)
+
+    out = _io.BytesIO()
+    writer.write(out)
+    return out.getvalue()
+
+
+
+def get_client_ip(request):
+    xff = request.META.get('HTTP_X_FORWARDED_FOR')
+    return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
 
 def get_or_create_user_profile(user):
     """Return a profile for existing users that may predate profile creation."""
     role = 'admin' if user.is_staff or user.is_superuser else 'inspector'
     profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'role': role})
     return profile
+
+
+def owned_queryset(queryset, user, owner_field='created_by'):
+    """Limit records to the authenticated user who owns/created them."""
+    if not user or not user.is_authenticated:
+        return queryset.none()
+    return queryset.filter(**{owner_field: user})
+
+
+def ensure_inspection_owner(inspection, user):
+    if inspection.inspector_id != user.id:
+        raise PermissionDenied('You can only access records for inspections you created.')
+
+
+def get_owned_document_querysets(user, period=None):
+    return {
+        'inspections': filter_queryset_by_period(
+            owned_queryset(Inspection.objects.all(), user, 'inspector'),
+            period,
+            'inspection_date',
+        ),
+        'product_receipt_certificates': filter_queryset_by_period(
+            owned_queryset(ProductReceiptCertificate.objects.all(), user),
+            period,
+            'receipt_date',
+        ),
+        'seal_isolation_reports': filter_queryset_by_period(
+            owned_queryset(SealIsolationReport.objects.all(), user),
+            period,
+            'report_date',
+        ),
+        'shore_tank_calculations': filter_queryset_by_period(
+            owned_queryset(ShoreTankCalculation.objects.all(), user),
+            period,
+            'calculation_date',
+        ),
+        'stock_reports': filter_queryset_by_period(
+            owned_queryset(StockReport.objects.all(), user),
+            period,
+            'report_date',
+        ),
+        'provisional_outturn_reports': filter_queryset_by_period(
+            owned_queryset(ProvisionalOuturnReport.objects.all(), user),
+            period,
+            'report_date',
+        ),
+        'vessel_reports': filter_queryset_by_period(
+            owned_queryset(VesselReport.objects.all(), user),
+            period,
+            'discharge_date',
+        ),
+    }
 
 
 def period_start_date(period):
@@ -163,36 +264,44 @@ def parse_log_datetime(line):
     return None
 
 
-def build_activity_overview(period=None):
-    """Build admin/supervisor activity metrics for dashboard charts."""
-    report_models = (
-        Inspection,
-        ProductReceiptCertificate,
-        SealIsolationReport,
-        ShoreTankCalculation,
-        StockReport,
-        ProvisionalOuturnReport,
-        VesselReport,
-    )
+def build_activity_overview(user, period=None):
+    """Build dashboard activity metrics, system-wide for admins and user-owned otherwise."""
+    is_admin = get_or_create_user_profile(user).role == 'admin'
+    owned_reports = get_owned_document_querysets(user, None)
+    report_querysets = {
+        'inspections': Inspection.objects.all(),
+        'product_receipt_certificates': ProductReceiptCertificate.objects.all(),
+        'seal_isolation_reports': SealIsolationReport.objects.all(),
+        'shore_tank_calculations': ShoreTankCalculation.objects.all(),
+        'stock_reports': StockReport.objects.all(),
+        'provisional_outturn_reports': ProvisionalOuturnReport.objects.all(),
+        'vessel_reports': VesselReport.objects.all(),
+    } if is_admin else owned_reports
 
     report_creation = sum(
-        filter_queryset_by_period(model.objects.all(), period, 'created_at').count()
-        for model in report_models
+        filter_queryset_by_period(queryset, period, 'created_at').count()
+        for queryset in report_querysets.values()
     )
     report_editing = sum(
-        filter_queryset_by_period(model.objects.filter(updated_at__gt=F('created_at') + timedelta(seconds=2)), period, 'updated_at').count()
-        for model in report_models
+        filter_queryset_by_period(
+            queryset.filter(updated_at__gt=F('created_at') + timedelta(seconds=2)),
+            period,
+            'updated_at',
+        ).count()
+        for queryset in report_querysets.values()
     )
-    file_uploads = filter_queryset_by_period(InspectionReport.objects.all(), period, 'generated_at').count()
+    report_files = InspectionReport.objects.all() if is_admin else InspectionReport.objects.filter(inspection__inspector=user)
+    file_uploads = filter_queryset_by_period(report_files, period, 'generated_at').count()
 
-    failed_login_attempts = count_log_entries('security.log', ['Unauthorized access attempt'], period)
-    auth_attempts = count_log_entries('security.log', ['Authentication attempt'], period)
-    password_changes = count_log_entries('security.log', ['reset password'], period)
-    admin_actions = (
-        count_log_entries('security.log', ['Admin '], period)
-        + filter_queryset_by_period(User.objects.filter(is_staff=True), period, 'date_joined').count()
-    )
-    report_deletion = count_log_entries('audit.log', ['DELETE request'], period)
+    failed_login_attempts = count_log_entries('security.log', ['Unauthorized access attempt'], period) if is_admin else 0
+    auth_attempts = count_log_entries('security.log', ['Authentication attempt'], period) if is_admin else 0
+    password_changes = count_log_entries('security.log', ['reset password'], period) if is_admin else 0
+    admin_actions = filter_queryset_by_period(
+        User.objects.filter(is_staff=True) if is_admin else User.objects.filter(pk=user.pk, is_staff=True),
+        period,
+        'date_joined',
+    ).count()
+    report_deletion = count_log_entries('audit.log', ['DELETE request'], period) if is_admin else 0
 
     rows = [
         {'activity': 'User login/logout', 'value': max(auth_attempts - failed_login_attempts, 0), 'why': 'Security', 'color': '#2563eb'},
@@ -207,12 +316,241 @@ def build_activity_overview(period=None):
     return rows
 
 
-# ========== USER VIEWSETS ==========
+def create_notification(recipient, title, message, notification_type='report_submitted', doc_type='', doc_id=None, doc_number=''):
+    """Create an in-app notification for a user."""
+    Notification.objects.create(
+        recipient=recipient,
+        notification_type=notification_type,
+        title=title,
+        message=message,
+        doc_type=doc_type,
+        doc_id=doc_id,
+        doc_number=doc_number,
+    )
+
+
+# ── Shared signing workflow mixin ────────────────────────────────────────────
+class SigningWorkflowMixin:
+    """
+    Provides the 5-step multi-party signing workflow for report ViewSets.
+    Requires subclass to define:
+      _build_pdf_bytes(self, obj) -> bytes
+      _serializer_class_detail  (the detail serializer)
+      _doc_type_label           (str used in Submission.doc_type)
+    """
+
+    def _get_role(self, request):
+        return get_or_create_user_profile(request.user).role
+
+    def _build_pdf_bytes(self, obj):
+        raise NotImplementedError
+
+    def _save_signing_state(self, obj, update_fields):
+        obj.save(update_fields=update_fields + ['updated_at'])
+
+    def _get_doc_number(self, obj):
+        for field in ('report_number', 'certificate_number', 'calculation_number', 'form_number'):
+            value = getattr(obj, field, None)
+            if value:
+                return value
+        return str(obj.pk)
+
+    def _get_doc_label(self):
+        return dict(
+            dip_ticket='Dip Ticket',
+            seal_isolation='Seal & Isolation Report',
+            product_receipt='Product Receipt Certificate',
+            shore_tank='Shore Tank Calculation',
+            sampling_form='Sampling Form',
+        ).get(self._doc_type_label, self._doc_type_label.replace('_', ' ').title())
+
+    def _get_counterparty_label(self):
+        return 'vessel captain' if self._doc_type_label == 'sampling_form' else 'terminal representative'
+
+    @action(detail=True, methods=['post'], url_path='inspector_sign')
+    def inspector_sign(self, request, pk=None):
+        """Step 1 — Inspector draws signature and signs the document."""
+        obj = self.get_object()
+        role = self._get_role(request)
+        if role not in ('inspector', 'admin'):
+            return Response({'detail': 'Only inspectors can perform this step.'}, status=status.HTTP_403_FORBIDDEN)
+        if obj.signing_step != 'draft':
+            return Response({'detail': f'Cannot sign: current step is "{obj.signing_step}".'}, status=status.HTTP_400_BAD_REQUEST)
+
+        sig_b64 = request.data.get('signature')
+        if not sig_b64:
+            return Response({'detail': 'signature field is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            pdf_bytes    = self._build_pdf_bytes(obj)
+            signed_bytes = overlay_signature_image(pdf_bytes, sig_b64, x=15, y=18, w=55, h=18)
+            obj.is_signed           = True
+            obj.signed_at           = timezone.now()
+            obj.signed_by           = request.user
+            obj.document_hash       = compute_document_hash(signed_bytes)
+            obj.signing_step        = 'inspector_signed'
+            obj.inspector_signed_at = timezone.now()
+            obj.inspector_signed_by = request.user
+            self._save_signing_state(obj, ['is_signed','signed_at','signed_by','document_hash',
+                                           'signing_step','inspector_signed_at','inspector_signed_by'])
+            response = HttpResponse(signed_bytes, content_type='application/pdf')
+            fname = self._get_doc_number(obj)
+            response['Content-Disposition'] = f'attachment; filename="InspectorSigned_{fname}.pdf"'
+            return response
+        except Exception as e:
+            return Response({'detail': f'Signing failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], url_path='send_to_client')
+    def send_to_client(self, request, pk=None):
+        """Step 2 — Inspector sends the signed document to the terminal representative)."""
+        obj = self.get_object()
+        role = self._get_role(request)
+        if role not in ('inspector', 'admin'):
+            return Response({'detail': 'Only inspectors can send to client.'}, status=status.HTTP_403_FORBIDDEN)
+        if obj.signing_step != 'inspector_signed':
+            return Response({'detail': f'Cannot send: current step is "{obj.signing_step}".'}, status=status.HTTP_400_BAD_REQUEST)
+        obj.signing_step = 'sent_to_client'
+        self._save_signing_state(obj, ['signing_step'])
+        return Response(self.get_serializer(obj).data)
+
+    @action(detail=True, methods=['post'], url_path='client_sign')
+    def client_sign(self, request, pk=None):
+        """Step 3 — Terminal Representative/terminal rep) draws signature and signs."""
+        obj = self.get_object()
+        role = self._get_role(request)
+        if role not in ('terminal_representative', 'admin'):
+            return Response({'detail': 'Only terminal representatives can perform this step.'}, status=status.HTTP_403_FORBIDDEN)
+        if obj.signing_step != 'sent_to_client':
+            return Response({'detail': f'Cannot sign: current step is "{obj.signing_step}".'}, status=status.HTTP_400_BAD_REQUEST)
+
+        sig_b64 = request.data.get('signature')
+        if not sig_b64:
+            return Response({'detail': 'signature field is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            pdf_bytes    = self._build_pdf_bytes(obj)
+            signed_bytes = overlay_signature_image(pdf_bytes, sig_b64, x=105, y=18, w=55, h=18)
+            obj.document_hash    = compute_document_hash(signed_bytes)
+            obj.signing_step     = 'sent_to_inspector'
+            obj.client_signed_at = timezone.now()
+            obj.client_signed_by = request.user
+            self._save_signing_state(obj, ['document_hash', 'signing_step', 'client_signed_at', 'client_signed_by'])
+
+            # Notify inspector that document is ready to submit
+            inspector = getattr(obj, 'created_by', None) or getattr(obj, 'inspector', None)
+            if inspector:
+                doc_number   = self._get_doc_number(obj)
+                vessel_name  = getattr(obj, 'vessel_name', '')
+                doc_label    = self._get_doc_label()
+                counterparty = self._get_counterparty_label()
+                create_notification(
+                    recipient=inspector,
+                    title=f'Document Ready to Submit - {doc_label} #{doc_number}',
+                    message=(
+                        f'{doc_label} #{doc_number} for vessel "{vessel_name}" has been signed by both '
+                        f'the inspector and the {counterparty}. '
+                        f'Please submit it to Admin.'
+                    ),
+                    notification_type='ready_to_submit',
+                    doc_type=self._doc_type_label,
+                    doc_id=obj.pk,
+                    doc_number=doc_number,
+                )
+
+            response = HttpResponse(signed_bytes, content_type='application/pdf')
+            fname = self._get_doc_number(obj)
+            response['Content-Disposition'] = f'attachment; filename="ClientSigned_{fname}.pdf"'
+            return response
+        except Exception as e:
+            return Response({'detail': f'Signing failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    @action(detail=True, methods=['post'], url_path='inspector_verify')
+    def inspector_verify(self, request, pk=None):
+        """Step 5a — Inspector verifies the client-signed document."""
+        obj = self.get_object()
+        role = self._get_role(request)
+        if role not in ('inspector', 'admin'):
+            return Response({'detail': 'Only inspectors can verify.'}, status=status.HTTP_403_FORBIDDEN)
+        if obj.signing_step != 'sent_to_inspector':
+            return Response({'detail': f'Cannot verify: current step is "{obj.signing_step}".'}, status=status.HTTP_400_BAD_REQUEST)
+        obj.signing_step = 'verified'
+        obj.verified_at  = timezone.now()
+        self._save_signing_state(obj, ['signing_step', 'verified_at'])
+        return Response(self.get_serializer(obj).data)
+
+    @action(detail=True, methods=['post'], url_path='submit_to_admin')
+    def submit_to_admin(self, request, pk=None):
+        """Step 5 — Inspector submits the signed document to Admin and notifies admin + terminal rep."""
+        obj = self.get_object()
+        role = self._get_role(request)
+        if role not in ('inspector', 'admin'):
+            return Response({'detail': 'Only inspectors can submit to admin.'}, status=status.HTTP_403_FORBIDDEN)
+        if obj.signing_step not in {'sent_to_inspector', 'verified'}:
+            return Response({'detail': f'Cannot submit: current step is "{obj.signing_step}".'}, status=status.HTTP_400_BAD_REQUEST)
+        if not getattr(obj, 'inspector_signed_at', None):
+            return Response({'detail': f'{self._get_doc_label()} is missing the inspector signature.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not getattr(obj, 'client_signed_at', None):
+            return Response({'detail': f'{self._get_doc_label()} is missing the terminal representative signature.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        doc_type = self._doc_type_label
+        doc_number = self._get_doc_number(obj)
+        vessel_name = getattr(obj, 'vessel_name', '')
+        terminal = getattr(obj, 'terminal', '')
+
+        already = Submission.objects.filter(doc_type=doc_type, doc_id=obj.pk).exists()
+        if not already:
+            Submission.objects.create(
+                doc_type=doc_type,
+                doc_id=obj.pk,
+                doc_number=doc_number,
+                vessel_name=vessel_name,
+                terminal=terminal,
+                submitted_by=request.user,
+                is_read=False,
+            )
+
+        # ── Notify all admins ────────────────────────────────────────────────
+        doc_label = self._get_doc_label()
+
+        title = f'New Report Submitted: {doc_label}'
+        msg   = (f'{request.user.get_full_name() or request.user.username} submitted '
+                 f'{doc_label} #{doc_number} for vessel "{vessel_name}" (Terminal: {terminal}).')
+
+        admin_profiles = UserProfile.objects.filter(role='admin').select_related('user')
+        for ap in admin_profiles:
+            create_notification(ap.user, title, msg,
+                                notification_type='report_submitted',
+                                doc_type=doc_type, doc_id=obj.pk, doc_number=doc_number)
+
+        # ── Notify terminal representative (client who signed) ────
+        client_user = getattr(obj, 'client_signed_by', None)
+        if client_user:
+            client_msg = (f'The signed {doc_label} #{doc_number} for vessel "{vessel_name}" '
+                          f'has been submitted to PBPA admin by '
+                          f'{request.user.get_full_name() or request.user.username}.')
+            create_notification(client_user, f'Report Submitted to Admin: {doc_label}', client_msg,
+                                notification_type='report_submitted_client',
+                                doc_type=doc_type, doc_id=obj.pk, doc_number=doc_number)
+
+        obj.signing_step = 'submitted'
+        self._save_signing_state(obj, ['signing_step'])
+        ActivityLog.log(request.user, 'report_submitted', doc_type=doc_type,
+            doc_id=obj.pk, doc_number=doc_number,
+            detail=f'{doc_label} #{doc_number} submitted for vessel \"{vessel_name}\"',
+            request=request)
+        return Response(self.get_serializer(obj).data)
+
+
 class UserRegistrationViewSet(viewsets.ModelViewSet):
     """User creation — admin only (no public registration)."""
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        profile = get_or_create_user_profile(self.request.user)
+        if profile.role == 'admin':
+            return User.objects.all()
+        return User.objects.filter(pk=self.request.user.pk)
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -230,14 +568,42 @@ class UserRegistrationViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         role = request.data.get('role', 'inspector')
-        if role not in ('inspector', 'supervisor', 'admin'):
+        if role not in ('inspector', 'terminal_representative', 'admin'):
             role = 'inspector'
-        UserProfile.objects.create(user=user, role=role)
+        profile_fields = {'role': role}
+        if role == 'terminal_representative':
+            profile_fields['employee_id']         = request.data.get('employee_id', '')
+            profile_fields['terminal']            = request.data.get('terminal', '')
+            profile_fields['terminal_location']   = request.data.get('terminal_location', '')
+            profile_fields['company']             = request.data.get('company', '')
+            profile_fields['position']            = request.data.get('position', '')
+            profile_fields['company_email']       = request.data.get('company_email', '')
+            profile_fields['phone']               = request.data.get('phone', '')
+            date_joined = request.data.get('date_joined_company')
+            if date_joined:
+                profile_fields['date_joined_company'] = date_joined
+        UserProfile.objects.create(user=user, **profile_fields)
         sec_log.info('Admin %s created user %s with role %s.', request.user.username, user.username, role)
+        ActivityLog.log(request.user, 'user_created', detail=f'Created user {user.username} with role {role}', request=request)
         return Response(
             {'detail': 'User created successfully.', 'user_id': user.id},
             status=status.HTTP_201_CREATED
         )
+
+    def update(self, request, *args, **kwargs):
+        if get_or_create_user_profile(request.user).role != 'admin':
+            return Response({'detail': 'Only admins can update users.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if get_or_create_user_profile(request.user).role != 'admin':
+            return Response({'detail': 'Only admins can update users.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if get_or_create_user_profile(request.user).role != 'admin':
+            return Response({'detail': 'Only admins can delete users.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
@@ -260,9 +626,32 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(profile)
         return Response(serializer.data)
 
+    def create(self, request, *args, **kwargs):
+        if get_or_create_user_profile(request.user).role != 'admin':
+            return Response({'detail': 'Only admins can create profiles.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if get_or_create_user_profile(request.user).role != 'admin':
+            return Response({'detail': 'Only admins can update profiles.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if get_or_create_user_profile(request.user).role != 'admin':
+            return Response({'detail': 'Only admins can update profiles.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if get_or_create_user_profile(request.user).role != 'admin':
+            return Response({'detail': 'Only admins can delete profiles.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=False, methods=['get'])
     def list_inspectors(self, request):
         """Get all inspectors"""
+        profile = get_or_create_user_profile(request.user)
+        if profile.role not in ('terminal_representative', 'admin'):
+            return Response({'detail': 'Only terminal representatives and admins can list inspectors.'}, status=status.HTTP_403_FORBIDDEN)
         inspectors = UserProfile.objects.filter(role='inspector', is_active=True)
         serializer = self.get_serializer(inspectors, many=True)
         return Response(serializer.data)
@@ -281,11 +670,12 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         user_profile.user.set_password(password)
         user_profile.user.save()
         sec_log.info('Admin %s reset password for user %s.', request.user.username, user_profile.user.username)
+        ActivityLog.log(request.user, 'password_changed', detail=f'Password reset for user {user_profile.user.username}', request=request)
         return Response({'detail': 'Password updated successfully.'})
 
 
 class RosterAssignmentViewSet(viewsets.ModelViewSet):
-    """Supervisor roster assignments for inspectors."""
+    """Admin roster assignments for inspectors."""
     permission_classes = (IsAuthenticated,)
     serializer_class = RosterAssignmentSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -295,46 +685,46 @@ class RosterAssignmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         profile = get_or_create_user_profile(self.request.user)
-        qs = RosterAssignment.objects.select_related('inspector', 'supervisor')
+        qs = RosterAssignment.objects.select_related('inspector', 'terminal_representative')
         if profile.role == 'inspector':
             return qs.filter(inspector=self.request.user, status='sent')
-        if profile.role in ('supervisor', 'admin'):
+        if profile.role in ('terminal_representative', 'admin'):
             return qs
         return qs.none()
 
-    def _ensure_supervisor_or_admin(self, request):
+    def _ensure_terminal_rep_or_admin(self, request):
         profile = get_or_create_user_profile(request.user)
-        if profile.role not in ('supervisor', 'admin'):
-            return Response({'detail': 'Only supervisors and admins can manage rosters.'}, status=status.HTTP_403_FORBIDDEN)
+        if profile.role not in ('terminal_representative', 'admin'):
+            return Response({'detail': 'Only terminal representatives and admins can manage rosters.'}, status=status.HTTP_403_FORBIDDEN)
         return None
 
     def create(self, request, *args, **kwargs):
-        denied = self._ensure_supervisor_or_admin(request)
+        denied = self._ensure_terminal_rep_or_admin(request)
         if denied:
             return denied
         return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        denied = self._ensure_supervisor_or_admin(request)
+        denied = self._ensure_terminal_rep_or_admin(request)
         if denied:
             return denied
         return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
-        denied = self._ensure_supervisor_or_admin(request)
+        denied = self._ensure_terminal_rep_or_admin(request)
         if denied:
             return denied
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        denied = self._ensure_supervisor_or_admin(request)
+        denied = self._ensure_terminal_rep_or_admin(request)
         if denied:
             return denied
         return super().destroy(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         sent_at = timezone.now() if serializer.validated_data.get('status') == 'sent' else None
-        serializer.save(supervisor=self.request.user, sent_at=sent_at, is_read=False)
+        serializer.save(created_by_admin=self.request.user, sent_at=sent_at, is_read=False)
 
     def perform_update(self, serializer):
         instance = self.get_object()
@@ -346,7 +736,7 @@ class RosterAssignmentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def send(self, request, pk=None):
-        denied = self._ensure_supervisor_or_admin(request)
+        denied = self._ensure_terminal_rep_or_admin(request)
         if denied:
             return denied
         assignment = self.get_object()
@@ -360,7 +750,7 @@ class RosterAssignmentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
-        denied = self._ensure_supervisor_or_admin(request)
+        denied = self._ensure_terminal_rep_or_admin(request)
         if denied:
             return denied
         assignment = self.get_object()
@@ -406,7 +796,7 @@ class RosterAssignmentViewSet(viewsets.ModelViewSet):
             ("Terminal", assignment.terminal or "-"),
             ("Vessel", assignment.vessel_name or "-"),
             ("Task", assignment.task or "-"),
-            ("Supervisor", assignment.supervisor.get_full_name() if assignment.supervisor else "-"),
+            ("Client", assignment.approved_by.get_full_name() if assignment.approved_by else "-"),
             ("Status", assignment.get_status_display()),
         ]
         for label, value in rows:
@@ -454,7 +844,7 @@ class TankViewSet(viewsets.ModelViewSet):
     def inspection_history(self, request, pk=None):
         """Get inspection history for a tank"""
         tank = self.get_object()
-        inspections = tank.inspections.all().order_by('-inspection_date')
+        inspections = tank.inspections.filter(inspector=request.user).order_by('-inspection_date')
         
         # Pagination
         page = request.query_params.get('page', 1)
@@ -478,7 +868,7 @@ class TankViewSet(viewsets.ModelViewSet):
         tanks = self.get_queryset()
         total_tanks = tanks.count()
         
-        inspections = Inspection.objects.filter(tank__in=tanks)
+        inspections = Inspection.objects.filter(tank__in=tanks, inspector=request.user)
         total_inspections = inspections.count()
         pending_inspections = inspections.filter(status='submitted').count()
         
@@ -498,10 +888,15 @@ class SealViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     
     def get_queryset(self):
+        queryset = Seal.objects.filter(inspection__inspector=self.request.user)
         inspection_id = self.request.query_params.get('inspection_id')
         if inspection_id:
-            return Seal.objects.filter(inspection_id=inspection_id)
-        return Seal.objects.all()
+            return queryset.filter(inspection_id=inspection_id)
+        return queryset
+
+    def perform_create(self, serializer):
+        ensure_inspection_owner(serializer.validated_data['inspection'], self.request.user)
+        serializer.save()
 
 
 class IsolationViewSet(viewsets.ModelViewSet):
@@ -511,10 +906,15 @@ class IsolationViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     
     def get_queryset(self):
+        queryset = Isolation.objects.filter(inspection__inspector=self.request.user)
         inspection_id = self.request.query_params.get('inspection_id')
         if inspection_id:
-            return Isolation.objects.filter(inspection_id=inspection_id)
-        return Isolation.objects.all()
+            return queryset.filter(inspection_id=inspection_id)
+        return queryset
+
+    def perform_create(self, serializer):
+        ensure_inspection_owner(serializer.validated_data['inspection'], self.request.user)
+        serializer.save()
 
 
 # ========== CALCULATION VIEWSET ==========
@@ -523,6 +923,13 @@ class InspectionCalculationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = InspectionCalculation.objects.all()
     serializer_class = InspectionCalculationSerializer
     permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        queryset = InspectionCalculation.objects.filter(inspection__inspector=self.request.user)
+        inspection_id = self.request.query_params.get('inspection_id')
+        if inspection_id:
+            return queryset.filter(inspection_id=inspection_id)
+        return queryset
 
 
 # ========== REPORT VIEWSET ==========
@@ -533,10 +940,15 @@ class InspectionReportViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     
     def get_queryset(self):
+        queryset = InspectionReport.objects.filter(inspection__inspector=self.request.user)
         inspection_id = self.request.query_params.get('inspection_id')
         if inspection_id:
-            return InspectionReport.objects.filter(inspection_id=inspection_id)
-        return InspectionReport.objects.all()
+            return queryset.filter(inspection_id=inspection_id)
+        return queryset
+
+    def perform_create(self, serializer):
+        ensure_inspection_owner(serializer.validated_data['inspection'], self.request.user)
+        serializer.save(generated_by=self.request.user)
 
 
 # ========== INSPECTION VIEWSET (Main) ==========
@@ -557,15 +969,22 @@ class InspectionViewSet(viewsets.ModelViewSet):
         period = self.request.query_params.get('period')
         
         queryset = Inspection.objects.all()
-        
-        # Role-based filtering
         profile = get_or_create_user_profile(user)
-
-        if profile:
-            if profile.role == 'inspector':
-                queryset = queryset.filter(inspector=user)
-            elif profile.role == 'supervisor':
-                queryset = queryset.filter(status__in=['submitted', 'approved', 'rejected'])
+        if profile.role == 'admin':
+            # Admin: list/approve/reject see submitted only; retrieve/generate see all
+            if self.action in {'list', 'recent', 'approve', 'reject'}:
+                queryset = queryset.filter(status='submitted')
+            # retrieve, generate_document, update, destroy — full access (no filter)
+        elif profile.role == 'terminal_representative':
+            # Terminal rep: list sees submitted; retrieve/generate sees submitted+approved
+            if self.action in {'list', 'recent', 'approve', 'reject'}:
+                queryset = queryset.filter(status='submitted')
+            elif self.action in {'retrieve', 'generate_document'}:
+                queryset = queryset.filter(Q(status='submitted') | Q(status='approved') | Q(status='rejected'))
+            else:
+                queryset = owned_queryset(queryset, user, 'inspector')
+        else:
+            queryset = owned_queryset(queryset, user, 'inspector')
         
         # Apply filters
         if status_filter:
@@ -607,12 +1026,12 @@ class InspectionViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def approve(self, request, pk=None):
-        """Approve an inspection (Supervisor only)"""
+        """Approve an inspection (Terminal Rep or Admin)."""
         inspection = self.get_object()
-        
-        if get_or_create_user_profile(request.user).role != 'supervisor':
+        role = get_or_create_user_profile(request.user).role
+        if role not in ('terminal_representative', 'admin'):
             return Response(
-                {'detail': 'Only supervisors can approve inspections'},
+                {'detail': 'Only terminal representatives or admins can approve inspections'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -623,21 +1042,24 @@ class InspectionViewSet(viewsets.ModelViewSet):
             )
         
         inspection.status = 'approved'
-        inspection.supervisor = request.user
+        inspection.approved_by = request.user
         inspection.approval_date = timezone.now()
         inspection.save()
-        
+        ActivityLog.log(request.user, 'report_approved', 'dip_ticket',
+            doc_id=inspection.pk, doc_number=inspection.ticket_number or str(inspection.pk),
+            detail=f'Dip ticket approved for vessel {inspection.vessel_name or "-"}',
+            request=request)
         serializer = self.get_serializer(inspection)
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def reject(self, request, pk=None):
-        """Reject an inspection (Supervisor only)"""
+        """Reject an inspection (Terminal Rep or Admin)."""
         inspection = self.get_object()
-        
-        if get_or_create_user_profile(request.user).role != 'supervisor':
+        role = get_or_create_user_profile(request.user).role
+        if role not in ('terminal_representative', 'admin'):
             return Response(
-                {'detail': 'Only supervisors can reject inspections'},
+                {'detail': 'Only terminal representatives or admins can reject inspections'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -649,11 +1071,14 @@ class InspectionViewSet(viewsets.ModelViewSet):
         
         reason = request.data.get('rejection_reason', '')
         inspection.status = 'rejected'
-        inspection.supervisor = request.user
+        inspection.approved_by = request.user
         inspection.approval_date = timezone.now()
         inspection.rejection_reason = reason
         inspection.save()
-        
+        ActivityLog.log(request.user, 'report_rejected', 'dip_ticket',
+            doc_id=inspection.pk, doc_number=inspection.ticket_number or str(inspection.pk),
+            detail=f'Rejected: {reason[:100] if reason else "-"}',
+            request=request)
         serializer = self.get_serializer(inspection)
         return Response(serializer.data)
     
@@ -688,22 +1113,65 @@ class InspectionViewSet(viewsets.ModelViewSet):
         
         profile = get_or_create_user_profile(user)
 
-        inspections_qs = filter_queryset_by_period(Inspection.objects.all(), period, 'inspection_date')
-        product_receipts_qs = filter_queryset_by_period(ProductReceiptCertificate.objects.all(), period, 'receipt_date')
-        seal_reports_qs = filter_queryset_by_period(SealIsolationReport.objects.all(), period, 'report_date')
-        shore_calcs_qs = filter_queryset_by_period(ShoreTankCalculation.objects.all(), period, 'calculation_date')
-        stock_reports_qs = filter_queryset_by_period(StockReport.objects.all(), period, 'report_date')
-        provisional_reports_qs = filter_queryset_by_period(ProvisionalOuturnReport.objects.all(), period, 'report_date')
-        vessel_reports_qs = filter_queryset_by_period(VesselReport.objects.all(), period, 'discharge_date')
+        owned_document_qs = get_owned_document_querysets(user, period)
+        if profile.role == 'admin':
+            document_qs = {
+                'inspections': filter_queryset_by_period(
+                    Inspection.objects.all(),
+                    period,
+                    'inspection_date',
+                ),
+                'product_receipt_certificates': filter_queryset_by_period(
+                    ProductReceiptCertificate.objects.all(),
+                    period,
+                    'receipt_date',
+                ),
+                'seal_isolation_reports': filter_queryset_by_period(
+                    SealIsolationReport.objects.all(),
+                    period,
+                    'report_date',
+                ),
+                'shore_tank_calculations': filter_queryset_by_period(
+                    ShoreTankCalculation.objects.all(),
+                    period,
+                    'calculation_date',
+                ),
+                'stock_reports': filter_queryset_by_period(
+                    StockReport.objects.all(),
+                    period,
+                    'report_date',
+                ),
+                'provisional_outturn_reports': filter_queryset_by_period(
+                    ProvisionalOuturnReport.objects.all(),
+                    period,
+                    'report_date',
+                ),
+                'vessel_reports': filter_queryset_by_period(
+                    VesselReport.objects.all(),
+                    period,
+                    'discharge_date',
+                ),
+            }
+        else:
+            document_qs = owned_document_qs
+
+        if profile.role in ('terminal_representative', 'admin'):
+            inspections_qs = filter_queryset_by_period(
+                Inspection.objects.filter(status='submitted'),
+                period,
+                'inspection_date',
+            )
+        else:
+            inspections_qs = owned_document_qs['inspections']
 
         document_counts = {
             'inspections': inspections_qs.count(),
-            'product_receipt_certificates': product_receipts_qs.count(),
-            'seal_isolation_reports': seal_reports_qs.count(),
-            'shore_tank_calculations': shore_calcs_qs.count(),
-            'stock_reports': stock_reports_qs.count(),
-            'provisional_outturn_reports': provisional_reports_qs.count(),
-            'vessel_reports': vessel_reports_qs.count(),
+            'product_receipt_certificates': document_qs['product_receipt_certificates'].count(),
+            'seal_isolation_reports': document_qs['seal_isolation_reports'].count(),
+            'shore_tank_calculations': document_qs['shore_tank_calculations'].count(),
+            'stock_reports': document_qs['stock_reports'].count(),
+            'provisional_outturn_reports': document_qs['provisional_outturn_reports'].count(),
+            'vessel_reports': document_qs['vessel_reports'].count(),
         }
 
         def get_status_counts(queryset):
@@ -727,15 +1195,15 @@ class InspectionViewSet(viewsets.ModelViewSet):
                 'document_counts': document_counts,
             })
         
-        elif profile.role == 'supervisor':
+        elif profile.role == 'terminal_representative':
             inspections = inspections_qs.filter(status='submitted')
             total_pending = inspections.count()
-            approved = inspections_qs.filter(supervisor=user, status='approved').count()
+            approved = inspections_qs.filter(approved_by=user, status='approved').count()
             status_counts = get_status_counts(inspections_qs)
-            activity_overview = build_activity_overview(period)
+            activity_overview = build_activity_overview(user, period)
             
             return Response({
-                'role': 'supervisor',
+                'role': 'terminal_representative',
                 'total_pending_approval': total_pending,
                 'total_approved': approved,
                 'awaiting_review': total_pending,
@@ -746,17 +1214,33 @@ class InspectionViewSet(viewsets.ModelViewSet):
         
         elif profile.role == 'admin':
             total_inspections = inspections_qs.count()
+            system_inspections = document_qs['inspections']
             total_tanks = Tank.objects.filter(is_active=True).count()
             status_counts = get_status_counts(inspections_qs)
-            activity_overview = build_activity_overview(period)
+            system_status_counts = get_status_counts(system_inspections)
+            system_document_counts = {
+                **document_counts,
+                'inspections': system_inspections.count(),
+            }
+            _sub_qs = SubmissionViewSet(request=request)._with_existing_document_targets(Submission.objects.select_related('submitted_by'))
+            pending_submissions = _sub_qs.filter(is_read=False).count()
+            submitted_reports_count = _sub_qs.count()
+            recent_submissions = _sub_qs.order_by('-submitted_at')[:5]
+            activity_overview = build_activity_overview(user, period)
             
             return Response({
                 'role': 'admin',
                 'total_inspections': total_inspections,
+                'total_system_inspections': system_inspections.count(),
                 'total_tanks': total_tanks,
                 **status_counts,
                 'document_counts': document_counts,
+                'system_document_counts': system_document_counts,
+                'system_status_counts': system_status_counts,
                 'activity_overview': activity_overview,
+                'pending_submissions': pending_submissions,
+                'submitted_reports_count': submitted_reports_count,
+                'recent_submissions': SubmissionSerializer(recent_submissions, many=True).data,
             })
         
         return Response({'detail': 'Unknown role'}, status=status.HTTP_400_BAD_REQUEST)
@@ -785,28 +1269,37 @@ class InspectionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class ProductReceiptCertificateViewSet(viewsets.ModelViewSet):
+class ProductReceiptCertificateViewSet(SigningWorkflowMixin, viewsets.ModelViewSet):
     """CRUD and PDF generation for PBPA product receipt certificates."""
     permission_classes = (IsAuthenticated,)
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['certificate_number', 'vessel_name', 'terminal', 'pbpa_inspector_name']
     ordering_fields = ['created_at', 'receipt_date', 'certificate_number', 'status']
     ordering = ['-created_at']
+    _doc_type_label = 'product_receipt'
 
     def get_queryset(self):
-        queryset = ProductReceiptCertificate.objects.select_related('created_by').prefetch_related('items__tank')
-        user = self.request.user
+        profile = get_or_create_user_profile(self.request.user)
+        base = ProductReceiptCertificate.objects.select_related('created_by').prefetch_related('items__tank')
+        if profile.role == 'terminal_representative':
+            if self.action == 'list':
+                qs = base.filter(signing_step='sent_to_client')
+            else:
+                qs = base.filter(
+                    Q(signing_step='sent_to_client')
+                    | Q(client_signed_by=self.request.user)
+                    | Q(signing_step__in=['client_signed', 'sent_to_inspector', 'verified', 'submitted'])
+                )
+        elif profile.role == 'admin':
+            qs = base if self.action != 'list' else base.filter(signing_step='submitted')
+        else:
+            qs = owned_queryset(base, self.request.user)
+
         status_filter = self.request.query_params.get('status')
         period = self.request.query_params.get('period')
-
-        if get_or_create_user_profile(user).role == 'inspector':
-            queryset = queryset.filter(created_by=user)
-
         if status_filter:
-            queryset = queryset.filter(status=status_filter)
-
-        queryset = filter_queryset_by_period(queryset, period, 'receipt_date')
-        return queryset
+            qs = qs.filter(status=status_filter)
+        return filter_queryset_by_period(qs, period, 'receipt_date')
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update', 'retrieve']:
@@ -816,6 +1309,14 @@ class ProductReceiptCertificateViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         full_name = self.request.user.get_full_name() or self.request.user.username
         serializer.save(created_by=self.request.user, pbpa_inspector_name=serializer.validated_data.get('pbpa_inspector_name') or full_name)
+
+    def _build_pdf_bytes(self, obj):
+        return self._build_pdf(obj).getvalue()
+
+    @action(detail=True, methods=['post'], url_path='sign_with_image')
+    def sign_with_image(self, request, pk=None):
+        """Legacy alias — redirects to inspector_sign for backwards compatibility."""
+        return self.inspector_sign(request, pk=pk)
 
     @action(detail=True, methods=['post'])
     def sign_document(self, request, pk=None):
@@ -1037,28 +1538,37 @@ class ProductReceiptCertificateViewSet(viewsets.ModelViewSet):
         return buffer
 
 
-class SealIsolationReportViewSet(viewsets.ModelViewSet):
+class SealIsolationReportViewSet(SigningWorkflowMixin, viewsets.ModelViewSet):
     """CRUD workflow for the PBPA sealing and isolation report."""
     permission_classes = (IsAuthenticated,)
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['report_number', 'vessel_name', 'product_name', 'terminal', 'pbpa_inspector_name']
     ordering_fields = ['created_at', 'report_date', 'report_number', 'status']
     ordering = ['-created_at']
+    _doc_type_label = 'seal_isolation'
 
     def get_queryset(self):
-        queryset = SealIsolationReport.objects.select_related('created_by').prefetch_related('entries')
-        user = self.request.user
+        profile = get_or_create_user_profile(self.request.user)
+        base = SealIsolationReport.objects.select_related('created_by').prefetch_related('entries')
+        if profile.role == 'terminal_representative':
+            if self.action == 'list':
+                qs = base.filter(signing_step='sent_to_client')
+            else:
+                qs = base.filter(
+                    Q(signing_step='sent_to_client')
+                    | Q(client_signed_by=self.request.user)
+                    | Q(signing_step__in=['client_signed', 'sent_to_inspector', 'verified', 'submitted'])
+                )
+        elif profile.role == 'admin':
+            qs = base if self.action != 'list' else base.filter(signing_step='submitted')
+        else:
+            qs = owned_queryset(base, self.request.user)
+
         status_filter = self.request.query_params.get('status')
         period = self.request.query_params.get('period')
-
-        if get_or_create_user_profile(user).role == 'inspector':
-            queryset = queryset.filter(created_by=user)
-
         if status_filter:
-            queryset = queryset.filter(status=status_filter)
-
-        queryset = filter_queryset_by_period(queryset, period, 'report_date')
-        return queryset
+            qs = qs.filter(status=status_filter)
+        return filter_queryset_by_period(qs, period, 'report_date')
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update', 'retrieve']:
@@ -1071,6 +1581,15 @@ class SealIsolationReportViewSet(viewsets.ModelViewSet):
             created_by=self.request.user,
             pbpa_inspector_name=serializer.validated_data.get('pbpa_inspector_name') or full_name,
         )
+
+    def _build_pdf_bytes(self, obj):
+        from .shore_tank_utils import generate_seal_isolation_pdf
+        return generate_seal_isolation_pdf(obj).getvalue()
+
+    @action(detail=True, methods=['post'], url_path='sign_with_image')
+    def sign_with_image(self, request, pk=None):
+        """Legacy alias — redirects to inspector_sign."""
+        return self.inspector_sign(request, pk=pk)
 
     @action(detail=True, methods=['post'])
     def sign_document(self, request, pk=None):
@@ -1137,13 +1656,13 @@ class ASTMLookupView(viewsets.ViewSet):
             )
 
         table_d20 = density_at_20_from_table(sample_density, sample_temp)
-        d20 = table_d20 if table_d20 is not None else ShoreTankCalculationEngine.density_at_20(sample_density, sample_temp)
+        d20 = table_d20 if table_d20 is not None else density_at_20_formula(sample_density, sample_temp)
 
         table_vcf = vcf_from_table(d20, tank_temp) if d20 is not None else None
         vcf = table_vcf if table_vcf is not None else (
-            ShoreTankCalculationEngine.vcf(d20, tank_temp) if d20 is not None else None
+            vcf_formula(d20, tank_temp) if d20 is not None else None
         )
-        wcf = ShoreTankCalculationEngine.wcf(d20)
+        wcf = wcf_from_density(d20)
 
         return Response({
             'density_at_20': d20,
@@ -1158,28 +1677,37 @@ class ASTMLookupView(viewsets.ViewSet):
         })
 
 
-class ShoreTankCalculationViewSet(viewsets.ModelViewSet):
+class ShoreTankCalculationViewSet(SigningWorkflowMixin, viewsets.ModelViewSet):
     """CRUD workflow for the PBPA shore tank calculation workbook."""
     permission_classes = (IsAuthenticated,)
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['calculation_number', 'vessel_name', 'product_name', 'terminal', 'pbpa_inspector_name']
     ordering_fields = ['created_at', 'calculation_date', 'calculation_number', 'status']
     ordering = ['-created_at']
+    _doc_type_label = 'shore_tank'
 
     def get_queryset(self):
-        queryset = ShoreTankCalculation.objects.select_related('created_by').prefetch_related('tank_items__tank')
-        user = self.request.user
+        profile = get_or_create_user_profile(self.request.user)
+        base = ShoreTankCalculation.objects.select_related('created_by').prefetch_related('tank_items__tank')
+        if profile.role == 'terminal_representative':
+            if self.action == 'list':
+                qs = base.filter(signing_step='sent_to_client')
+            else:
+                qs = base.filter(
+                    Q(signing_step='sent_to_client')
+                    | Q(client_signed_by=self.request.user)
+                    | Q(signing_step__in=['client_signed', 'sent_to_inspector', 'verified', 'submitted'])
+                )
+        elif profile.role == 'admin':
+            qs = base if self.action != 'list' else base.filter(signing_step='submitted')
+        else:
+            qs = owned_queryset(base, self.request.user)
+
         status_filter = self.request.query_params.get('status')
         period = self.request.query_params.get('period')
-
-        if get_or_create_user_profile(user).role == 'inspector':
-            queryset = queryset.filter(created_by=user)
-
         if status_filter:
-            queryset = queryset.filter(status=status_filter)
-
-        queryset = filter_queryset_by_period(queryset, period, 'calculation_date')
-        return queryset
+            qs = qs.filter(status=status_filter)
+        return filter_queryset_by_period(qs, period, 'calculation_date')
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update', 'retrieve']:
@@ -1192,6 +1720,15 @@ class ShoreTankCalculationViewSet(viewsets.ModelViewSet):
             created_by=self.request.user,
             pbpa_inspector_name=serializer.validated_data.get('pbpa_inspector_name') or full_name,
         )
+
+    def _build_pdf_bytes(self, obj):
+        from .shore_tank_utils import generate_shore_tank_pdf
+        return generate_shore_tank_pdf(obj).getvalue()
+
+    @action(detail=True, methods=['post'], url_path='sign_with_image')
+    def sign_with_image(self, request, pk=None):
+        """Legacy alias — redirects to inspector_sign."""
+        return self.inspector_sign(request, pk=pk)
 
     @action(detail=True, methods=['post'])
     def sign_document(self, request, pk=None):
@@ -1298,30 +1835,38 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     search_fields = ['vessel_name', 'doc_number', 'terminal', 'doc_type']
     ordering = ['-submitted_at']
 
+    def _with_existing_document_targets(self, queryset):
+        target_filter = Q(pk__in=[])
+        for doc_type, config in SubmissionSerializer.SUBMITTABLE_DOCUMENTS.items():
+            target_filter |= Q(
+                doc_type=doc_type,
+                doc_id__in=config['model'].objects.values_list('pk', flat=True),
+            )
+        return queryset.filter(target_filter)
+
     def get_queryset(self):
-        user = self.request.user
-        profile = get_or_create_user_profile(user)
+        profile = get_or_create_user_profile(self.request.user)
         qs = Submission.objects.select_related('submitted_by')
         if profile.role == 'inspector':
-            qs = qs.filter(submitted_by=user)
+            qs = qs.filter(submitted_by=self.request.user)
+        qs = self._with_existing_document_targets(qs)
+        doc_type = self.request.query_params.get('doc_type')
+        if doc_type:
+            qs = qs.filter(doc_type=doc_type)
         return qs
 
     def perform_create(self, serializer):
         serializer.save(submitted_by=self.request.user)
 
     def destroy(self, request, *args, **kwargs):
-        """Only admins and supervisors can delete submissions."""
         profile = get_or_create_user_profile(request.user)
-        if profile.role not in ('admin', 'supervisor'):
+        if profile.role not in ('admin', 'terminal_representative'):
             return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'])
     def unread_count(self, request):
-        profile = get_or_create_user_profile(request.user)
-        if profile.role not in ('admin', 'supervisor'):
-            return Response({'count': 0})
-        return Response({'count': Submission.objects.filter(is_read=False).count()})
+        return Response({'count': self.get_queryset().filter(is_read=False).count()})
 
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
@@ -1332,7 +1877,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def mark_all_read(self, request):
-        Submission.objects.filter(is_read=False).update(is_read=True)
+        self.get_queryset().filter(is_read=False).update(is_read=True)
         return Response({'status': 'all marked read'})
 
 
@@ -1345,7 +1890,12 @@ class VesselReportViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        qs = VesselReport.objects.select_related('created_by')
+        profile = get_or_create_user_profile(self.request.user)
+        base = VesselReport.objects.select_related('created_by')
+        if profile.role == 'admin':
+            qs = base
+        else:
+            qs = owned_queryset(base, self.request.user)
         return filter_queryset_by_period(qs, self.request.query_params.get('period'), 'discharge_date')
 
     def perform_create(self, serializer):
@@ -1510,10 +2060,12 @@ class ProvisionalOuturnReportViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        qs = ProvisionalOuturnReport.objects.select_related('created_by').prefetch_related('items')
         profile = get_or_create_user_profile(self.request.user)
-        if profile.role == 'inspector':
-            qs = qs.filter(created_by=self.request.user)
+        base = ProvisionalOuturnReport.objects.select_related('created_by').prefetch_related('items')
+        if profile.role in ('admin', 'terminal_representative') and self.action in {'list', 'retrieve', 'pdf', 'docx'}:
+            qs = base
+        else:
+            qs = owned_queryset(base, self.request.user)
         qs = filter_queryset_by_period(qs, self.request.query_params.get('period'), 'report_date')
         return qs
 
@@ -1896,10 +2448,12 @@ class StockReportViewSet(viewsets.ModelViewSet):
     ordering = ['-report_date', '-created_at']
 
     def get_queryset(self):
-        qs = StockReport.objects.select_related('created_by').prefetch_related('items')
         profile = get_or_create_user_profile(self.request.user)
-        if profile.role == 'inspector':
-            qs = qs.filter(created_by=self.request.user)
+        base = StockReport.objects.select_related('created_by').prefetch_related('items')
+        if profile.role in ('admin', 'terminal_representative') and self.action in {'list', 'retrieve', 'pdf'}:
+            qs = base
+        else:
+            qs = owned_queryset(base, self.request.user)
         qs = filter_queryset_by_period(qs, self.request.query_params.get('period'), 'report_date')
         return qs
 
@@ -2058,6 +2612,252 @@ class StockReportViewSet(viewsets.ModelViewSet):
         return buf
 
 
+class ServiceRequestViewSet(viewsets.ModelViewSet):
+    """Service requests submitted by clients; admin & inspector get notified."""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ServiceRequestSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['request_number', 'vessel_name', 'terminal', 'operation_type']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        profile = get_or_create_user_profile(self.request.user)
+        qs = ServiceRequest.objects.select_related('submitted_by', 'assigned_to')
+        # terminal representative sees only their own; admin/inspector see all
+        if profile.role == 'terminal_representative':
+            return qs.filter(submitted_by=self.request.user)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(submitted_by=self.request.user, is_read_admin=False, is_read_inspector=False)
+
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        """Unread count for admin or inspector."""
+        profile = get_or_create_user_profile(request.user)
+        if profile.role == 'admin':
+            count = ServiceRequest.objects.filter(is_read_admin=False).count()
+        elif profile.role == 'inspector':
+            count = ServiceRequest.objects.filter(is_read_inspector=False).count()
+        else:
+            count = 0
+        return Response({'count': count})
+
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        sr = self.get_object()
+        profile = get_or_create_user_profile(request.user)
+        if profile.role == 'admin':
+            sr.is_read_admin = True
+            sr.save(update_fields=['is_read_admin', 'updated_at'])
+        elif profile.role == 'inspector':
+            sr.is_read_inspector = True
+            sr.save(update_fields=['is_read_inspector', 'updated_at'])
+        return Response(self.get_serializer(sr).data)
+
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        profile = get_or_create_user_profile(request.user)
+        if profile.role == 'admin':
+            ServiceRequest.objects.filter(is_read_admin=False).update(is_read_admin=True)
+        elif profile.role == 'inspector':
+            ServiceRequest.objects.filter(is_read_inspector=False).update(is_read_inspector=True)
+        return Response({'status': 'all marked read'})
+
+    @action(detail=True, methods=['post'])
+    def acknowledge(self, request, pk=None):
+        sr = self.get_object()
+        sr.status = 'acknowledged'
+        sr.is_read_admin = True
+        sr.save(update_fields=['status', 'is_read_admin', 'updated_at'])
+        return Response(self.get_serializer(sr).data)
+
+    @action(detail=True, methods=['get', 'post'])
+    def messages(self, request, pk=None):
+        sr = self.get_object()
+        if request.method == 'GET':
+            msgs = sr.messages.select_related('sender').all()
+            return Response(ServiceRequestMessageSerializer(msgs, many=True).data)
+        serializer = ServiceRequestMessageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        msg = serializer.save(service_request=sr, sender=request.user)
+        # Notify all participants except the sender
+        sender_name = request.user.get_full_name() or request.user.username
+        notif_title = f'New message on {sr.request_number}'
+        notif_body = f'{sender_name}: {msg.body[:100]}'
+        recipients = set()
+        # Always notify the terminal rep (submitted_by)
+        if sr.submitted_by and sr.submitted_by != request.user:
+            recipients.add(sr.submitted_by)
+        # Notify assigned inspector
+        if sr.assigned_to and sr.assigned_to != request.user:
+            recipients.add(sr.assigned_to)
+        # Notify all admins
+        admin_ids = UserProfile.objects.filter(role='admin').values_list('user_id', flat=True)
+        for u in User.objects.filter(pk__in=admin_ids).exclude(pk=request.user.pk):
+            recipients.add(u)
+        # Notify all inspectors who have replied in this thread
+        thread_senders = sr.messages.exclude(sender=request.user).values_list('sender_id', flat=True).distinct()
+        for u in User.objects.filter(pk__in=thread_senders):
+            recipients.add(u)
+        for recipient in recipients:
+            Notification.objects.create(
+                recipient=recipient,
+                notification_type='sr_message',
+                title=notif_title,
+                message=notif_body,
+            )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def assign(self, request, pk=None):
+        sr = self.get_object()
+        inspector_id = request.data.get('inspector_id')
+        try:
+            inspector = User.objects.get(pk=inspector_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Inspector not found.'}, status=status.HTTP_400_BAD_REQUEST)
+        sr.assigned_to = inspector
+        sr.status = 'in_progress'
+        sr.is_read_inspector = False
+        sr.save(update_fields=['assigned_to', 'status', 'is_read_inspector', 'updated_at'])
+        return Response(self.get_serializer(sr).data)
+
+    @action(detail=True, methods=['post'])
+    def complete(self, request, pk=None):
+        sr = self.get_object()
+        sr.status = 'completed'
+        sr.save(update_fields=['status', 'updated_at'])
+        return Response(self.get_serializer(sr).data)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        sr = self.get_object()
+        reason = request.data.get('reason', '')
+        sr.status = 'cancelled'
+        if reason:
+            sr.notes = (sr.notes + '\n\nCancellation reason: ' + reason).strip()
+        sr.save(update_fields=['status', 'notes', 'updated_at'])
+        return Response(self.get_serializer(sr).data)
+
+
+
+class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
+    """Real-time activity log — admin only."""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ActivityLogSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['user__username', 'user__first_name', 'action', 'doc_type', 'doc_number', 'detail']
+    ordering = ['-timestamp']
+
+    def get_queryset(self):
+        profile = get_or_create_user_profile(self.request.user)
+        if profile.role != 'admin':
+            return ActivityLog.objects.none()
+        qs = ActivityLog.objects.select_related('user').all()
+        action = self.request.query_params.get('action')
+        period = self.request.query_params.get('period')
+        if action:
+            qs = qs.filter(action=action)
+        if period:
+            start = period_start_datetime(period)
+            if start:
+                qs = qs.filter(timestamp__gte=start)
+        return qs
+
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """Return activity counts grouped by action type for the dashboard."""
+        profile = get_or_create_user_profile(request.user)
+        if profile.role != 'admin':
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+
+        period = request.query_params.get('period')
+        qs = ActivityLog.objects.all()
+        if period:
+            start = period_start_datetime(period)
+            if start:
+                qs = qs.filter(timestamp__gte=start)
+
+        from django.db.models import Count
+        counts = {
+            row['action']: row['count']
+            for row in qs.values('action').annotate(count=Count('id'))
+        }
+
+        COLOR_MAP = {
+            'login':            '#2563eb',
+            'logout':           '#64748b',
+            'login_failed':     '#dc2626',
+            'report_created':   '#16a34a',
+            'report_updated':   '#f59e0b',
+            'report_deleted':   '#ef4444',
+            'report_submitted': '#0891b2',
+            'report_approved':  '#059669',
+            'report_rejected':  '#be123c',
+            'password_changed': '#7c3aed',
+            'user_created':     '#4f46e5',
+            'user_deleted':     '#9f1239',
+            'file_uploaded':    '#0369a1',
+        }
+        WHY_MAP = {
+            'login':            'Security audit',
+            'logout':           'Session tracking',
+            'login_failed':     'Detect attacks',
+            'report_created':   'Usage monitoring',
+            'report_updated':   'Audit trail',
+            'report_deleted':   'Accountability',
+            'report_submitted': 'Workflow tracking',
+            'report_approved':  'Approval tracking',
+            'report_rejected':  'Rejection tracking',
+            'password_changed': 'Security tracking',
+            'user_created':     'Access management',
+            'user_deleted':     'Access management',
+            'file_uploaded':    'Storage monitoring',
+        }
+        LABEL_MAP = dict(ActivityLog.ACTION_CHOICES)
+        rows = [
+            {
+                'action': action,
+                'activity': LABEL_MAP.get(action, action),
+                'value': count,
+                'why': WHY_MAP.get(action, ''),
+                'color': COLOR_MAP.get(action, '#8B1A1A'),
+            }
+            for action, count in sorted(counts.items(), key=lambda x: -x[1])
+        ]
+        return Response(rows)
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    """In-app notifications for the current user."""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = NotificationSerializer
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        qs = self.get_queryset().filter(is_read=False)
+        notif_type = request.query_params.get('notification_type')
+        if notif_type:
+            qs = qs.filter(notification_type=notif_type)
+        return Response({'count': qs.count()})
+
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        n = self.get_object()
+        n.is_read = True
+        n.save(update_fields=['is_read'])
+        return Response({'status': 'marked read'})
+
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        self.get_queryset().filter(is_read=False).update(is_read=True)
+        return Response({'status': 'all marked read'})
+
+
 def csrf_failure(request, reason=""):
     """Handle CSRF failures securely."""
     from .exception_handler import custom_exception_handler
@@ -2078,7 +2878,7 @@ def csrf_failure(request, reason=""):
     )
 
 
-class SamplingFormViewSet(viewsets.ModelViewSet):
+class SamplingFormViewSet(SigningWorkflowMixin, viewsets.ModelViewSet):
     """CRUD + official PBPA PDF for Sampling Forms."""
     permission_classes = (IsAuthenticated,)
     serializer_class = SamplingFormSerializer
@@ -2086,12 +2886,24 @@ class SamplingFormViewSet(viewsets.ModelViewSet):
     search_fields = ['form_number', 'vessel_name', 'product_name', 'terminal', 'pbpa_inspector_name']
     ordering_fields = ['created_at', 'sampling_date', 'form_number', 'status']
     ordering = ['-created_at']
+    _doc_type_label = 'sampling_form'
 
     def get_queryset(self):
-        qs = SamplingForm.objects.select_related('created_by')
         profile = get_or_create_user_profile(self.request.user)
-        if profile.role == 'inspector':
-            qs = qs.filter(created_by=self.request.user)
+        base = SamplingForm.objects.select_related('created_by')
+        if profile.role == 'terminal_representative':
+            if self.action == 'list':
+                qs = base.filter(signing_step='sent_to_client')
+            else:
+                qs = base.filter(
+                    Q(signing_step='sent_to_client')
+                    | Q(client_signed_by=self.request.user)
+                    | Q(signing_step__in=['client_signed', 'sent_to_inspector', 'verified', 'submitted'])
+                )
+        elif profile.role == 'admin':
+            qs = base if self.action != 'list' else base.filter(signing_step='submitted')
+        else:
+            qs = owned_queryset(base, self.request.user)
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)
@@ -2104,6 +2916,14 @@ class SamplingFormViewSet(viewsets.ModelViewSet):
             created_by=self.request.user,
             pbpa_inspector_name=serializer.validated_data.get('pbpa_inspector_name') or full_name,
         )
+
+    def _build_pdf_bytes(self, obj):
+        return self._build_pdf(obj).getvalue()
+
+    @action(detail=True, methods=['post'], url_path='sign_with_image')
+    def sign_with_image(self, request, pk=None):
+        """Legacy alias: inspector signature starts the shared workflow."""
+        return self.inspector_sign(request, pk=pk)
 
     @action(detail=True, methods=['post'])
     def issue(self, request, pk=None):

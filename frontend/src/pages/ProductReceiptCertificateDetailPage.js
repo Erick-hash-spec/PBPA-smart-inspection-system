@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { productReceiptCertificateService } from '../services/api';
 import { ChevronLeft } from 'lucide-react';
+import { SigningActions } from '../components/SigningActions';
 
 const ConfirmModal = ({ message, onConfirm, onCancel }) => (
   <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -50,6 +51,7 @@ export const ProductReceiptCertificateDetailPage = () => {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
   const [showDelete, setShowDelete] = useState(false);
+  const userRole = localStorage.getItem('user_role');
 
   useEffect(() => { fetchCertificate(); }, [id]); // eslint-disable-line
 
@@ -91,18 +93,6 @@ export const ProductReceiptCertificateDetailPage = () => {
     } catch { setError('Failed to generate document'); }
   };
 
-  const handleSign = async () => {
-    try {
-      const res = await productReceiptCertificateService.signDocument(id);
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a'); a.href = url;
-      a.download = `SIGNED_PRC_${certificate.certificate_number}.pdf`;
-      document.body.appendChild(a); a.click(); a.remove();
-      window.URL.revokeObjectURL(url);
-      fetchCertificate();
-    } catch (err) { setError('Signing failed: ' + (err.response?.data?.detail || err.message)); }
-  };
-
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
@@ -128,57 +118,38 @@ export const ProductReceiptCertificateDetailPage = () => {
         />
       )}
 
-      {/* ────────────────────────────────────────────────────────────────── */}
-      {/* HEADER SECTION */}
-      {/* ────────────────────────────────────────────────────────────────── */}
+      {/* HEADER */}
       <div className="mb-8">
         <button onClick={() => navigate('/product-receipt-certificates')} className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm mb-4 transition-colors">
           <ChevronLeft className="w-4 h-4" />Back
-</button>
-        
+        </button>
+
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-              Product Receipt Certificate
-            </h1>
-            <p className="text-gray-500 text-sm md:text-base">
-              #{certificate.certificate_number} • {certificate.vessel_name}
-            </p>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Product Receipt Certificate</h1>
+            <p className="text-gray-500 text-sm md:text-base">#{certificate.certificate_number} • {certificate.vessel_name}</p>
             <p className="text-gray-400 text-xs md:text-sm mt-1">{certificate.terminal}</p>
           </div>
-
-          {/* Status & Actions */}
           <div className="flex items-center gap-2 flex-wrap">
             {isDraft ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                Draft
-</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200">Draft</span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200">Issued
-</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200">Issued</span>
             )}
-
             {isDraft && (
-              <button onClick={() => navigate(`/product-receipt-certificates/${id}/edit`)} className="px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">Edit
-</button>
+              <button onClick={() => navigate(`/product-receipt-certificates/${id}/edit`)} className="px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">Edit</button>
             )}
-
-            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors inline-flex items-center gap-2">Delete
-</button>
+            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors inline-flex items-center gap-2">Delete</button>
           </div>
         </div>
       </div>
 
-      {/* Error Banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm flex gap-2 animate-slide-up">
           <span>{error}</span>
         </div>
       )}
 
-      {/* ────────────────────────────────────────────────────────────────── */}
-      {/* CERTIFICATE HEADER SECTION */}
-      {/* ────────────────────────────────────────────────────────────────── */}
       <Section title="Certificate Header">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Field label="Vessel Name" value={certificate.vessel_name} highlight />
@@ -190,9 +161,6 @@ export const ProductReceiptCertificateDetailPage = () => {
         </div>
       </Section>
 
-      {/* ────────────────────────────────────────────────────────────────── */}
-      {/* LINE ITEMS SECTION */}
-      {/* ────────────────────────────────────────────────────────────────── */}
       <Section title="Line Items">
         <div className="overflow-x-auto -mx-2 md:mx-0">
           <table className="w-full text-sm">
@@ -224,9 +192,6 @@ export const ProductReceiptCertificateDetailPage = () => {
         </div>
       </Section>
 
-      {/* ────────────────────────────────────────────────────────────────── */}
-      {/* ADDITIONAL DETAILS SECTION */}
-      {/* ────────────────────────────────────────────────────────────────── */}
       {(certificate.notes || certificate.terminal_representative_signature || certificate.pbpa_inspector_signature) && (
         <Section title="Additional Details">
           {certificate.notes && (
@@ -242,29 +207,25 @@ export const ProductReceiptCertificateDetailPage = () => {
         </Section>
       )}
 
-      {/* ────────────────────────────────────────────────────────────────── */}
-      {/* ACTIONS SECTION */}
-      {/* ────────────────────────────────────────────────────────────────── */}
       <Section title="Actions">
         <div className="flex flex-wrap gap-2.5">
           {isDraft && (
             <button onClick={handleSubmitCertificate} className="report-action inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Submit</button>
           )}
-
-          <button onClick={handleDownloadPdf} className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Download
-</button>
-
-          <button onClick={handleDownloadDoc} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Word
-</button>
-
-          {!certificate.is_signed ? (
-            <button onClick={handleSign} className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Sign & Download
-</button>
-          ) : (
-            <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-purple-100 text-purple-800 border border-purple-200 cursor-help" title={`Signed by ${certificate.signed_by_name || 'PBPA'}`}>Signed
-</span>
-          )}
+          <button onClick={handleDownloadPdf} className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Download</button>
+          <button onClick={handleDownloadDoc} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Word</button>
         </div>
+      </Section>
+
+      <Section title="Signing Workflow">
+        <SigningActions
+          doc={certificate}
+          role={userRole}
+          service={productReceiptCertificateService}
+          docLabel="PRC"
+          onRefresh={fetchCertificate}
+          setError={setError}
+        />
       </Section>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { sealIsolationReportService } from '../services/api';
+import { LogoHeader } from '../components/LogoHeader';
 import { TerminalSelect, ProductSelect } from '../components/FormOptions';
 import { Trash2 } from 'lucide-react';
 
@@ -94,10 +95,8 @@ export const SealIsolationReportFormPage = () => {
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto animate-fade-in">
-      <div className="mb-6">
-        <button onClick={() => navigate(isEdit ? `/seal-isolation-reports/${id}` : '/seal-isolation-reports')} className="text-sm text-blue-600 hover:underline mb-1">← Back</button>
-        <h1 className="text-3xl font-bold text-gray-900">{isEdit ? 'Edit Seal & Isolation Report' : 'New Sealing and Isolation Report'}</h1>
-      </div>
+      <button onClick={() => navigate(isEdit ? `/seal-isolation-reports/${id}` : '/seal-isolation-reports')} className="text-sm text-blue-600 hover:underline mb-4">← Back</button>
+      <LogoHeader title={isEdit ? 'Edit Seal & Isolation Report' : 'New Sealing and Isolation Report'} />
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm">{error}</div>}
 

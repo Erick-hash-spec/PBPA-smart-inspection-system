@@ -44,12 +44,12 @@ ensure_demo_user(
 )
 
 ensure_demo_user(
-    username='supervisor1',
-    email='supervisor1@example.com',
+    username='terminal_rep1',
+    email='terminalrep1@example.com',
     password='password123',
     first_name='Jane',
-    last_name='Supervisor',
-    role='supervisor',
+    last_name='Terminal',
+    role='terminal_representative',
     department='QA',
 )
 

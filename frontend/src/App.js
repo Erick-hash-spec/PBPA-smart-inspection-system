@@ -5,7 +5,6 @@ import { DarkModeProvider } from './contexts/DarkModeContext';
 import { Navigation } from './components/Navigation';
 import { TopBar } from './components/TopBar';
 import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { TankListPage } from './pages/TankListPage';
 import { InspectionFormPage } from './pages/InspectionFormPage';
@@ -30,12 +29,24 @@ import { UserManagementPage } from './pages/UserManagementPage';
 import { RosterPage } from './pages/RosterPage';
 import { RosterFormPage } from './pages/RosterFormPage';
 import { SamplingFormListPage, SamplingFormFormPage, SamplingFormDetailPage } from './pages/SamplingFormPage';
+import { SystemAnalyticsPage } from './pages/SystemAnalyticsPage';
+import { ClientDashboardPage } from './pages/ClientDashboardPage';
+import { ServiceRequestPage } from './pages/ServiceRequestPage';
 import './index.css';
 
 const ProtectedRoute = ({ children, isAuthenticated }) => {
   if (!isAuthenticated) return <Navigate to="/login" />;
   return children;
 };
+
+const RoleRoute = ({ children, isAuthenticated, allowedRoles }) => {
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  const role = localStorage.getItem('user_role');
+  if (!allowedRoles.includes(role)) return <Navigate to="/dashboard" replace />;
+  return children;
+};
+
+const isTerminalRep = () => localStorage.getItem('user_role') === 'terminal_representative';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => authService.isAuthenticated());
@@ -51,6 +62,11 @@ function App() {
   }, []);
 
   const P = ({ children }) => <ProtectedRoute isAuthenticated={isAuthenticated}>{children}</ProtectedRoute>;
+  const AdminOnly = ({ children }) => (
+    <RoleRoute isAuthenticated={isAuthenticated} allowedRoles={['admin']}>
+      {children}
+    </RoleRoute>
+  );
 
   return (
     <DarkModeProvider>
@@ -58,11 +74,11 @@ function App() {
         <div className="min-h-screen overflow-x-hidden bg-gradient-surface">
           <Navigation />
           <TopBar />
-          <main className={isAuthenticated ? 'app-main min-h-screen pt-14 md:ml-64' : 'min-h-screen overflow-x-hidden'}>
+          <main className={isAuthenticated ? 'app-main min-h-screen pt-14' : 'min-h-screen overflow-x-hidden'}>
             <Routes>
             <Route path="/login"    element={<LoginPage />} />
 
-            <Route path="/dashboard" element={<P><DashboardPage /></P>} />
+            <Route path="/dashboard" element={<P>{isTerminalRep() ? <Navigate to="/client-dashboard" /> : <DashboardPage />}</P>} />
             <Route path="/tanks"     element={<P><TankListPage /></P>} />
 
             {/* Dip Tickets */}
@@ -119,11 +135,20 @@ function App() {
             <Route path="/sampling-forms/:id"      element={<P><SamplingFormDetailPage /></P>} />
             <Route path="/sampling-forms/:id/edit" element={<P><SamplingFormFormPage /></P>} />
 
+            {/* Client Dashboard (Terminal Representative) */}
+            <Route path="/client-dashboard" element={<P><ClientDashboardPage /></P>} />
+
+            {/* Service Requests */}
+            <Route path="/service-requests" element={<P><ServiceRequestPage /></P>} />
+
             {/* User Management (Admin only) */}
             <Route path="/users" element={<P><UserManagementPage /></P>} />
 
-            <Route path="/"  element={<Navigate to="/dashboard" />} />
-            <Route path="*"  element={<Navigate to="/dashboard" />} />
+            {/* Analytics (Admin only) */}
+            <Route path="/system-analytics" element={<AdminOnly><SystemAnalyticsPage /></AdminOnly>} />
+
+            <Route path="/"  element={<Navigate to={isTerminalRep() ? '/client-dashboard' : '/dashboard'} />} />
+            <Route path="*"  element={<Navigate to={isTerminalRep() ? '/client-dashboard' : '/dashboard'} />} />
           </Routes>
         </main>
       </div>

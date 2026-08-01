@@ -31,6 +31,8 @@ const ConfirmModal = ({ message, onConfirm, onCancel }) => (
 
 export const ProductReceiptCertificateListPage = () => {
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('user_role');
+  const isAdmin = userRole === 'admin';
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -102,10 +104,12 @@ export const ProductReceiptCertificateListPage = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">PBPA product delivery receipt records</p>
           </div>
         </div>
+        {!isAdmin && (
         <button onClick={() => navigate('/product-receipt-certificates/new')}
           className="gradient-primary text-white px-5 py-2.5 rounded-xl font-semibold text-sm inline-flex items-center gap-2 hover:opacity-90 transition shadow-sm">
           <Plus className="w-4 h-4" />New Certificate
-</button>
+        </button>
+      )}
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">{error}</div>}
@@ -144,11 +148,11 @@ export const ProductReceiptCertificateListPage = () => {
                       <div className="report-actions" onClick={e => e.stopPropagation()}>
                         <button onClick={() => navigate(`/product-receipt-certificates/${cert.id}`)} title="View"
                           className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
-                        {cert.status === 'draft' && (
+                        {cert.status === 'draft' && !isAdmin && (
                           <button onClick={() => navigate(`/product-receipt-certificates/${cert.id}/edit`)} title="Edit"
                             className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
                         )}
-                        {cert.status === 'draft' && (
+                        {cert.status === 'draft' && !isAdmin && (
                           <button onClick={() => handleSubmitCertificate(cert.id)} title="Submit"
                             className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700">Submit</button>
                         )}

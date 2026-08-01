@@ -8,15 +8,37 @@ Table 60B: density @20C (kg/L) + tank temperature (C) -> VCF
 import bisect
 import json
 import os
+import threading
 
 _TABLE_59B = None
 _TABLE_60B = None
+_LOAD_LOCK = threading.Lock()
 _TABLE_59B_KEYS = []
 _TABLE_60B_KEYS = []
 _TABLE_59B_TEMP_KEYS = {}
 _TABLE_60B_TEMP_KEYS = {}
 _TABLE_59B_RANGE = None
 _TABLE_60B_RANGE = None
+
+# ASTM D1250 Table 54B thermal expansion coefficients by density group
+# gasoline/naphtha ≤ 0.770 kg/L: 0.001200
+# kerosene/jet A1  0.770–0.800 kg/L: 0.001000
+# gasoil/diesel/fuel oil ≥ 0.800 kg/L: 0.000640
+_ALPHA_BANDS = [
+    (0.770, 0.001200),  # gasoline / naphtha  (density < 0.770)
+    (0.800, 0.001000),  # kerosene / jet A1   (0.770 ≤ density < 0.800)
+]  # else 0.000640 for gasoil / diesel / crude
+
+
+def _astm_alpha(density_kg_l):
+    """Return correct ASTM D1250 thermal expansion alpha for the density group."""
+    if density_kg_l is None:
+        return 0.000840
+    for threshold, alpha in _ALPHA_BANDS:
+        if density_kg_l < threshold:
+            return alpha
+    return 0.000640
+
 
 _BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 _EXCEL_PATH = os.path.join(_BASE_DIR, 'SHORE TANK CALCULATION EXCELL.xlsx')
@@ -25,26 +47,27 @@ _JSON_60B_PATH = os.path.join(_BASE_DIR, 'astm_table60b.json')
 
 
 def _load_tables():
+    global _TABLE_59B
     if _TABLE_59B is not None:
         return
-
-    try:
-        _set_table_cache(_load_json_table(_JSON_59B_PATH), _load_json_table(_JSON_60B_PATH))
-        return
-    except Exception:
-        pass
-
-    try:
-        import openpyxl
-
-        wb = openpyxl.load_workbook(_EXCEL_PATH, data_only=True, read_only=True)
+    with _LOAD_LOCK:
+        if _TABLE_59B is not None:  # double-checked inside lock
+            return
         try:
-            _set_table_cache(_parse_sheet(wb['Table 59B']), _parse_sheet(wb['Table 60B']))
-        finally:
-            wb.close()
-    except Exception:
-        # Tables unavailable; callers can use formula fallback.
-        _set_table_cache({}, {})
+            _set_table_cache(_load_json_table(_JSON_59B_PATH), _load_json_table(_JSON_60B_PATH))
+            return
+        except Exception:
+            pass
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(_EXCEL_PATH, data_only=True, read_only=True)
+            try:
+                _set_table_cache(_parse_sheet(wb['Table 59B']), _parse_sheet(wb['Table 60B']))
+            finally:
+                wb.close()
+        except Exception:
+            # Tables unavailable; callers can use formula fallback.
+            _set_table_cache({}, {})
 
 
 def _load_json_table(path):
@@ -196,6 +219,22 @@ def wcf_from_density(density_at_20_kg_l):
     if density_at_20_kg_l is None:
         return None
     return round(max(density_at_20_kg_l - 0.0011, 0), 4)
+
+
+def density_at_20_formula(sample_density_kg_l, sample_temperature_c):
+    """Formula fallback for Table 59B: correct observed density to 20°C."""
+    if sample_density_kg_l is None or sample_temperature_c is None:
+        return None
+    alpha = _astm_alpha(sample_density_kg_l)
+    return round(sample_density_kg_l * (1 + alpha * (sample_temperature_c - 20)), 4)
+
+
+def vcf_formula(density_at_20_kg_l, tank_temperature_c):
+    """Formula fallback for Table 60B: VCF = 1 / (1 + alpha*(T_tank - 20))."""
+    if density_at_20_kg_l is None or tank_temperature_c is None:
+        return 1.0
+    alpha = _astm_alpha(density_at_20_kg_l)
+    return round(1 / (1 + alpha * (tank_temperature_c - 20)), 6)
 
 
 def table_range():

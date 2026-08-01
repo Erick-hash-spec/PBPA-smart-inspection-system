@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { provisionalOuturnService } from '../services/api';
+import { LogoHeader } from '../components/LogoHeader';
 import { Trash2 } from 'lucide-react';
 
 const PORT_OPTIONS = ['KOJ1', 'KOJ2', 'SBM', 'Mtwara', 'Tanga'];
@@ -57,13 +58,7 @@ const ProvisionalOutturnReportFormPage = () => {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (isEditing) {
-      loadReport();
-    }
-  }, [id]);
-
-  const loadReport = async () => {
+  const loadReport = useCallback(async () => {
     try {
       const data = await provisionalOuturnService.retrieve(id);
       setFormData({
@@ -76,7 +71,13 @@ const ProvisionalOutturnReportFormPage = () => {
       setError('Failed to load report: ' + err.message);
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (isEditing) {
+      loadReport();
+    }
+  }, [isEditing, loadReport]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -188,13 +189,7 @@ const ProvisionalOutturnReportFormPage = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          {isEditing ? 'Edit Provisional Outturn Report' : 'New Provisional Outturn Report'}
-        </h1>
-        <p className="text-gray-600 text-sm mt-1">PBPA Template</p>
-      </div>
+      <LogoHeader title={isEditing ? 'Edit Provisional Outturn Report' : 'New Provisional Outturn Report'} subtitle="PBPA Template" />
 
       {/* Error Alert */}
       {error && (

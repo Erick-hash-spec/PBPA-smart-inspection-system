@@ -9,7 +9,8 @@ export const RosterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const userRole = localStorage.getItem('user_role');
-  const isSupervisorOrAdmin = ['supervisor', 'admin'].includes(userRole);
+  const isAdmin = userRole === 'admin';
+  const isTerminalRepOrAdmin = ['terminal_representative', 'admin'].includes(userRole);
 
   const [rosters, setRosters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,11 +108,11 @@ export const RosterPage = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Roster</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              {isSupervisorOrAdmin ? 'Assign weekly working days to inspectors' : 'Your assigned working schedule'}
+              {isTerminalRepOrAdmin ? 'Assign weekly working days to inspectors' : 'Your assigned working schedule'}
             </p>
           </div>
         </div>
-        {isSupervisorOrAdmin && (
+        {isAdmin && (
           <button
             onClick={openCreate}
             className="gradient-primary text-white px-5 py-2.5 rounded-xl font-semibold text-sm inline-flex items-center gap-2 hover:opacity-90 transition shadow-sm"
@@ -155,7 +156,7 @@ export const RosterPage = () => {
             <div
               key={r.id}
               className={`bg-white dark:bg-slate-800 rounded-2xl border shadow-sm p-5 transition hover:shadow-md ${
-                !r.is_read && !isSupervisorOrAdmin
+                !r.is_read && !isTerminalRepOrAdmin
                   ? 'border-l-4 border-[#8B1A1A] border-r border-t border-b border-gray-100'
                   : 'border-gray-100 dark:border-gray-700'
               }`}
@@ -188,7 +189,7 @@ export const RosterPage = () => {
                         </span>
                       )}
                     </span>
-                    {!r.is_read && !isSupervisorOrAdmin && (
+                    {!r.is_read && !isTerminalRepOrAdmin && (
                       <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
                         New
                       </span>
@@ -250,7 +251,7 @@ export const RosterPage = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 flex-wrap shrink-0">
-                  {!isSupervisorOrAdmin && !r.is_read && (
+                  {!isTerminalRepOrAdmin && !r.is_read && (
                     <button
                       onClick={() => handleMarkRead(r.id)}
                       className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-100 transition"
@@ -263,15 +264,17 @@ export const RosterPage = () => {
                     className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-700"
                     title="Download"
                   >Download</button>
-                  {isSupervisorOrAdmin && (
+                  {isTerminalRepOrAdmin && (
                     <>
                       {r.status !== 'cancelled' && (
                         <>
-                          <button
-                            onClick={() => openEdit(r)}
-                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700"
-                            title="Edit"
-                          >Edit</button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => openEdit(r)}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700"
+                              title="Edit"
+                            >Edit</button>
+                          )}
                           {r.status === 'draft' && (
                             <button
                               onClick={() => handleSend(r.id)}

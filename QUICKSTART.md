@@ -1,4 +1,4 @@
-# ⚡ Quick Start Guide - 5 Minutes to Running
+#  Quick Start Guide - 5 Minutes to Running
 
 This guide will get you up and running in 5 minutes.
 
@@ -61,7 +61,7 @@ python manage.py shell < load_sample_data.py
 python manage.py runserver
 ```
 
-✅ Backend running at http://localhost:8000
+ Backend running at http://localhost:8000
 
 ---
 
@@ -79,7 +79,7 @@ npm install
 npm start
 ```
 
-✅ Frontend running at http://localhost:3000
+ Frontend running at http://localhost:3000
 
 ---
 
@@ -101,7 +101,7 @@ Password: password123
 
 ---
 
-## 🎯 What to Try First
+##  What to Try First
 
 ### As an Inspector:
 1. Go to Dashboard
@@ -128,7 +128,7 @@ Password: password123
 
 ---
 
-## 📊 Key Calculations Explained
+##  Key Calculations Explained
 
 The system automatically calculates:
 
@@ -144,7 +144,7 @@ All calculations are done in **barrels** (1 barrel = 159 liters).
 
 ---
 
-## 🔧 Stopping Services
+##  Stopping Services
 
 ```bash
 # Backend: Press Ctrl+C in Terminal 1
@@ -154,7 +154,7 @@ All calculations are done in **barrels** (1 barrel = 159 liters).
 
 ---
 
-## 🆘 Common Issues
+##  Common Issues
 
 ### "Connection refused" - Database
 **Solution:** Start PostgreSQL or Docker container
@@ -183,7 +183,7 @@ npm install
 
 ---
 
-## 📱 Dashboard Walkthrough
+## Dashboard Walkthrough
 
 ### Inspector Dashboard Shows:
 - Total Inspections (count)
@@ -203,7 +203,7 @@ npm install
 
 ---
 
-## 🚀 Next Steps
+##  Next Steps
 
 ### Learn the System:
 1. Read [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md) for detailed docs
@@ -225,7 +225,7 @@ npm install
 
 ---
 
-## 📚 Documentation Files
+##  Documentation Files
 
 - **IMPLEMENTATION_GUIDE.md** - Complete technical guide
 - **DEPLOYMENT.md** - Production deployment guide
@@ -233,7 +233,7 @@ npm install
 
 ---
 
-## 💡 Pro Tips
+##  Pro Tips
 
 1. **Bulk Import**: Load tanks from CSV using Django admin
 2. **Batch Approvals**: Supervisors can approve multiple inspections
@@ -243,7 +243,7 @@ npm install
 
 ---
 
-## ✅ System Ready!
+##  System Ready!
 
 Your Smart Petroleum Reporting System is now running!
 

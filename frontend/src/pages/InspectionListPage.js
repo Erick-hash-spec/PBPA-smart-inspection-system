@@ -31,6 +31,8 @@ const ConfirmModal = ({ message, onConfirm, onCancel }) => (
 
 export const InspectionListPage = () => {
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('user_role');
+  const isAdmin = userRole === 'admin';
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -104,10 +106,12 @@ export const InspectionListPage = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">PBPA tank dip ticket register</p>
           </div>
         </div>
+        {!isAdmin && (
         <button onClick={() => navigate('/inspections/new')}
           className="gradient-primary text-white px-5 py-2.5 rounded-xl font-semibold text-sm inline-flex items-center gap-2 hover:opacity-90 transition shadow-sm">
           <Plus className="w-4 h-4" />New Ticket
-</button>
+        </button>
+      )}
       </div>
 
       {error && (
@@ -159,7 +163,7 @@ export const InspectionListPage = () => {
                       <div className="report-actions" onClick={e => e.stopPropagation()}>
                         <button onClick={() => navigate(`/inspections/${insp.id}`)} title="View"
                           className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
-                        {insp.status === 'draft' && (
+                        {insp.status === 'draft' && !isAdmin && (
                           <button onClick={() => navigate(`/inspections/${insp.id}/edit`)} title="Edit"
                             className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
                         )}
@@ -195,7 +199,7 @@ export const InspectionListPage = () => {
                 </div>
                 <div className="report-actions mt-3" onClick={e => e.stopPropagation()}>
                   <button onClick={() => navigate(`/inspections/${insp.id}`)} className="report-action bg-blue-50 text-blue-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-blue-200">View</button>
-                  {insp.status === 'draft' && <button onClick={() => navigate(`/inspections/${insp.id}/edit`)} className="report-action bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200">Edit</button>}
+                  {insp.status === 'draft' && !isAdmin && <button onClick={() => navigate(`/inspections/${insp.id}/edit`)} className="report-action bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200">Edit</button>}
                   {insp.status === 'approved' && (submittedIds.has(insp.id) ? <span className="report-action bg-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-green-200">Sent</span> : <button onClick={() => setSubmitTarget(insp)} className="report-action bg-[#8B1A1A] text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Submit</button>)}
                   <button onClick={() => setDeleteTarget(insp)} className="report-action bg-red-50 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200">Delete</button>
                 </div>

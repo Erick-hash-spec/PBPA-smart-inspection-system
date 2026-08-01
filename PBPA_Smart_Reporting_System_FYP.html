@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PBPA Smart Petroleum Reporting System — Final Year Project</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; line-height: 1.7; color: #1a1a2e; background: #f8f9fa; }
+  .container { max-width: 960px; margin: 0 auto; background: #fff; padding: 48px 56px; box-shadow: 0 2px 24px rgba(0,0,0,0.08); }
+  h1 { font-size: 2rem; color: #8B1A1A; border-bottom: 3px solid #8B1A1A; padding-bottom: 12px; margin-bottom: 8px; }
+  h2 { font-size: 1.35rem; color: #8B1A1A; margin: 36px 0 12px; border-left: 4px solid #8B1A1A; padding-left: 12px; }
+  h3 { font-size: 1.1rem; color: #2c3e50; margin: 24px 0 8px; }
+  h4 { font-size: 0.95rem; color: #555; margin: 16px 0 6px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0 8px 24px; }
+  li { margin: 4px 0; }
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 28px 0; }
+  pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 12px 0; font-size: 12.5px; line-height: 1.5; }
+  code { font-family: 'Consolas', 'Courier New', monospace; }
+  p code, li code { background: #f0f0f0; color: #c0392b; padding: 1px 5px; border-radius: 3px; font-size: 12.5px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { background: #8B1A1A; color: #fff; padding: 8px 12px; text-align: left; }
+  td { padding: 7px 12px; border-bottom: 1px solid #eee; }
+  tr:nth-child(even) td { background: #fafafa; }
+  strong { color: #2c3e50; }
+  .cover { text-align: center; padding: 40px 0 32px; border-bottom: 2px solid #8B1A1A; margin-bottom: 32px; }
+  .cover h1 { border: none; font-size: 2.2rem; }
+  .cover .subtitle { color: #666; font-size: 1rem; margin-top: 8px; }
+  .cover .meta { margin-top: 20px; color: #444; font-size: 0.95rem; line-height: 2; }
+  @media print {
+    body { background: #fff; }
+    .container { box-shadow: none; padding: 20px; }
+    pre { white-space: pre-wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="cover">
+    <h1>PBPA Smart Petroleum Reporting System</h1>
+    <p class="subtitle">Final Year Project — Technical Documentation</p>
+    <div class="meta">
+      <strong>Author:</strong> Erick Muhanuzi<br>
+      <strong>Institution:</strong> PBPA<br>
+      <strong>Year:</strong> 2024<br>
+      <strong>Stack:</strong> Django REST Framework · React · PostgreSQL
+    </div>
+  </div>
+  <h1>PBPA Smart Petroleum Reporting System</h1>
+<h3>Final Year Project — Technical Documentation</h3>
+
+<strong>Author:</strong> Erick Muhanuzi  
+<strong>Institution:</strong> PBPA  
+<strong>Year:</strong> 2024  
+
+<hr>
+
+<h2 id="table-of-contents">Table of Contents</h2>
+
+<ol><li>[Project Overview](#1-project-overview)</li><li>[System Architecture](#2-system-architecture)</li><li>[Project Structure](#3-project-structure)</li><li>[User Roles & Permissions](#4-user-roles--permissions)</li><li>[Features & Modules](#5-features--modules)</li><li>[Database Models](#6-database-models)</li><li>[API Reference](#7-api-reference)</li><li>[Calculation Engine](#8-calculation-engine)</li><li>[Signing Workflow](#9-signing-workflow)</li><li>[Real-Time Messaging](#10-real-time-messaging)</li><li>[Notification System](#11-notification-system)</li><li>[Quick Start Guide](#12-quick-start-guide)</li><li>[Configuration](#13-configuration)</li><li>[Deployment](#14-deployment)</li><li>[Troubleshooting](#15-troubleshooting)</li></ol>
+
+<hr>
+
+<h2 id="1-project-overview">1. Project Overview</h2>
+
+<p>The <strong>PBPA Smart Petroleum Reporting System</strong> is a full-stack web application that digitizes petroleum tank inspection and reporting processes at petroleum storage facilities. It replaces manual paperwork with a structured digital workflow covering inspection, calculation, signing, submission, and approval.</p>
+
+<h3>Key Capabilities</h3>
+
+<table><tr><th>Capability</th><th>Description</th></tr><tr><td>Digital Inspections</td><td>Capture dip readings, temperatures, seal/isolation checks</td></tr><tr><td>ASTM D1250 Calculations</td><td>Automatic VCF, WCF, NSV using lookup tables and formula fallback</td></tr><tr><td>Shore Tank Calculations</td><td>Multi-tank initial/final volume reconciliation with PDF export</td></tr><tr><td>Document Signing</td><td>4-step inspector → terminal rep → inspector → admin workflow</td></tr><tr><td>Submissions Inbox</td><td>Admin receives and reviews all submitted documents</td></tr><tr><td>Vessel Reports</td><td>Discharge summary linking all documents for a vessel</td></tr><tr><td>Service Requests</td><td>Terminal rep submits requests; inspector/admin reply in real time</td></tr><tr><td>Real-Time Messaging</td><td>Chat thread per service request with live polling</td></tr><tr><td>Notifications</td><td>In-app notifications for messages, submissions, and signing events</td></tr><tr><td>Inspector Roster</td><td>Admin assigns inspectors to vessels with scheduling</td></tr><tr><td>Sampling Forms</td><td>Digital sampling records with PDF generation</td></tr><tr><td>Stock Reports</td><td>Periodic stock reconciliation reports</td></tr><tr><td>Provisional Outturn</td><td>Ship vs shore volume comparison reports</td></tr><tr><td>System Analytics</td><td>Activity logs, document counts, period-based statistics</td></tr></table>
+<hr>
+
+<h2 id="2-system-architecture">2. System Architecture</h2>
+
+<pre><code class="lang-">┌─────────────────────────────────────────────────────────┐
+<p>│                     React Frontend                       │</p>
+<p>│  (Create React App · Tailwind CSS · Axios · React Router)│</p>
+<p>└────────────────────────┬────────────────────────────────┘</p>
+<p>                         │ HTTP/REST (JWT Auth)</p>
+<p>┌────────────────────────▼────────────────────────────────┐</p>
+<p>│                  Django REST Framework                   │</p>
+<p>│         (ViewSets · JWT · CORS · Throttling)             │</p>
+<p>├─────────────────────────────────────────────────────────┤</p>
+<p>│              inspections app (main)                      │</p>
+<p>│  models · serializers · views · calculations · signing  │</p>
+<p>│  astm_tables · shore_tank_utils · permissions · throttles│</p>
+<p>└────────────────────────┬────────────────────────────────┘</p>
+<p>                         │ ORM</p>
+<p>┌────────────────────────▼────────────────────────────────┐</p>
+<p>│                    PostgreSQL Database                   │</p>
+<p>└─────────────────────────────────────────────────────────┘</p>
+</code></pre>
+
+<strong>Tech Stack:</strong>
+
+<table><tr><th>Layer</th><th>Technology</th></tr><tr><td>Frontend</td><td>React 18, Tailwind CSS, Axios, React Router v6, Lucide Icons</td></tr><tr><td>Backend</td><td>Django 4, Django REST Framework, SimpleJWT</td></tr><tr><td>Database</td><td>PostgreSQL 12+</td></tr><tr><td>PDF Generation</td><td>ReportLab</td></tr><tr><td>ASTM Calculations</td><td>Custom lookup tables + formula fallback (astm_tables.py)</td></tr></table>
+<hr>
+
+<h2 id="3-project-structure">3. Project Structure</h2>
+
+<pre><code class="lang-">SMART REPORTING SYSTEM/
+<p>├── backend/</p>
+<p>│   ├── config/</p>
+<p>│   │   ├── settings.py          # Django settings</p>
+<p>│   │   └── wsgi.py              # WSGI entry point</p>
+<p>│   ├── inspections/</p>
+<p>│   │   ├── models.py            # All database models (25 models)</p>
+<p>│   │   ├── serializers.py       # DRF serializers</p>
+<p>│   │   ├── views.py             # ViewSets &amp; API endpoints</p>
+<p>│   │   ├── urls.py              # URL routing</p>
+<p>│   │   ├── calculations.py      # Shore tank validation &amp; calculation engine</p>
+<p>│   │   ├── astm_tables.py       # ASTM D1250 VCF/WCF lookup tables</p>
+<p>│   │   ├── shore_tank_utils.py  # Shore tank PDF generation</p>
+<p>│   │   ├── signing.py           # Document signing workflow helpers</p>
+<p>│   │   ├── permissions.py       # Custom DRF permissions</p>
+<p>│   │   ├── middleware.py        # Request logging middleware</p>
+<p>│   │   ├── throttles.py         # API rate limiting</p>
+<p>│   │   ├── validators.py        # Custom field validators</p>
+<p>│   │   ├── exception_handler.py # Custom error responses</p>
+<p>│   │   ├── admin.py             # Django admin configuration</p>
+<p>│   │   └── tests.py             # Unit tests</p>
+<p>│   ├── manage.py</p>
+<p>│   └── requirements.txt</p>
+<p>├── frontend/</p>
+<p>│   ├── src/</p>
+<p>│   │   ├── pages/</p>
+<p>│   │   │   ├── LoginPage.js</p>
+<p>│   │   │   ├── RegisterPage.js</p>
+<p>│   │   │   ├── DashboardPage.js</p>
+<p>│   │   │   ├── InspectionListPage.js</p>
+<p>│   │   │   ├── InspectionFormPage.js</p>
+<p>│   │   │   ├── InspectionDetailPage.js</p>
+<p>│   │   │   ├── SealIsolationReportListPage.js</p>
+<p>│   │   │   ├── SealIsolationReportFormPage.js</p>
+<p>│   │   │   ├── SealIsolationReportDetailPage.js</p>
+<p>│   │   │   ├── ShoreTankCalculationListPage.js</p>
+<p>│   │   │   ├── ShoreTankCalculationFormPage.js</p>
+<p>│   │   │   ├── ShoreTankCalculationDetailPage.js</p>
+<p>│   │   │   ├── ProductReceiptCertificateListPage.js</p>
+<p>│   │   │   ├── ProductReceiptCertificateFormPage.js</p>
+<p>│   │   │   ├── ProductReceiptCertificateDetailPage.js</p>
+<p>│   │   │   ├── VesselReportPage.js</p>
+<p>│   │   │   ├── SubmissionsInboxPage.js</p>
+<p>│   │   │   ├── ServiceRequestPage.js</p>
+<p>│   │   │   ├── StockReportPage.js</p>
+<p>│   │   │   ├── ProvisionalOutturnReportListPage.js</p>
+<p>│   │   │   ├── ProvisionalOutturnReportFormPage.js</p>
+<p>│   │   │   ├── ProvisionalOutturnReportDetailPage.js</p>
+<p>│   │   │   ├── SamplingFormPage.js</p>
+<p>│   │   │   ├── RosterPage.js</p>
+<p>│   │   │   ├── RosterFormPage.js</p>
+<p>│   │   │   ├── ClientDashboardPage.js</p>
+<p>│   │   │   ├── UserManagementPage.js</p>
+<p>│   │   │   ├── TankListPage.js</p>
+<p>│   │   │   ├── AdminPanelPage.js</p>
+<p>│   │   │   └── SystemAnalyticsPage.js</p>
+<p>│   │   ├── components/</p>
+<p>│   │   │   ├── Navigation.js    # Sidebar navigation</p>
+<p>│   │   │   ├── TopBar.js        # Header with notification bells</p>
+<p>│   │   │   └── SigningActions.js # Document signing UI</p>
+<p>│   │   ├── services/</p>
+<p>│   │   │   └── api.js           # Axios API client (all services)</p>
+<p>│   │   └── App.js               # Routes &amp; auth guards</p>
+<p>│   └── package.json</p>
+<p>└── README.md</p>
+</code></pre>
+
+<hr>
+
+<h2 id="4-user-roles--permissions">4. User Roles & Permissions</h2>
+
+<h3>Inspector</h3>
+<ul><li>Create and manage dip ticket inspections</li><li>Create seal & isolation reports</li><li>Create shore tank calculations</li><li>Create product receipt certificates</li><li>Create stock reports, sampling forms, provisional outturn reports</li><li>Sign documents (Step 1 of signing workflow)</li><li>Submit signed documents to admin</li><li>View own roster assignments</li><li>Reply to service requests in real time</li><li>Receive notifications for signing events and messages</li></ul>
+
+<h3>Terminal Representative (Supervisor)</h3>
+<ul><li>Submit service requests for inspection operations</li><li>View own submitted documents on client dashboard</li><li>Sign documents (Step 2 — counter-sign)</li><li>Receive real-time message notifications from inspector/admin</li><li>Chat with inspector and admin on service requests</li></ul>
+
+<h3>Admin</h3>
+<ul><li>Full access to all documents and reports</li><li>Manage users and tanks</li><li>View submissions inbox (all submitted documents)</li><li>Create and finalize vessel reports</li><li>Assign inspectors to roster</li><li>Acknowledge, assign, and complete service requests</li><li>View system analytics and activity logs</li><li>Receive notifications for all submissions and messages</li></ul>
+
+<hr>
+
+<h2 id="5-features--modules">5. Features & Modules</h2>
+
+<h3>5.1 Dashboard</h3>
+<ul><li>Role-based card layout (daily/weekly/monthly/yearly/all period filter)</li><li>Defaults to **today's** counts</li><li>Submissions inbox card shows unread + read counts</li><li>Recent submissions panel for admin</li></ul>
+
+<h3>5.2 Dip Ticket Inspections</h3>
+<ul><li>Tank selection with calibration data</li><li>Dip reading, temperature, water level capture</li><li>Automatic volume calculations</li><li>Seal and isolation sub-records</li><li>PDF dip ticket generation</li><li>Signing workflow integration</li></ul>
+
+<h3>5.3 Shore Tank Calculations</h3>
+<ul><li>Multi-tank initial and final readings</li><li>ASTM D1250 VCF/WCF auto-calculation via lookup table with formula fallback</li><li>Correct alpha coefficients per product:</li></ul>
+<p>  - Gasoline/Naphtha (< 0.770 kg/L): α = 0.001200</p>
+<p>  - Kerosene/Jet A1 (0.770–0.800 kg/L): α = 0.001000</p>
+<p>  - Gasoil/Diesel/Fuel Oil (≥ 0.800 kg/L): α = 0.000640</p>
+<ul><li>WCF = density@20°C − 0.0011 (valid range 0.5–1.2)</li><li>Terminal totals and received volume summary</li><li>PDF report generation with company letterhead</li><li>4-step signing workflow</li></ul>
+
+<h3>5.4 Seal & Isolation Reports</h3>
+<ul><li>Seal integrity checks per tank</li><li>Valve/pipeline isolation records</li><li>PDF generation</li><li>Signing workflow</li></ul>
+
+<h3>5.5 Product Receipt Certificates</h3>
+<ul><li>Multi-item product receipt records</li><li>Quantity and weight tracking</li><li>PDF generation</li><li>Signing workflow</li></ul>
+
+<h3>5.6 Vessel Reports</h3>
+<ul><li>Links dip tickets, seal reports, shore calculations, certificates</li><li>Auto-fill vessel details from linked documents</li><li>Total weight (MT) and volume (m³) summary</li><li>Draft → Final → Cancelled status flow</li><li>Admin-only creation; links documents from any inspector</li></ul>
+
+<h3>5.7 Submissions Inbox</h3>
+<ul><li>All submitted documents appear here for admin review</li><li>Filter by document type (server-side)</li><li>Deleted source documents automatically excluded</li><li>Unread/read badge counts on dashboard card</li><li>Mark individual or all as read</li></ul>
+
+<h3>5.8 Service Requests</h3>
+<ul><li>Terminal rep submits requests (operation type, vessel, terminal, date/time)</li><li>Admin can acknowledge, assign to inspector, complete, or cancel</li><li>Inspector can complete assigned requests</li><li>**Real-time chat thread** per request (4-second polling)</li><li>Message notifications sent to all participants on new message</li></ul>
+
+<h3>5.9 Inspector Roster</h3>
+<ul><li>Admin creates roster assignments per vessel/date</li><li>Inspector receives bell notification for new assignments</li><li>Inspector marks assignments as read</li></ul>
+
+<h3>5.10 Sampling Forms</h3>
+<ul><li>Digital sampling records</li><li>PDF generation</li></ul>
+
+<h3>5.11 Stock Reports</h3>
+<ul><li>Periodic stock reconciliation</li><li>Opening/closing stock tracking</li><li>PDF export</li></ul>
+
+<h3>5.12 Provisional Outturn Reports</h3>
+<ul><li>Ship vs shore volume comparison per terminal</li><li>Difference volume and percentage calculations</li><li>PDF generation</li></ul>
+
+<h3>5.13 System Analytics (Admin)</h3>
+<ul><li>Document counts by type and period</li><li>Activity log viewer</li><li>User activity overview</li></ul>
+
+<hr>
+
+<h2 id="6-database-models">6. Database Models</h2>
+
+<table><tr><th>Model</th><th>Description</th></tr><tr><td><code>UserProfile</code></td><td>Extends Django User with role (admin/inspector/supervisor) and department</td></tr><tr><td><code>RosterAssignment</code></td><td>Inspector roster entries per vessel/date</td></tr><tr><td><code>Tank</code></td><td>Tank specifications, dimensions, calibration data</td></tr><tr><td><code>Inspection</code></td><td>Dip ticket inspection record</td></tr><tr><td><code>Seal</code></td><td>Seal integrity check linked to inspection</td></tr><tr><td><code>Isolation</code></td><td>Valve/pipeline isolation check linked to inspection</td></tr><tr><td><code>InspectionCalculation</code></td><td>Calculated volumes for an inspection</td></tr><tr><td><code>InspectionReport</code></td><td>Generated PDF report record</td></tr><tr><td><code>ProductReceiptCertificate</code></td><td>Product receipt certificate header</td></tr><tr><td><code>ProductReceiptCertificateItem</code></td><td>Line items for a certificate</td></tr><tr><td><code>SealIsolationReport</code></td><td>Seal & isolation report header</td></tr><tr><td><code>SealIsolationEntry</code></td><td>Individual seal/isolation entry</td></tr><tr><td><code>ShoreTankCalculation</code></td><td>Shore tank calculation header</td></tr><tr><td><code>ShoreTankCalculationItem</code></td><td>Per-tank calculation row (VCF, WCF, volumes)</td></tr><tr><td><code>Submission</code></td><td>Document submitted to admin inbox</td></tr><tr><td><code>VesselReport</code></td><td>Vessel discharge summary report</td></tr><tr><td><code>StockReport</code></td><td>Stock reconciliation report</td></tr><tr><td><code>StockReportItem</code></td><td>Per-product stock line item</td></tr><tr><td><code>ProvisionalOuturnReport</code></td><td>Provisional outturn report header</td></tr><tr><td><code>ProvisionalOuturnItem</code></td><td>Per-terminal outturn comparison row</td></tr><tr><td><code>ServiceRequest</code></td><td>Inspection operation request from terminal rep</td></tr><tr><td><code>ServiceRequestMessage</code></td><td>Chat message on a service request thread</td></tr><tr><td><code>Notification</code></td><td>In-app notification (sr_message, ready_to_submit, report_submitted)</td></tr><tr><td><code>SamplingForm</code></td><td>Sampling form record</td></tr><tr><td><code>ActivityLog</code></td><td>System audit log entry</td></tr></table>
+<hr>
+
+<h2 id="7-api-reference">7. API Reference</h2>
+
+<p>All endpoints require <code>Authorization: Bearer {access_token}</code> unless noted.</p>
+
+<h3>Authentication</h3>
+
+<pre><code class="lang-">POST   /api/auth/token/              Login — returns access + refresh tokens
+<p>POST   /api/auth/token/refresh/      Refresh access token</p>
+<p>POST   /api/auth/register/           Register new user</p>
+</code></pre>
+
+<h3>Users & Profiles</h3>
+
+<pre><code class="lang-">GET    /api/users/profile/           List user profiles
+<p>GET    /api/users/profile/{id}/      Get profile</p>
+<p>PUT    /api/users/profile/{id}/      Update profile</p>
+</code></pre>
+
+<h3>Tanks</h3>
+
+<pre><code class="lang-">GET    /api/tanks/                   List tanks
+<p>POST   /api/tanks/                   Create tank (admin)</p>
+<p>GET    /api/tanks/{id}/              Tank detail</p>
+<p>GET    /api/tanks/{id}/inspection_history/  Inspection history</p>
+</code></pre>
+
+<h3>Inspections (Dip Tickets)</h3>
+
+<pre><code class="lang-">GET    /api/inspections/             List inspections
+<p>POST   /api/inspections/             Create inspection</p>
+<p>GET    /api/inspections/{id}/        Detail</p>
+<p>PUT    /api/inspections/{id}/        Update</p>
+<p>POST   /api/inspections/{id}/submit/         Submit for approval</p>
+<p>POST   /api/inspections/{id}/approve/        Approve (supervisor)</p>
+<p>POST   /api/inspections/{id}/reject/         Reject (supervisor)</p>
+<p>POST   /api/inspections/{id}/inspector_sign/ Inspector sign (Step 1)</p>
+<p>POST   /api/inspections/{id}/client_sign/    Terminal rep sign (Step 2)</p>
+<p>POST   /api/inspections/{id}/submit_to_admin/ Submit to admin (Step 4)</p>
+<p>GET    /api/inspections/{id}/generate_document/ Download PDF</p>
+<p>GET    /api/inspections/dashboard/   Dashboard statistics</p>
+</code></pre>
+
+<h3>Shore Tank Calculations</h3>
+
+<pre><code class="lang-">GET    /api/shore-tank-calculations/           List
+<p>POST   /api/shore-tank-calculations/           Create</p>
+<p>GET    /api/shore-tank-calculations/{id}/      Detail</p>
+<p>PUT    /api/shore-tank-calculations/{id}/      Update</p>
+<p>POST   /api/shore-tank-calculations/{id}/inspector_sign/</p>
+<p>POST   /api/shore-tank-calculations/{id}/client_sign/</p>
+<p>POST   /api/shore-tank-calculations/{id}/submit_to_admin/</p>
+<p>GET    /api/shore-tank-calculations/{id}/pdf/  Download PDF</p>
+<p>POST   /api/astm/lookup/                       ASTM D1250 VCF/WCF lookup</p>
+</code></pre>
+
+<h3>Seal & Isolation Reports</h3>
+
+<pre><code class="lang-">GET    /api/seal-isolation-reports/            List
+<p>POST   /api/seal-isolation-reports/            Create</p>
+<p>GET    /api/seal-isolation-reports/{id}/       Detail</p>
+<p>POST   /api/seal-isolation-reports/{id}/inspector_sign/</p>
+<p>POST   /api/seal-isolation-reports/{id}/client_sign/</p>
+<p>POST   /api/seal-isolation-reports/{id}/submit_to_admin/</p>
+<p>GET    /api/seal-isolation-reports/{id}/pdf/   Download PDF</p>
+</code></pre>
+
+<h3>Product Receipt Certificates</h3>
+
+<pre><code class="lang-">GET    /api/product-receipt-certificates/      List
+<p>POST   /api/product-receipt-certificates/      Create</p>
+<p>GET    /api/product-receipt-certificates/{id}/ Detail</p>
+<p>POST   /api/product-receipt-certificates/{id}/inspector_sign/</p>
+<p>POST   /api/product-receipt-certificates/{id}/client_sign/</p>
+<p>POST   /api/product-receipt-certificates/{id}/submit_to_admin/</p>
+<p>GET    /api/product-receipt-certificates/{id}/pdf/</p>
+</code></pre>
+
+<h3>Vessel Reports</h3>
+
+<pre><code class="lang-">GET    /api/vessel-reports/          List
+<p>POST   /api/vessel-reports/          Create (admin)</p>
+<p>GET    /api/vessel-reports/{id}/     Detail</p>
+<p>PUT    /api/vessel-reports/{id}/     Update</p>
+<p>POST   /api/vessel-reports/{id}/finalize/   Finalize</p>
+<p>POST   /api/vessel-reports/{id}/cancel/     Cancel</p>
+<p>GET    /api/vessel-reports/{id}/pdf/        Download PDF</p>
+</code></pre>
+
+<h3>Submissions Inbox</h3>
+
+<pre><code class="lang-">GET    /api/submissions/             List (filtered by doc_type query param)
+<p>DELETE /api/submissions/{id}/        Delete (admin/supervisor)</p>
+<p>POST   /api/submissions/{id}/mark_read/     Mark as read</p>
+<p>POST   /api/submissions/mark_all_read/      Mark all read</p>
+<p>GET    /api/submissions/unread_count/       Unread count</p>
+</code></pre>
+
+<h3>Service Requests</h3>
+
+<pre><code class="lang-">GET    /api/service-requests/        List
+<p>POST   /api/service-requests/        Create (terminal rep)</p>
+<p>GET    /api/service-requests/{id}/   Detail</p>
+<p>PUT    /api/service-requests/{id}/   Update</p>
+<p>DELETE /api/service-requests/{id}/   Delete (admin)</p>
+<p>POST   /api/service-requests/{id}/acknowledge/  Acknowledge (admin)</p>
+<p>POST   /api/service-requests/{id}/assign/       Assign inspector (admin)</p>
+<p>POST   /api/service-requests/{id}/complete/     Mark complete</p>
+<p>POST   /api/service-requests/{id}/cancel/       Cancel</p>
+<p>POST   /api/service-requests/{id}/mark_read/    Mark read</p>
+<p>POST   /api/service-requests/mark_all_read/     Mark all read</p>
+<p>GET    /api/service-requests/unread_count/      Unread count</p>
+<p>GET    /api/service-requests/{id}/messages/     Get chat messages</p>
+<p>POST   /api/service-requests/{id}/messages/     Send chat message</p>
+</code></pre>
+
+<h3>Notifications</h3>
+
+<pre><code class="lang-">GET    /api/notifications/                      List notifications
+<p>GET    /api/notifications/unread_count/         Unread count (supports ?notification_type=)</p>
+<p>POST   /api/notifications/{id}/mark_read/       Mark read</p>
+<p>POST   /api/notifications/mark_all_read/        Mark all read</p>
+</code></pre>
+
+<h3>Other Endpoints</h3>
+
+<pre><code class="lang-">GET    /api/rosters/                 Roster assignments
+<p>POST   /api/rosters/                 Create assignment (admin)</p>
+<p>GET    /api/rosters/unread_count/    Inspector unread count</p>
+<p>POST   /api/rosters/{id}/mark_read/  Mark read</p>
+
+<p>GET    /api/sampling-forms/          List sampling forms</p>
+<p>POST   /api/sampling-forms/          Create</p>
+<p>GET    /api/sampling-forms/{id}/pdf/ Download PDF</p>
+
+<p>GET    /api/stock-reports/           List stock reports</p>
+<p>POST   /api/stock-reports/           Create</p>
+<p>GET    /api/stock-reports/{id}/pdf/  Download PDF</p>
+
+<p>GET    /api/provisional-outturn-reports/       List</p>
+<p>POST   /api/provisional-outturn-reports/       Create</p>
+<p>GET    /api/provisional-outturn-reports/{id}/pdf/</p>
+
+<p>GET    /api/activity-logs/           System activity log (admin)</p>
+</code></pre>
+
+<hr>
+
+<h2 id="8-calculation-engine">8. Calculation Engine</h2>
+
+<h3>ASTM D1250 — Volume Correction Factor (VCF)</h3>
+
+<p>VCF corrects observed volume at tank temperature to volume at 15°C standard.</p>
+
+<strong>Process:</strong>
+<ol><li>Compute density at 20°C from observed density and sample temperature using ASTM Table 54B</li><li>Look up VCF from ASTM tables using density@20 and tank temperature</li><li>Fall back to formula if table lookup returns no result:</li></ol>
+
+<pre><code class="lang-">VCF = exp(−α × ΔT × (1 + 0.8 × α × ΔT))
+<p>where ΔT = tank_temperature − 15°C</p>
+</code></pre>
+
+<strong>Alpha coefficients (ASTM D1250 Table 54B):</strong>
+
+<table><tr><th>Product</th><th>Density@20 Range</th><th>α (per °C)</th></tr><tr><td>Gasoline / Naphtha</td><td>< 0.770 kg/L</td><td>0.001200</td></tr><tr><td>Kerosene / Jet A1</td><td>0.770 – 0.800 kg/L</td><td>0.001000</td></tr><tr><td>Gasoil / Diesel / Fuel Oil</td><td>≥ 0.800 kg/L</td><td>0.000640</td></tr></table>
+<h3>Weight Conversion Factor (WCF)</h3>
+
+<pre><code class="lang-">WCF = density@20°C − 0.0011
+<p>Valid range: 0.5 – 1.2</p>
+</code></pre>
+
+<p>WCF converts standard volume (m³) to weight in air (MT):</p>
+<pre><code class="lang-">Weight in Air (MT) = Standard Volume (m³) × WCF
+</code></pre>
+
+<h3>Shore Tank Volume Calculation</h3>
+
+<pre><code class="lang-">Gross Observed Volume = from dip reading and tank calibration
+<p>Net Observed Volume   = Gross − Roof Displacement − Water Volume</p>
+<p>Standard Volume       = Net Observed Volume × VCF</p>
+<p>Weight in Air (MT)    = Standard Volume × WCF</p>
+</code></pre>
+
+<hr>
+
+<h2 id="9-signing-workflow">9. Signing Workflow</h2>
+
+<p>All major documents follow a 4-step signing workflow:</p>
+
+<pre><code class="lang-">Step 1: Inspector signs
+<p>        → Document status: inspector_signed</p>
+<p>        → Terminal rep notified</p>
+
+<p>Step 2: Terminal rep counter-signs</p>
+<p>        → Document status: sent_to_inspector</p>
+<p>        → Inspector notified: "Please submit to Admin"</p>
+
+<p>Step 3: Inspector reviews and submits to Admin</p>
+<p>        → Document status: submitted</p>
+<p>        → Admin notified</p>
+<p>        → Submission record created in inbox</p>
+
+<p>Step 4: Admin reviews in Submissions Inbox</p>
+<p>        → Creates Vessel Report linking all documents</p>
+</code></pre>
+
+<strong>Status flow:</strong>
+<pre><code class="lang-">draft → inspector_signed → sent_to_inspector → submitted
+</code></pre>
+
+<p>Legacy states <code>client_signed</code> and <code>verified</code> are supported for backward compatibility.</p>
+
+<hr>
+
+<h2 id="10-real-time-messaging">10. Real-Time Messaging</h2>
+
+<p>Service requests have a built-in chat thread visible to all participants.</p>
+
+<strong>How it works:</strong>
+<ul><li>Any user (inspector, admin, terminal rep) can open the chat panel from the service requests table</li><li>Messages are stored in `ServiceRequestMessage` model</li><li>Frontend polls every **4 seconds** for new messages</li><li>On sending a message, the backend creates `Notification` records for:</li></ul>
+<p>  - The terminal rep (submitted_by)</p>
+<p>  - The assigned inspector</p>
+<p>  - All admin users</p>
+<p>  - Any other user who has previously replied in the thread</p>
+<p>  - (Sender is excluded)</p>
+
+<strong>Notification bell (TopBar):</strong>
+<ul><li>Blue `MessageSquare` bell visible to all roles</li><li>Polls every **10 seconds** for unread SR message count</li><li>Dropdown shows message preview, sender name, timestamp</li><li>Clicking navigates to `/service-requests` and marks notification read</li></ul>
+
+<hr>
+
+<h2 id="11-notification-system">11. Notification System</h2>
+
+<p>Three notification types:</p>
+
+<table><tr><th>Type</th><th>Trigger</th><th>Recipients</th></tr><tr><td><code>ready_to_submit</code></td><td>Document signed by terminal rep and ready for inspector to submit</td><td>Inspector</td></tr><tr><td><code>report_submitted</code></td><td>Document submitted to admin inbox</td><td>Admin</td></tr><tr><td><code>sr_message</code></td><td>New message on a service request thread</td><td>All thread participants</td></tr></table>
+<strong>TopBar bells:</strong>
+
+<table><tr><th>Bell</th><th>Icon</th><th>Roles</th><th>Color</th></tr><tr><td>Report notifications</td><td>FileCheck</td><td>Admin, Inspector</td><td>Green</td></tr><tr><td>Submissions inbox</td><td>Bell</td><td>Admin</td><td>Red</td></tr><tr><td>Roster assignments</td><td>Bell</td><td>Inspector</td><td>Red</td></tr><tr><td>Service requests</td><td>ConciergeBell</td><td>Admin, Inspector</td><td>Orange</td></tr><tr><td>SR messages</td><td>MessageSquare</td><td>All</td><td>Blue</td></tr></table>
+<hr>
+
+<h2 id="12-quick-start-guide">12. Quick Start Guide</h2>
+
+<h3>Prerequisites</h3>
+<ul><li>Python 3.10+</li><li>Node.js 16+</li><li>PostgreSQL 12+</li></ul>
+
+<h3>Backend Setup</h3>
+
+<pre><code class="lang-bash"># 1. Navigate to backend
+<p>cd backend</p>
+
+<h1>2. Create and activate virtual environment</h1>
+<p>python -m venv venv</p>
+<p>venv\Scripts\activate        # Windows</p>
+<p>source venv/bin/activate     # Linux/Mac</p>
+
+<h1>3. Install dependencies</h1>
+<p>pip install -r requirements.txt</p>
+
+<h1>4. Create PostgreSQL database</h1>
+<p>psql -U postgres</p>
+<p>CREATE DATABASE petroleum_db;</p>
+<p>\q</p>
+
+<h1>5. Run migrations</h1>
+<p>python manage.py migrate</p>
+
+<h1>6. Create admin superuser</h1>
+<p>python manage.py createsuperuser</p>
+
+<h1>7. Start development server</h1>
+<p>python manage.py runserver</p>
+</code></pre>
+
+<p>Backend available at: <strong>http://localhost:8000</strong></p>
+
+<h3>Frontend Setup</h3>
+
+<pre><code class="lang-bash"># 1. Navigate to frontend
+<p>cd frontend</p>
+
+<h1>2. Install dependencies</h1>
+<p>npm install</p>
+
+<h1>3. Create environment file</h1>
+<p>echo REACT_APP_API_URL=http://localhost:8000/api &gt; .env</p>
+
+<h1>4. Start development server</h1>
+<p>npm start</p>
+</code></pre>
+
+<p>Frontend available at: <strong>http://localhost:3000</strong></p>
+
+<hr>
+
+<h2 id="13-configuration">13. Configuration</h2>
+
+<h3>Database (`backend/config/settings.py`)</h3>
+
+<pre><code class="lang-python">DATABASES = {
+<p>    'default': {</p>
+<p>        'ENGINE': 'django.db.backends.postgresql',</p>
+<p>        'NAME': 'petroleum_db',</p>
+<p>        'USER': 'postgres',</p>
+<p>        'PASSWORD': 'your_password',</p>
+<p>        'HOST': 'localhost',</p>
+<p>        'PORT': '5432',</p>
+<p>    }</p>
+<p>}</p>
+</code></pre>
+
+<h3>CORS</h3>
+
+<pre><code class="lang-python">CORS_ALLOWED_ORIGINS = [
+<p>    "http://localhost:3000",</p>
+<p>    "http://localhost:8000",</p>
+<p>]</p>
+</code></pre>
+
+<h3>JWT Token Lifetime</h3>
+
+<pre><code class="lang-python">from datetime import timedelta
+
+<p>SIMPLE_JWT = {</p>
+<p>    'ACCESS_TOKEN_LIFETIME':  timedelta(hours=1),</p>
+<p>    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),</p>
+<p>}</p>
+</code></pre>
+
+<hr>
+
+<h2 id="14-deployment">14. Deployment</h2>
+
+<h3>Production with Gunicorn</h3>
+
+<pre><code class="lang-bash">pip install gunicorn
+<p>gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4</p>
+</code></pre>
+
+<h3>Environment Variables (Production)</h3>
+
+<pre><code class="lang-bash">SECRET_KEY=your_strong_secret_key
+<p>DEBUG=False</p>
+<p>DATABASE_URL=postgresql://user:password@host:5432/petroleum_db</p>
+<p>ALLOWED_HOSTS=yourdomain.com</p>
+</code></pre>
+
+<h3>Frontend Build</h3>
+
+<pre><code class="lang-bash">cd frontend
+<p>npm run build</p>
+<h1>Serve the build/ folder with Nginx or any static file server</h1>
+</code></pre>
+
+<hr>
+
+<h2 id="15-troubleshooting">15. Troubleshooting</h2>
+
+<table><tr><th>Problem</th><th>Solution</th></tr><tr><td>Database connection error</td><td>Ensure PostgreSQL is running; verify credentials in settings.py</td></tr><tr><td>Migration errors</td><td>Run <code>python manage.py makemigrations</code> then <code>python manage.py migrate</code></td></tr><tr><td>CORS errors</td><td>Add frontend URL to <code>CORS_ALLOWED_ORIGINS</code> in settings.py</td></tr><tr><td>Token expired</td><td>Call <code>POST /api/auth/token/refresh/</code> with refresh token; re-login if expired</td></tr><tr><td>WCF validation error</td><td>Ensure density@20 is in range 0.5–1.2 kg/L</td></tr><tr><td>Messages not appearing</td><td>Check browser console for 401 errors; re-login if token expired</td></tr><tr><td>PDF not generating</td><td>Ensure ReportLab is installed: <code>pip install reportlab</code></td></tr></table>
+<h3>Useful Management Commands</h3>
+
+<pre><code class="lang-bash"># Run tests
+<p>python manage.py test</p>
+
+<h1>Export all data</h1>
+<p>python manage.py dumpdata inspections &gt; backup.json</p>
+
+<h1>Load sample data</h1>
+<p>python manage.py loaddata sample_data.json</p>
+
+<h1>Add a tank via shell</h1>
+<p>python manage.py shell</p>
+<p>&gt;&gt;&gt; from inspections.models import Tank</p>
+<p>&gt;&gt;&gt; Tank.objects.create(</p>
+<p>...     tank_id='TANK-001',</p>
+<p>...     tank_name='Crude Oil Storage A',</p>
+<p>...     product_type='crude_oil',</p>
+<p>...     capacity=1000,</p>
+<p>...     location='Bay 1',</p>
+<p>...     height=15.5,</p>
+<p>...     diameter=8.2</p>
+<p>... )</p>
+</code></pre>
+
+<hr>
+
+<h2 id="support">Support</h2>
+
+<ul><li>Admin Dashboard: `/admin/`</li><li>API Root: `/api/`</li></ul>
+
+<hr>
+
+<h2 id="license">License</h2>
+
+<p>© 2024 PBPA Smart Reporting System — Erick Muhanuzi Final Year Project</p>
+
+</div>
+</body>
+</html>

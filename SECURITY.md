@@ -1,12 +1,12 @@
 # Security Implementation Guide
 
-## 📋 Overview
+##  Overview
 
 This document provides a comprehensive security overview of the SMART Reporting System. It covers security features, best practices, and deployment guidelines for production environments.
 
 ---
 
-## 🔐 Security Architecture
+##  Security Architecture
 
 ### Authentication & Authorization
 
@@ -31,7 +31,7 @@ Admin:       System administration, user management
 
 ---
 
-## 🛡️ Security Features Implemented
+##  Security Features Implemented
 
 ### Backend Security
 
@@ -123,7 +123,7 @@ HSTS: 1 year with subdomains and preload
 
 ---
 
-## 🚀 Production Deployment Checklist
+##  Production Deployment Checklist
 
 ### Pre-Deployment ✅
 
@@ -162,7 +162,7 @@ HSTS: 1 year with subdomains and preload
   - Configured in `settings.py`
   - Monitor logs for abuse patterns
 
-### Deployment Steps 🚀
+### Deployment Steps 
 
 1. **Update Environment Variables**
    ```bash
@@ -226,7 +226,7 @@ HSTS: 1 year with subdomains and preload
 
 ---
 
-## 📝 Security Best Practices
+##  Security Best Practices
 
 ### Development
 
@@ -291,7 +291,7 @@ HSTS: 1 year with subdomains and preload
 
 ---
 
-## 🔍 Security Audit Trail
+##  Security Audit Trail
 
 ### Logged Events
 
@@ -336,7 +336,7 @@ docker-compose exec backend tail -f logs/error.log
 
 ---
 
-## 🆘 Incident Response
+##  Incident Response
 
 ### Security Incident Detected
 
@@ -376,7 +376,7 @@ docker-compose exec backend tail -f logs/error.log
 
 ---
 
-## 📚 Security References
+##  Security References
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Django Security Documentation](https://docs.djangoproject.com/en/4.2/topics/security/)
@@ -385,7 +385,7 @@ docker-compose exec backend tail -f logs/error.log
 
 ---
 
-## 📞 Support & Reporting
+##  Support & Reporting
 
 For security vulnerabilities or concerns:
 

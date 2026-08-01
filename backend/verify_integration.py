@@ -4,6 +4,12 @@ Shore Tank Calculation Integration - Maps Excel calculations to ASTM Engine
 Verifies that calculations can be extracted and used to fill DOCX templates
 """
 
+import sys
+
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace")
+
 print("="*120)
 print("SHORE TANK CALCULATION ENGINE - INTEGRATION VERIFICATION")
 print("="*120)

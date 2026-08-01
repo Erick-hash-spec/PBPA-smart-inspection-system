@@ -76,6 +76,9 @@ axiosInstance.interceptors.response.use(
         return Promise.reject(error);
       }
     }
+    if (error.response?.status === 404 && error.response?.data?.detail === 'Not found.') {
+      error.response.data.detail = 'This record could not be found, or your account does not have permission to view it.';
+    }
     return Promise.reject(error);
   }
 );
@@ -175,42 +178,60 @@ export const reportService = {
   downloadReport: (id) => axiosInstance.get(`/reports/${id}/report_file/`, { responseType: 'blob' }),
 };
 
+const SIGNING_WORKFLOW = (base) => ({
+  inspectorSign:   (id, sig) => axiosInstance.post(`${base}/${id}/inspector_sign/`, { signature: sig }, { responseType: 'blob' }),
+  sendToClient:    (id)      => axiosInstance.post(`${base}/${id}/send_to_client/`),
+  clientSign:      (id, sig) => axiosInstance.post(`${base}/${id}/client_sign/`, { signature: sig }, { responseType: 'blob' }),
+  sendToInspector: (id)      => axiosInstance.post(`${base}/${id}/send_to_inspector/`),
+  inspectorVerify: (id)      => axiosInstance.post(`${base}/${id}/inspector_verify/`),
+  submitToAdmin:   (id)      => axiosInstance.post(`${base}/${id}/submit_to_admin/`),
+});
+
 // ========== PRODUCT RECEIPT CERTIFICATE SERVICE ==========
 export const productReceiptCertificateService = {
-  getCertificates: (params = {}) => axiosInstance.get('/product-receipt-certificates/', { params }),
-  getCertificateById: (id) => axiosInstance.get(`/product-receipt-certificates/${id}/`),
-  createCertificate: (data) => axiosInstance.post('/product-receipt-certificates/', data),
-  updateCertificate: (id, data) => axiosInstance.put(`/product-receipt-certificates/${id}/`, data),
-  deleteCertificate: (id) => axiosInstance.delete(`/product-receipt-certificates/${id}/`),
-  issueCertificate: (id) => axiosInstance.post(`/product-receipt-certificates/${id}/issue/`),
-  signDocument: (id) => axiosInstance.post(`/product-receipt-certificates/${id}/sign_document/`, {}, { responseType: 'blob' }),
-  downloadCertificatePdf: (id) => axiosInstance.get(`/product-receipt-certificates/${id}/pdf/`, { responseType: 'blob' }),
-  generateDocument: (id) => axiosInstance.get(`/product-receipt-certificates/${id}/generate_document/`, { responseType: 'blob' }),
+  getCertificates:       (params = {}) => axiosInstance.get('/product-receipt-certificates/', { params }),
+  getCertificateById:    (id) => axiosInstance.get(`/product-receipt-certificates/${id}/`),
+  createCertificate:     (data) => axiosInstance.post('/product-receipt-certificates/', data),
+  updateCertificate:     (id, data) => axiosInstance.put(`/product-receipt-certificates/${id}/`, data),
+  deleteCertificate:     (id) => axiosInstance.delete(`/product-receipt-certificates/${id}/`),
+  issueCertificate:      (id) => axiosInstance.post(`/product-receipt-certificates/${id}/issue/`),
+  signDocument:          (id) => axiosInstance.post(`/product-receipt-certificates/${id}/sign_document/`, {}, { responseType: 'blob' }),
+  signWithImage:         (id, signature) => axiosInstance.post(`/product-receipt-certificates/${id}/sign_with_image/`, { signature }, { responseType: 'blob' }),
+  clientSign:            (id, signature) => axiosInstance.post(`/product-receipt-certificates/${id}/client_sign/`, { signature }, { responseType: 'blob' }),
+  downloadCertificatePdf:(id) => axiosInstance.get(`/product-receipt-certificates/${id}/pdf/`, { responseType: 'blob' }),
+  generateDocument:      (id) => axiosInstance.get(`/product-receipt-certificates/${id}/generate_document/`, { responseType: 'blob' }),
+  ...SIGNING_WORKFLOW('/product-receipt-certificates'),
 };
 
 // ========== SEAL AND ISOLATION REPORT SERVICE ==========
 export const sealIsolationReportService = {
-  getReports: (params = {}) => axiosInstance.get('/seal-isolation-reports/', { params }),
-  getReportById: (id) => axiosInstance.get(`/seal-isolation-reports/${id}/`),
-  createReport: (data) => axiosInstance.post('/seal-isolation-reports/', data),
-  updateReport: (id, data) => axiosInstance.put(`/seal-isolation-reports/${id}/`, data),
-  deleteReport: (id) => axiosInstance.delete(`/seal-isolation-reports/${id}/`),
-  issueReport: (id) => axiosInstance.post(`/seal-isolation-reports/${id}/issue/`),
-  signDocument: (id) => axiosInstance.post(`/seal-isolation-reports/${id}/sign_document/`, {}, { responseType: 'blob' }),
-  generateDocument: (id) => axiosInstance.get(`/seal-isolation-reports/${id}/generate_document/`, { responseType: 'blob' }),
+  getReports:      (params = {}) => axiosInstance.get('/seal-isolation-reports/', { params }),
+  getReportById:   (id) => axiosInstance.get(`/seal-isolation-reports/${id}/`),
+  createReport:    (data) => axiosInstance.post('/seal-isolation-reports/', data),
+  updateReport:    (id, data) => axiosInstance.put(`/seal-isolation-reports/${id}/`, data),
+  deleteReport:    (id) => axiosInstance.delete(`/seal-isolation-reports/${id}/`),
+  issueReport:     (id) => axiosInstance.post(`/seal-isolation-reports/${id}/issue/`),
+  signDocument:    (id) => axiosInstance.post(`/seal-isolation-reports/${id}/sign_document/`, {}, { responseType: 'blob' }),
+  signWithImage:   (id, signature) => axiosInstance.post(`/seal-isolation-reports/${id}/sign_with_image/`, { signature }, { responseType: 'blob' }),
+  clientSign:      (id, signature) => axiosInstance.post(`/seal-isolation-reports/${id}/client_sign/`, { signature }, { responseType: 'blob' }),
+  generateDocument:(id) => axiosInstance.get(`/seal-isolation-reports/${id}/generate_document/`, { responseType: 'blob' }),
+  ...SIGNING_WORKFLOW('/seal-isolation-reports'),
 };
 
 // ========== SHORE TANK CALCULATION SERVICE ==========
 export const shoreTankCalculationService = {
-  getCalculations: (params = {}) => axiosInstance.get('/shore-tank-calculations/', { params }),
+  getCalculations:    (params = {}) => axiosInstance.get('/shore-tank-calculations/', { params }),
   getCalculationById: (id) => axiosInstance.get(`/shore-tank-calculations/${id}/`),
-  createCalculation: (data) => axiosInstance.post('/shore-tank-calculations/', data),
-  updateCalculation: (id, data) => axiosInstance.put(`/shore-tank-calculations/${id}/`, data),
-  deleteCalculation: (id) => axiosInstance.delete(`/shore-tank-calculations/${id}/`),
+  createCalculation:  (data) => axiosInstance.post('/shore-tank-calculations/', data),
+  updateCalculation:  (id, data) => axiosInstance.put(`/shore-tank-calculations/${id}/`, data),
+  deleteCalculation:  (id) => axiosInstance.delete(`/shore-tank-calculations/${id}/`),
   calculateTankItems: (id) => axiosInstance.post(`/shore-tank-calculations/${id}/calculate/`),
-  finalizeCalculation: (id) => axiosInstance.post(`/shore-tank-calculations/${id}/finalize/`),
-  signDocument: (id) => axiosInstance.post(`/shore-tank-calculations/${id}/sign_document/`, {}, { responseType: 'blob' }),
-  generateDocument: (id) => axiosInstance.get(`/shore-tank-calculations/${id}/generate_document/`, { responseType: 'blob' }),
+  finalizeCalculation:(id) => axiosInstance.post(`/shore-tank-calculations/${id}/finalize/`),
+  signDocument:       (id) => axiosInstance.post(`/shore-tank-calculations/${id}/sign_document/`, {}, { responseType: 'blob' }),
+  signWithImage:      (id, signature) => axiosInstance.post(`/shore-tank-calculations/${id}/sign_with_image/`, { signature }, { responseType: 'blob' }),
+  clientSign:         (id, signature) => axiosInstance.post(`/shore-tank-calculations/${id}/client_sign/`, { signature }, { responseType: 'blob' }),
+  generateDocument:   (id) => axiosInstance.get(`/shore-tank-calculations/${id}/generate_document/`, { responseType: 'blob' }),
+  ...SIGNING_WORKFLOW('/shore-tank-calculations'),
 };
 
 // ========== STOCK REPORT SERVICE ==========
@@ -238,14 +259,23 @@ export const provisionalOuturnService = {
 
 // ========== SAMPLING FORM SERVICE ==========
 export const samplingFormService = {
-  getForms:    (params = {}) => axiosInstance.get('/sampling-forms/', { params }),
-  getFormById: (id) => axiosInstance.get(`/sampling-forms/${id}/`),
-  createForm:  (data) => axiosInstance.post('/sampling-forms/', data),
-  updateForm:  (id, data) => axiosInstance.put(`/sampling-forms/${id}/`, data),
-  deleteForm:  (id) => axiosInstance.delete(`/sampling-forms/${id}/`),
-  issueForm:   (id) => axiosInstance.post(`/sampling-forms/${id}/issue/`),
-  downloadPdf: (id) => axiosInstance.get(`/sampling-forms/${id}/pdf/`, { responseType: 'blob' }),
+  getForms:        (params = {}) => axiosInstance.get('/sampling-forms/', { params }),
+  getFormById:     (id) => axiosInstance.get(`/sampling-forms/${id}/`),
+  createForm:      (data) => axiosInstance.post('/sampling-forms/', data),
+  updateForm:      (id, data) => axiosInstance.put(`/sampling-forms/${id}/`, data),
+  deleteForm:      (id) => axiosInstance.delete(`/sampling-forms/${id}/`),
+  issueForm:       (id) => axiosInstance.post(`/sampling-forms/${id}/issue/`),
+  downloadPdf:     (id) => axiosInstance.get(`/sampling-forms/${id}/pdf/`, { responseType: 'blob' }),
+  signWithImage:   (id, signature) => axiosInstance.post(`/sampling-forms/${id}/sign_with_image/`, { signature }, { responseType: 'blob' }),
+  ...SIGNING_WORKFLOW('/sampling-forms'),
 };
+
+// ========== ELECTRONIC SIGNATURE HELPERS (shared across services) ==========
+export const signWithImage = (endpoint, id, signature) =>
+  axiosInstance.post(`/${endpoint}/${id}/sign_with_image/`, { signature }, { responseType: 'blob' });
+
+export const clientSign = (endpoint, id, signature) =>
+  axiosInstance.post(`/${endpoint}/${id}/client_sign/`, { signature }, { responseType: 'blob' });
 
 // ========== SUBMISSION SERVICE ==========
 export const submissionService = {
@@ -269,10 +299,42 @@ export const vesselReportService = {
   downloadPdf: (id) => axiosInstance.get(`/vessel-reports/${id}/pdf/`, { responseType: 'blob' }),
 };
 
+// ========== SERVICE REQUEST SERVICE ==========
+export const serviceRequestService = {
+  getRequests:    (params = {}) => axiosInstance.get('/service-requests/', { params }),
+  getRequestById: (id) => axiosInstance.get(`/service-requests/${id}/`),
+  createRequest:  (data) => axiosInstance.post('/service-requests/', data),
+  updateRequest:  (id, data) => axiosInstance.put(`/service-requests/${id}/`, data),
+  deleteRequest:  (id) => axiosInstance.delete(`/service-requests/${id}/`),
+  getUnreadCount: () => axiosInstance.get('/service-requests/unread_count/'),
+  markRead:       (id) => axiosInstance.post(`/service-requests/${id}/mark_read/`),
+  markAllRead:    () => axiosInstance.post('/service-requests/mark_all_read/'),
+  acknowledge:    (id) => axiosInstance.post(`/service-requests/${id}/acknowledge/`),
+  assign:         (id, inspector_id) => axiosInstance.post(`/service-requests/${id}/assign/`, { inspector_id }),
+  complete:       (id) => axiosInstance.post(`/service-requests/${id}/complete/`),
+  cancel:         (id, reason) => axiosInstance.post(`/service-requests/${id}/cancel/`, { reason }),
+  getMessages:    (id) => axiosInstance.get(`/service-requests/${id}/messages/`),
+  sendMessage:    (id, body) => axiosInstance.post(`/service-requests/${id}/messages/`, { body }),
+};
+
+// ========== NOTIFICATION SERVICE ==========
+export const notificationService = {
+  getNotifications: (params = {}) => axiosInstance.get('/notifications/', { params }),
+  getUnreadCount:   (type) => axiosInstance.get('/notifications/unread_count/', type ? { params: { notification_type: type } } : {}),
+  markRead:         (id) => axiosInstance.post(`/notifications/${id}/mark_read/`),
+  markAllRead:      () => axiosInstance.post('/notifications/mark_all_read/'),
+};
+
 // ========== ASTM LOOKUP SERVICE ==========
 export const astmService = {
   lookup: (sample_density, sample_temp, tank_temp) =>
     axiosInstance.post('/astm/lookup/', { sample_density, sample_temp, tank_temp }),
+};
+
+// ========== ACTIVITY LOG SERVICE ==========
+export const activityService = {
+  getLogs:   (params = {}) => axiosInstance.get('/activity-logs/', { params }),
+  getSummary:(params = {}) => axiosInstance.get('/activity-logs/summary/', { params }),
 };
 
 export default axiosInstance;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { productReceiptCertificateService, tankService, shoreTankCalculationService } from '../services/api';
+import { LogoHeader } from '../components/LogoHeader';
 import { TerminalSelect, ProductSelect } from '../components/FormOptions';
 import { Trash2 } from 'lucide-react';
 
@@ -48,13 +49,31 @@ export const ProductReceiptCertificateFormPage = () => {
     try {
       const res = await shoreTankCalculationService.getCalculationById(stcId);
       const d = res.data;
-      const items = (d.tank_items || []).map(item => ({
-        tank: item.tank || '',
-        tank_no: item.tank_no || '',
-        product_name: item.product_name || d.product_name || '',
-        weight_tonnage: item.received_weight_air_mt != null ? Number(item.received_weight_air_mt).toFixed(3) : '',
-        volume_liters: item.received_standard_volume_m3 != null ? Number(item.received_standard_volume_m3 * 1000).toFixed(3) : '',
-      }));
+      const tankItems = d.tank_items || [];
+
+      // If multiple tank items, map each; if single item with 0 values, fall back to parent totals
+      const items = tankItems.length > 0 ? tankItems.map((item, idx) => {
+        const stdVolM3  = item.received_standard_volume_m3;
+        const weightMt  = item.received_weight_air_mt;
+
+        // Fall back to parent totals divided by item count when per-item values are missing/zero
+        const count = tankItems.length || 1;
+        const volL  = (stdVolM3 != null && stdVolM3 !== 0)
+          ? Number(stdVolM3 * 1000).toFixed(3)
+          : (d.terminal_standard_volume_m3 ? Number((d.terminal_standard_volume_m3 / count) * 1000).toFixed(3) : '');
+        const wt    = (weightMt != null && weightMt !== 0)
+          ? Number(weightMt).toFixed(3)
+          : (d.terminal_weight_air_mt ? Number(d.terminal_weight_air_mt / count).toFixed(3) : '');
+
+        return {
+          tank: item.tank || '',
+          tank_no: item.tank_no || '',
+          product_name: d.product_name || '',
+          weight_tonnage: wt,
+          volume_liters: volL,
+        };
+      }) : [emptyItem()];
+
       setFormData(prev => ({
         ...prev,
         vessel_name: d.vessel_name || '',
@@ -62,7 +81,9 @@ export const ProductReceiptCertificateFormPage = () => {
         receipt_date: d.calculation_date || prev.receipt_date,
         terminal_representative_name: d.terminal_representative_name || '',
         pbpa_inspector_name: d.pbpa_inspector_name || '',
-        items: items.length ? items : [emptyItem()],
+        quantity_received_through_inlet_flowmeters:
+          d.meter_quantity_m3 ? Number(d.meter_quantity_m3 * 1000).toFixed(3) : '',
+        items,
       }));
     } catch { setError('Failed to load shore tank calculation data'); }
     finally { setPageLoading(false); }
@@ -126,7 +147,7 @@ export const ProductReceiptCertificateFormPage = () => {
         ...formData,
         quantity_received_through_inlet_flowmeters: Number(formData.quantity_received_through_inlet_flowmeters || 0),
         items: formData.items
-          .filter(item => item.product_name || item.tank_no)
+          .filter(item => item.product_name || item.tank_no || item.weight_tonnage || item.volume_liters)
           .map(item => ({ ...item, tank: item.tank ? Number(item.tank) : null, weight_tonnage: Number(item.weight_tonnage || 0), volume_liters: Number(item.volume_liters || 0) })),
       };
       if (isEdit) {
@@ -149,10 +170,8 @@ export const ProductReceiptCertificateFormPage = () => {
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto animate-fade-in">
-      <div className="mb-6">
-        <button onClick={() => navigate(isEdit ? `/product-receipt-certificates/${id}` : '/product-receipt-certificates')} className="text-sm text-blue-600 hover:underline mb-1">← Back</button>
-        <h1 className="text-3xl font-bold text-gray-900">{isEdit ? 'Edit Certificate' : 'New Product Receipt Certificate'}</h1>
-      </div>
+      <button onClick={() => navigate(isEdit ? `/product-receipt-certificates/${id}` : '/product-receipt-certificates')} className="text-sm text-blue-600 hover:underline mb-4">← Back</button>
+      <LogoHeader title={isEdit ? 'Edit Certificate' : 'New Product Receipt Certificate'} />
 
       {fromStc && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm">

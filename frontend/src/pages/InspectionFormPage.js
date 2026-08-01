@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { inspectionService } from '../services/api';
+import { LogoHeader } from '../components/LogoHeader';
 import { TerminalSelect, ProductSelect } from '../components/FormOptions';
 
 const inputCls = 'w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white text-sm transition outline-none focus:border-[#8B1A1A] focus:ring-2 focus:ring-[#8B1A1A]/10';
@@ -156,11 +157,8 @@ export const InspectionFormPage = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto animate-fade-in">
-      <div className="mb-6">
-        <button onClick={() => navigate(isEdit ? `/inspections/${id}` : '/inspections')} className="text-sm text-blue-600 hover:underline mb-1">← Back</button>
-        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">{isEdit ? 'Edit Dip Ticket' : 'New Dip Ticket'}</h1>
-        <p className="mt-1 text-sm text-slate-500">Ticket number is generated automatically after saving.</p>
-      </div>
+      <button onClick={() => navigate(isEdit ? `/inspections/${id}` : '/inspections')} className="text-sm text-blue-600 hover:underline mb-4">← Back</button>
+      <LogoHeader title={isEdit ? 'Edit Dip Ticket' : 'New Dip Ticket'} subtitle="Ticket number is generated automatically after saving." />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 flex gap-2 text-sm">

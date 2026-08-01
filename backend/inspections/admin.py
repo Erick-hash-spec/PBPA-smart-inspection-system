@@ -44,13 +44,13 @@ class TankAdmin(admin.ModelAdmin):
 # ── Inspection ────────────────────────────────────────────────────────────────
 def approve_inspections(modeladmin, request, queryset):
     queryset.filter(status='submitted').update(
-        status='approved', supervisor=request.user, approval_date=timezone.now()
+        status='approved', approved_by=request.user, approval_date=timezone.now()
     )
 approve_inspections.short_description = 'Approve selected inspections'
 
 def reject_inspections(modeladmin, request, queryset):
     queryset.filter(status='submitted').update(
-        status='rejected', supervisor=request.user, approval_date=timezone.now()
+        status='rejected', approved_by=request.user, approval_date=timezone.now()
     )
 reject_inspections.short_description = 'Reject selected inspections'
 
@@ -66,7 +66,7 @@ class InspectionAdmin(admin.ModelAdmin):
     ordering = ('-inspection_date',)
     actions = [approve_inspections, reject_inspections]
     fieldsets = (
-        ('Header', {'fields': ('tank', 'inspector', 'supervisor', 'status', 'inspection_date')}),
+        ('Header', {'fields': ('tank', 'inspector', 'approved_by', 'status', 'inspection_date')}),
         ('Dip Ticket', {'fields': ('ticket_number', 'vessel_name', 'product_name', 'terminal')}),
         ('Measurements', {'fields': ('dip_reading', 'temperature', 'water_level', 'tank_condition')}),
         ('Seal & Meter', {'fields': (
@@ -215,7 +215,7 @@ class VesselReportAdmin(admin.ModelAdmin):
 
 @admin.register(RosterAssignment)
 class RosterAssignmentAdmin(admin.ModelAdmin):
-    list_display = ('week_start_date', 'inspector', 'supervisor', 'shift', 'location', 'terminal', 'status', 'sent_at')
+    list_display = ('week_start_date', 'inspector', 'created_by_admin', 'shift', 'location', 'terminal', 'status', 'sent_at')
     list_filter = ('status', 'shift', 'week_start_date')
     search_fields = ('inspector__username', 'inspector__first_name', 'inspector__last_name', 'terminal', 'vessel_name', 'task')
     readonly_fields = ('created_at', 'updated_at', 'sent_at')

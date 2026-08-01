@@ -17,9 +17,9 @@ class IsInspector(BasePermission):
         return _role(request.user) == 'inspector'
 
 
-class IsSupervisor(BasePermission):
+class IsTerminalRep(BasePermission):
     def has_permission(self, request, view):
-        return _role(request.user) == 'supervisor'
+        return _role(request.user) == 'terminal_representative'
 
 
 class IsAdmin(BasePermission):
@@ -27,9 +27,9 @@ class IsAdmin(BasePermission):
         return _role(request.user) == 'admin'
 
 
-class IsSupervisorOrAdmin(BasePermission):
+class IsTerminalRepOrAdmin(BasePermission):
     def has_permission(self, request, view):
-        return _role(request.user) in ('supervisor', 'admin')
+        return _role(request.user) in ('terminal_representative', 'admin')
 
 
 class IsInspectorOrReadOnly(BasePermission):

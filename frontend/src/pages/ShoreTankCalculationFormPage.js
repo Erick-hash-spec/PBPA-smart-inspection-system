@@ -131,7 +131,7 @@ export const ShoreTankCalculationFormPage = () => {
         const message = err.response?.data?.detail || 'ASTM lookup failed';
         setAstmData(prev => { const n=[...prev]; n[itemIndex]={...n[itemIndex],[state]:{...emptyAstm(),error:message}}; return n; });
       }
-    }, 150);
+    }, 400);
   }, []);
 
   useEffect(() => {

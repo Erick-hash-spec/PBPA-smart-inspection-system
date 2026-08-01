@@ -14,6 +14,9 @@ from .views import (
     ProvisionalOuturnReportViewSet,
     StockReportViewSet,
     SamplingFormViewSet,
+    ServiceRequestViewSet,
+    NotificationViewSet,
+    ActivityLogViewSet,
 )
 
 router = DefaultRouter()
@@ -35,6 +38,10 @@ router.register(r'vessel-reports', VesselReportViewSet, basename='vessel-report'
 router.register(r'provisional-outturn-reports', ProvisionalOuturnReportViewSet, basename='provisional-outturn-report')
 router.register(r'stock-reports', StockReportViewSet, basename='stock-report')
 router.register(r'sampling-forms', SamplingFormViewSet, basename='sampling-form')
+
+router.register(r'service-requests', ServiceRequestViewSet, basename='service-request')
+router.register(r'notifications', NotificationViewSet, basename='notification')
+router.register(r'activity-logs', ActivityLogViewSet, basename='activity-log')
 
 urlpatterns = [
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

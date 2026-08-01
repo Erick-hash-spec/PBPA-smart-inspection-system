@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { sealIsolationReportService } from '../services/api';
 import { ChevronLeft } from 'lucide-react';
+import { SigningActions } from '../components/SigningActions';
 
 const ConfirmModal = ({ message, onConfirm, onCancel }) => (
   <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -50,6 +51,7 @@ export const SealIsolationReportDetailPage = () => {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
   const [showDelete, setShowDelete] = useState(false);
+  const userRole = localStorage.getItem('user_role');
 
   useEffect(() => { load(); }, [id]); // eslint-disable-line
 
@@ -78,18 +80,6 @@ export const SealIsolationReportDetailPage = () => {
       document.body.appendChild(a); a.click(); a.remove();
       window.URL.revokeObjectURL(url);
     } catch { setError('Failed to generate document'); }
-  };
-
-  const handleSign = async () => {
-    try {
-      const res = await sealIsolationReportService.signDocument(id);
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a'); a.href = url;
-      a.download = `SIGNED_SIR_${report.report_number}.pdf`;
-      document.body.appendChild(a); a.click(); a.remove();
-      window.URL.revokeObjectURL(url);
-      load();
-    } catch (err) { setError('Signing failed: ' + (err.response?.data?.detail || err.message)); }
   };
 
   if (loading) return (
@@ -218,14 +208,18 @@ export const SealIsolationReportDetailPage = () => {
           <button onClick={handleDownload} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Download
 </button>
 
-          {!report.is_signed ? (
-            <button onClick={handleSign} className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Sign & Download
-</button>
-          ) : (
-            <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-purple-100 text-purple-800 border border-purple-200 cursor-help" title={`Digitally Signed`}>Signed
-</span>
-          )}
         </div>
+      </Section>
+
+      <Section title="Signing Workflow">
+        <SigningActions
+          doc={report}
+          role={userRole}
+          service={sealIsolationReportService}
+          docLabel="SIR"
+          onRefresh={load}
+          setError={setError}
+        />
       </Section>
     </div>
   );

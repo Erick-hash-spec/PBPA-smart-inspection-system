@@ -1,28 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { userService } from '../services/api';
 import {
   Users, Plus, Eye, EyeOff, AlertCircle,
   CheckCircle, Shield, UserCheck, Search,
 } from 'lucide-react';
 
-const ROLES = ['inspector', 'supervisor', 'admin'];
+const ROLES = ['inspector', 'terminal_representative', 'admin'];
+
+const ROLE_LABELS = { inspector: 'Inspector', terminal_representative: 'Terminal Representative', admin: 'Admin' };
 
 const roleBadge = {
   admin:      'bg-purple-100 text-purple-700 border-purple-200',
-  supervisor: 'bg-blue-100 text-blue-700 border-blue-200',
+  terminal_representative: 'bg-blue-100 text-blue-700 border-blue-200',
   inspector:  'bg-emerald-100 text-emerald-700 border-emerald-200',
 };
 
-const EMPTY_FORM = { username: '', email: '', first_name: '', last_name: '', role: 'inspector', password: '', confirm_password: '' };
+const EMPTY_FORM = { username: '', email: '', first_name: '', last_name: '', role: 'inspector', password: '', confirm_password: '', employee_id: '', terminal: '', terminal_location: '', company: '', position: '', phone: '', company_email: '', date_joined_company: '' };
 
 const Modal = ({ title, onClose, children }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-700 animate-slide-up">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-700 animate-slide-up flex flex-col max-h-[90vh]">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
         <h2 className="text-base font-bold text-gray-900 dark:text-white">{title}</h2>
-        <button onClick={onClose} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-slate-700 dark:text-gray-200 dark:border-gray-600">Edit</button>
+        <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-      <div className="px-6 py-5">{children}</div>
+      <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
     </div>
   </div>
 );
@@ -49,26 +53,26 @@ export const UserManagementPage = () => {
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState(null); // { type: 'success'|'error', msg }
 
-  useEffect(() => { fetchUsers(); }, []);
+  const showBanner = useCallback((type, msg) => {
+    setBanner({ type, msg });
+    setTimeout(() => setBanner(null), 4000);
+  }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await userService.getUsers();
       setUsers(res.data.results || res.data);
     } catch { showBanner('error', 'Failed to load users.'); }
     finally { setLoading(false); }
-  };
+  }, [showBanner]);
 
-  const showBanner = (type, msg) => {
-    setBanner({ type, msg });
-    setTimeout(() => setBanner(null), 4000);
-  };
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const openCreate = () => { setForm(EMPTY_FORM); setModal('create'); };
   const openEdit = (u) => {
     setSelected(u);
-    setForm({ username: u.user_detail?.username || '', email: u.user_detail?.email || '', first_name: u.user_detail?.first_name || '', last_name: u.user_detail?.last_name || '', role: u.role || 'inspector', password: '', confirm_password: '' });
+    setForm({ username: u.user_detail?.username || '', email: u.user_detail?.email || '', first_name: u.user_detail?.first_name || '', last_name: u.user_detail?.last_name || '', role: u.role || 'inspector', password: '', confirm_password: '', employee_id: u.employee_id || '', terminal: u.terminal || '', terminal_location: u.terminal_location || '', company: u.company || '', position: u.position || '', phone: u.phone || '', company_email: u.company_email || '', date_joined_company: u.date_joined_company || '' });
     setModal('edit');
   };
   const openDelete = (u) => { setSelected(u); setModal('delete'); };
@@ -81,7 +85,11 @@ export const UserManagementPage = () => {
     if (form.password.length < 8) return showBanner('error', 'Password must be at least 8 characters.');
     setSaving(true);
     try {
-      await userService.createUser({ username: form.username, email: form.email, first_name: form.first_name, last_name: form.last_name, password: form.password, confirm_password: form.confirm_password, role: form.role });
+      const createPayload = { username: form.username, email: form.email, first_name: form.first_name, last_name: form.last_name, password: form.password, confirm_password: form.confirm_password, role: form.role };
+      if (form.role === 'terminal_representative') {
+        Object.assign(createPayload, { employee_id: form.employee_id, terminal: form.terminal, terminal_location: form.terminal_location, company: form.company, position: form.position, phone: form.phone, company_email: form.company_email, date_joined_company: form.date_joined_company || undefined });
+      }
+      await userService.createUser(createPayload);
       showBanner('success', `User "${form.username}" created successfully.`);
       closeModal(); fetchUsers();
     } catch (err) {
@@ -94,7 +102,11 @@ export const UserManagementPage = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await userService.updateUser(selected.id, { role: form.role, user: { first_name: form.first_name, last_name: form.last_name, email: form.email } });
+      const editPayload = { role: form.role, user: { first_name: form.first_name, last_name: form.last_name, email: form.email } };
+      if (form.role === 'terminal_representative') {
+        Object.assign(editPayload, { employee_id: form.employee_id, terminal: form.terminal, terminal_location: form.terminal_location, company: form.company, position: form.position, phone: form.phone, company_email: form.company_email, date_joined_company: form.date_joined_company || null });
+      }
+      await userService.updateUser(selected.id, editPayload);
       showBanner('success', 'User updated successfully.');
       closeModal(); fetchUsers();
     } catch { showBanner('error', 'Failed to update user.'); }
@@ -206,7 +218,7 @@ export const UserManagementPage = () => {
                         <td className="px-5 py-3.5 text-gray-600 dark:text-gray-300">{u.user_detail?.email || '—'}</td>
                         <td className="px-5 py-3.5">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border capitalize ${roleBadge[u.role] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                            <Shield className="w-3 h-3" />{u.role}
+                            <Shield className="w-3 h-3" />{ROLE_LABELS[u.role] || u.role}
 </span>
                         </td>
                         <td className="px-5 py-3.5">
@@ -243,7 +255,7 @@ export const UserManagementPage = () => {
                           <p className="text-xs text-gray-400">{u.user_detail?.email || '—'}</p>
                         </div>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold border capitalize ${roleBadge[u.role] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>{u.role}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold border capitalize ${roleBadge[u.role] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>{ROLE_LABELS[u.role] || u.role}</span>
                     </div>
                     <div className="flex gap-2 mt-3">
                       <button onClick={() => openEdit(u)} className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center justify-center gap-1">Edit</button>
@@ -270,9 +282,25 @@ export const UserManagementPage = () => {
             <Field label="Email"><input type="email" className={inputCls} value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} placeholder="user@example.com" /></Field>
             <Field label="Role">
               <select className={inputCls} value={form.role} onChange={e => setForm(p => ({...p, role: e.target.value}))}>
-                {ROLES.map(r => <option key={r} value={r} className="capitalize">{r.charAt(0).toUpperCase()+r.slice(1)}</option>)}
+                {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
               </select>
             </Field>
+            {form.role === 'terminal_representative' && (
+              <div className="space-y-3 border border-blue-100 dark:border-blue-900/40 rounded-xl p-4 bg-blue-50/50 dark:bg-blue-900/10">
+                <p className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-widest">Company Details</p>
+                <Field label="Full Name (Company)"><input className={inputCls} value={form.first_name + ' ' + form.last_name} readOnly placeholder="Auto from First + Last Name" /></Field>
+                <Field label="Employee ID (optional)"><input className={inputCls} value={form.employee_id} onChange={e => setForm(p => ({...p, employee_id: e.target.value}))} placeholder="e.g. EMP-001" /></Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Terminal"><input className={inputCls} value={form.terminal} onChange={e => setForm(p => ({...p, terminal: e.target.value}))} placeholder="e.g. VIVO Terminal" /></Field>
+                  <Field label="Terminal Location"><input className={inputCls} value={form.terminal_location} onChange={e => setForm(p => ({...p, terminal_location: e.target.value}))} placeholder="e.g. Kurasini" /></Field>
+                </div>
+                <Field label="Company"><input className={inputCls} value={form.company} onChange={e => setForm(p => ({...p, company: e.target.value}))} placeholder="e.g. VIVO Energy Tanzania" /></Field>
+                <Field label="Position / Designation"><input className={inputCls} value={form.position} onChange={e => setForm(p => ({...p, position: e.target.value}))} placeholder="e.g. Terminal Representative" /></Field>
+                <Field label="Phone Number"><input className={inputCls} value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))} placeholder="+255 712 345 678" /></Field>
+                <Field label="Company Email"><input type="email" className={inputCls} value={form.company_email} onChange={e => setForm(p => ({...p, company_email: e.target.value}))} placeholder="company@example.com" /></Field>
+                <Field label="Date"><input type="date" className={inputCls} value={form.date_joined_company} onChange={e => setForm(p => ({...p, date_joined_company: e.target.value}))} /></Field>
+              </div>
+            )}
             <Field label="Password">
               <div className="relative">
                 <input type={showPw ? 'text' : 'password'} className={inputCls + ' pr-10'} required minLength={8} value={form.password} onChange={e => setForm(p => ({...p, password: e.target.value}))} placeholder="Min. 8 characters" />
@@ -306,9 +334,24 @@ export const UserManagementPage = () => {
             <Field label="Email"><input type="email" className={inputCls} value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} /></Field>
             <Field label="Role">
               <select className={inputCls} value={form.role} onChange={e => setForm(p => ({...p, role: e.target.value}))}>
-                {ROLES.map(r => <option key={r} value={r} className="capitalize">{r.charAt(0).toUpperCase()+r.slice(1)}</option>)}
+                {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
               </select>
             </Field>
+            {form.role === 'terminal_representative' && (
+              <div className="space-y-3 border border-blue-100 dark:border-blue-900/40 rounded-xl p-4 bg-blue-50/50 dark:bg-blue-900/10">
+                <p className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-widest">Company Details</p>
+                <Field label="Employee ID (optional)"><input className={inputCls} value={form.employee_id} onChange={e => setForm(p => ({...p, employee_id: e.target.value}))} /></Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Terminal"><input className={inputCls} value={form.terminal} onChange={e => setForm(p => ({...p, terminal: e.target.value}))} /></Field>
+                  <Field label="Terminal Location"><input className={inputCls} value={form.terminal_location} onChange={e => setForm(p => ({...p, terminal_location: e.target.value}))} /></Field>
+                </div>
+                <Field label="Company"><input className={inputCls} value={form.company} onChange={e => setForm(p => ({...p, company: e.target.value}))} /></Field>
+                <Field label="Position / Designation"><input className={inputCls} value={form.position} onChange={e => setForm(p => ({...p, position: e.target.value}))} /></Field>
+                <Field label="Phone Number"><input className={inputCls} value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))} /></Field>
+                <Field label="Company Email"><input type="email" className={inputCls} value={form.company_email} onChange={e => setForm(p => ({...p, company_email: e.target.value}))} /></Field>
+                <Field label="Date"><input type="date" className={inputCls} value={form.date_joined_company} onChange={e => setForm(p => ({...p, date_joined_company: e.target.value}))} /></Field>
+              </div>
+            )}
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={closeModal} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 transition">Cancel</button>
               <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl gradient-primary text-white text-sm font-semibold hover:shadow-lg transition disabled:opacity-50">

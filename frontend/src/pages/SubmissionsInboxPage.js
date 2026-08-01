@@ -1,15 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  inspectionService,
-  productReceiptCertificateService,
-  provisionalOuturnService,
-  sealIsolationReportService,
-  shoreTankCalculationService,
-  stockReportService,
-  submissionService,
-} from '../services/api';
-import { Bell, CheckCheck, FileText, Lock, Ruler, ClipboardList, Package, ShipWheel, Trash2 } from 'lucide-react';
+import { submissionService } from '../services/api';
+import { Bell, CheckCheck, FileText, Lock, Ruler, ClipboardList, Package, ShipWheel, Ship } from 'lucide-react';
 
 const DOC_TYPE_CONFIG = {
   dip_ticket:      { label: 'Dip Ticket',               icon: ClipboardList, color: 'text-blue-600',   bg: 'bg-blue-50',   href: (id) => `/inspections/${id}` },
@@ -17,29 +9,7 @@ const DOC_TYPE_CONFIG = {
   product_receipt: { label: 'Product Receipt Cert.',    icon: FileText,      color: 'text-amber-600',  bg: 'bg-amber-50',  href: (id) => `/product-receipt-certificates/${id}` },
   shore_tank:      { label: 'Shore Tank Calculation',   icon: Ruler,         color: 'text-teal-600',   bg: 'bg-teal-50',   href: (id) => `/shore-tank-calculations/${id}` },
   stock_report:    { label: 'Stock Report',             icon: Package,       color: 'text-emerald-600', bg: 'bg-emerald-50', href: (id) => `/stock-reports/${id}` },
-  provisional_outturn: { label: 'Provisional Outturn',   icon: ShipWheel,     color: 'text-indigo-600', bg: 'bg-indigo-50', href: (id) => `/provisional-outturn-reports/${id}` },
-};
-
-const downloadBlob = (blob, filename) => {
-  const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
-};
-
-const printBlob = (blob) => {
-  const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-  const win = window.open(url, '_blank');
-  if (win) {
-    win.onload = () => {
-      win.focus();
-      win.print();
-    };
-  }
+  provisional_outturn: { label: 'Provisional Outturn', icon: ShipWheel,     color: 'text-indigo-600', bg: 'bg-indigo-50', href: (id) => `/provisional-outturn-reports/${id}` },
 };
 
 export const SubmissionsInboxPage = () => {
@@ -47,19 +17,30 @@ export const SubmissionsInboxPage = () => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [filter, setFilter]           = useState('');
+  const [allSubmissions, setAllSubmissions] = useState([]);
   const userRole = localStorage.getItem('user_role');
-  const canDelete = ['admin', 'supervisor'].includes(userRole);
 
-  useEffect(() => { fetchSubmissions(); }, []);
+  useEffect(() => { fetchAll(); }, []); // eslint-disable-line
+  useEffect(() => { fetchFiltered(filter); }, [filter]); // eslint-disable-line
 
-  const fetchSubmissions = async () => {
-    setLoading(true);
+  const fetchAll = async () => {
     try {
       const res = await submissionService.getSubmissions();
+      setAllSubmissions(res.data.results || res.data);
+    } catch {}
+  };
+
+  const fetchSubmissions = async (docType = '') => {
+    setLoading(true);
+    try {
+      const params = docType ? { doc_type: docType } : {};
+      const res = await submissionService.getSubmissions(params);
       setSubmissions(res.data.results || res.data);
     } catch {}
     finally { setLoading(false); }
   };
+
+  const fetchFiltered = fetchSubmissions;
 
   const handleMarkRead = async (id) => {
     await submissionService.markRead(id);
@@ -69,6 +50,7 @@ export const SubmissionsInboxPage = () => {
   const handleMarkAllRead = async () => {
     await submissionService.markAllRead();
     setSubmissions(prev => prev.map(s => ({ ...s, is_read: true })));
+    setAllSubmissions(prev => prev.map(s => ({ ...s, is_read: true })));
   };
 
   const handleView = async (sub) => {
@@ -77,65 +59,12 @@ export const SubmissionsInboxPage = () => {
     if (cfg) navigate(cfg.href(sub.doc_id));
   };
 
-  const fetchSubmissionPdf = async (sub) => {
-    if (sub.doc_type === 'dip_ticket') {
-      const res = await inspectionService.generateDocument(sub.doc_id);
-      return res.data;
-    }
-    if (sub.doc_type === 'seal_isolation') {
-      const res = await sealIsolationReportService.generateDocument(sub.doc_id);
-      return res.data;
-    }
-    if (sub.doc_type === 'shore_tank') {
-      const res = await shoreTankCalculationService.generateDocument(sub.doc_id);
-      return res.data;
-    }
-    if (sub.doc_type === 'product_receipt') {
-      const res = await productReceiptCertificateService.downloadCertificatePdf(sub.doc_id);
-      return res.data;
-    }
-    if (sub.doc_type === 'stock_report') {
-      const res = await stockReportService.downloadPdf(sub.doc_id);
-      return res.data;
-    }
-    if (sub.doc_type === 'provisional_outturn') {
-      return provisionalOuturnService.generatePDF(sub.doc_id);
-    }
-    throw new Error('No printable document is available for this submission type.');
+  const handleCreateVesselReport = (sub) => {
+    navigate(`/vessel-reports/new?vessel=${encodeURIComponent(sub.vessel_name)}&terminal=${encodeURIComponent(sub.terminal || '')}&submission_id=${sub.id}&doc_type=${sub.doc_type}&doc_id=${sub.doc_id}`);
   };
 
-  const handleDownload = async (sub) => {
-    try {
-      const blob = await fetchSubmissionPdf(sub);
-      if (!sub.is_read) await handleMarkRead(sub.id);
-      downloadBlob(blob, `${sub.doc_type}_${sub.doc_number || sub.doc_id}.pdf`);
-    } catch {
-      window.alert('Failed to download this report.');
-    }
-  };
-
-  const handlePrint = async (sub) => {
-    try {
-      const blob = await fetchSubmissionPdf(sub);
-      if (!sub.is_read) await handleMarkRead(sub.id);
-      printBlob(blob);
-    } catch {
-      window.alert('Failed to print this report.');
-    }
-  };
-
-  const handleDelete = async (sub) => {
-    if (!window.confirm(`Delete submission #${sub.doc_number} (${sub.doc_type})? This cannot be undone.`)) return;
-    try {
-      await submissionService.deleteSubmission(sub.id);
-      setSubmissions(prev => prev.filter(s => s.id !== sub.id));
-    } catch {
-      window.alert('Failed to delete this submission.');
-    }
-  };
-
-  const filtered = filter ? submissions.filter(s => s.doc_type === filter) : submissions;
-  const unread   = submissions.filter(s => !s.is_read).length;
+  const filtered = submissions;
+  const unread   = allSubmissions.filter(s => !s.is_read).length;
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto animate-fade-in">
@@ -147,18 +76,13 @@ export const SubmissionsInboxPage = () => {
               <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">{unread}</span>
             )}
           </div>
-          <p className="text-gray-500 text-sm">Documents submitted by inspectors for PBPA review</p>
+          <p className="text-gray-500 text-sm">Signed documents submitted by inspectors — ready for vessel report creation</p>
         </div>
-        <div className="flex gap-2">
-          {unread > 0 && (
-            <button onClick={handleMarkAllRead} className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold transition">
-              <CheckCheck className="w-4 h-4" />Mark all read
-</button>
-          )}
-          <button onClick={() => navigate('/vessel-reports/new')} className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
-            + New Vessel Report
-</button>
-        </div>
+        {unread > 0 && (
+          <button onClick={handleMarkAllRead} className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold transition">
+            <CheckCheck className="w-4 h-4" />Mark all read
+          </button>
+        )}
       </div>
 
       {/* Filter tabs */}
@@ -167,7 +91,7 @@ export const SubmissionsInboxPage = () => {
           <button key={key} onClick={() => setFilter(key)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filter === key ? 'bg-[#8B1A1A] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {label}
-</button>
+          </button>
         ))}
       </div>
 
@@ -202,15 +126,13 @@ export const SubmissionsInboxPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap md:shrink-0">
-                  <button onClick={() => handleView(sub)} className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition">View
-</button>
-                  <button onClick={() => handleDownload(sub)} className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-green-100 transition">Download
-</button>
-                  <button onClick={() => handlePrint(sub)} className="inline-flex items-center gap-1.5 bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">Print
-</button>
-                  {canDelete && (
-                    <button onClick={() => handleDelete(sub)} title="Delete submission" className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-100 transition">
-                      <Trash2 className="w-3.5 h-3.5" />
+                  <button onClick={() => handleView(sub)}
+                    className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition">View
+                  </button>
+                  {userRole === 'admin' && (
+                    <button onClick={() => handleCreateVesselReport(sub)}
+                      className="inline-flex items-center gap-1.5 bg-[#8B1A1A] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-[#7a1717] transition">
+                      <Ship className="w-3.5 h-3.5" /> Create Vessel Report
                     </button>
                   )}
                 </div>

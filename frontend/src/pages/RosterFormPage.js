@@ -28,6 +28,12 @@ export const RosterFormPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
+  const userRole = localStorage.getItem('user_role');
+
+  // Only admins can create or edit rosters
+  useEffect(() => {
+    if (userRole !== 'admin') navigate('/roster', { replace: true });
+  }, [userRole, navigate]);
 
   const [inspectors, setInspectors] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -1,6 +1,6 @@
-# 🚀 Smart Petroleum Reporting System - Implementation & Deployment Guide
+#  Smart Petroleum Reporting System - Implementation & Deployment Guide
 
-## 📋 System Overview
+##  System Overview
 
 The Smart Petroleum Reporting System is a comprehensive web platform for managing petroleum tank inspections, calculations, and reporting. It replaces manual paperwork with digital workflows.
 
@@ -15,7 +15,7 @@ The Smart Petroleum Reporting System is a comprehensive web platform for managin
 
 ---
 
-## 🛠️ Complete Setup Instructions
+##  Complete Setup Instructions
 
 ### Phase 1: Backend Setup
 
@@ -135,11 +135,11 @@ EOF
 npm start
 ```
 
-✅ Frontend available at: **http://localhost:3000**
+ Frontend available at: **http://localhost:3000**
 
 ---
 
-## 🔐 Login Credentials
+##  Login Credentials
 
 After running `load_sample_data.py`, use these credentials:
 
@@ -151,7 +151,7 @@ After running `load_sample_data.py`, use these credentials:
 
 ---
 
-## 📊 System Architecture
+##  System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -184,7 +184,7 @@ After running `load_sample_data.py`, use these credentials:
 
 ---
 
-## 🔄 API Endpoints Reference
+##  API Endpoints Reference
 
 ### Authentication
 ```
@@ -245,7 +245,7 @@ GET    /api/reports/{id}/            # Download report
 
 ---
 
-## 🎯 Workflow Example
+##  Workflow Example
 
 ### Inspector Workflow
 1. **Login** with inspector credentials
@@ -282,7 +282,7 @@ GET    /api/reports/{id}/            # Download report
 
 ---
 
-## 📱 Frontend Pages
+##  Frontend Pages
 
 | Page | Route | Access |
 |------|-------|--------|
@@ -297,7 +297,7 @@ GET    /api/reports/{id}/            # Download report
 
 ---
 
-## 🧮 Calculation Engine Details
+##  Calculation Engine Details
 
 ### Volume Calculation
 ```
@@ -336,7 +336,7 @@ Net Standard Volume = Corrected Volume × Density Correction Factor
 
 ---
 
-## 🐳 Docker Deployment
+##  Docker Deployment
 
 ### Build & Run with Docker Compose
 
@@ -365,7 +365,7 @@ docker-compose exec backend python manage.py shell < backend/load_sample_data.py
 
 ---
 
-## 📚 Database Models
+##  Database Models
 
 ### UserProfile
 - Extended User model with roles (Inspector, Supervisor, Admin)
@@ -406,7 +406,7 @@ docker-compose exec backend python manage.py shell < backend/load_sample_data.py
 
 ---
 
-## 🔒 Security Features
+##  Security Features
 
 ✅ JWT Token Authentication
 ✅ Role-Based Access Control (RBAC)
@@ -419,7 +419,7 @@ docker-compose exec backend python manage.py shell < backend/load_sample_data.py
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Database Connection Error
 ```
@@ -448,7 +448,7 @@ Add your frontend URL if missing
 
 ---
 
-## 📈 Next Steps / Enhancement Ideas
+##  Next Steps / Enhancement Ideas
 
 ### Phase 4 - Smart Features
 - [ ] Add historical anomaly detection
@@ -477,7 +477,7 @@ Add your frontend URL if missing
 
 ---
 
-## 📞 Support & Contact
+##  Support & Contact
 
 For questions or issues:
 1. Check the troubleshooting section above
@@ -487,13 +487,13 @@ For questions or issues:
 
 ---
 
-## 📄 License
+##  License
 
 This project is proprietary to PBPA.
 
 ---
 
-## 🎓 Technical Stack
+##  Technical Stack
 
 | Component | Technology | Version |
 |-----------|-----------|---------|

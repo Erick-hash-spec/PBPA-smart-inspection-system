@@ -26,6 +26,8 @@ const rowTotal = (item) =>
 /* ─── List Page ─────────────────────────────────────────────────────────── */
 export const StockReportListPage = () => {
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('user_role');
+  const isAdmin = userRole === 'admin';
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
@@ -76,10 +78,12 @@ export const StockReportListPage = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">Stock Reports</h1>
           <p className="text-gray-600 dark:text-gray-300 text-sm mt-1 break-words">PBPA daily petroleum stock reports</p>
         </div>
+        {!isAdmin && (
         <button onClick={() => navigate('/stock-reports/new')}
           className="inline-flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#7a1717] text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition">
           <Plus className="w-4 h-4" />New Stock Report
-</button>
+        </button>
+      )}
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 text-sm">{error}</div>}
@@ -109,7 +113,7 @@ export const StockReportListPage = () => {
                 <button onClick={() => navigate(`/stock-reports/${r.id}`)}
                   className={`${actionCls} w-full sm:w-auto bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/40`}>View
 </button>
-                {r.status === 'draft' && (
+                {r.status === 'draft' && !isAdmin && (
                   <button onClick={() => navigate(`/stock-reports/${r.id}/edit`)}
                     className={`${actionCls} w-full sm:w-auto bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-200 border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40`}>Edit
 </button>

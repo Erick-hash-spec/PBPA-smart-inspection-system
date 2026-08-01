@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { shoreTankCalculationService } from '../services/api';
-import { ChevronLeft, FileText, Download, CheckCircle, Clock, FilePlus } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
+import { SigningActions } from '../components/SigningActions';
 
 const f  = (v, d = 3) => (v == null || v === '') ? '—' : Number(v).toFixed(d);
 const f4 = (v) => f(v, 4);
@@ -74,6 +75,7 @@ export const ShoreTankCalculationDetailPage = () => {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
   const [finalizing, setFinalizing] = useState(false);
+  const userRole = localStorage.getItem('user_role');
 
   useEffect(() => { load(); }, [id]); // eslint-disable-line
 
@@ -100,18 +102,6 @@ export const ShoreTankCalculationDetailPage = () => {
       document.body.appendChild(a); a.click();
       window.URL.revokeObjectURL(url); document.body.removeChild(a);
     } catch { setError('Failed to generate document'); }
-  };
-
-  const handleSign = async () => {
-    try {
-      const res = await shoreTankCalculationService.signDocument(id);
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url; a.download = `SIGNED_STC_${calc.calculation_number}.pdf`;
-      document.body.appendChild(a); a.click();
-      window.URL.revokeObjectURL(url); document.body.removeChild(a);
-      load();
-    } catch (err) { setError('Signing failed: ' + (err.response?.data?.detail || err.message)); }
   };
 
   if (loading) return (
@@ -191,12 +181,8 @@ export const ShoreTankCalculationDetailPage = () => {
             <button onClick={handleDoc} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors inline-flex items-center gap-2">Document
 </button>
 
-            {!calc.is_signed ? (
-              <button onClick={handleSign} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 transition-colors inline-flex items-center gap-2">Sign
-</button>
-            ) : (
-              <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 cursor-help" title={`Signed by ${calc.signed_by_name || 'PBPA'} on ${calc.signed_at ? new Date(calc.signed_at).toLocaleString() : ''}`}>Signed
-</span>
+            {calc.is_signed && (
+              <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 cursor-help" title={`Signed by ${calc.signed_by_name || 'PBPA'} on ${calc.signed_at ? new Date(calc.signed_at).toLocaleString() : ''}`}>Signed</span>
             )}
           </div>
         </div>
@@ -367,6 +353,20 @@ export const ShoreTankCalculationDetailPage = () => {
           <p className="text-gray-700 leading-relaxed">{calc.remarks}</p>
         </Card>
       )}
+
+      <div className="bg-white rounded-2xl shadow-base p-6 md:p-8 mb-6 animate-slide-up">
+        <div className="mb-6 pb-4 border-b border-gray-100">
+          <h2 className="text-sm font-bold text-gray-600 uppercase tracking-widest mb-1">Signing Workflow</h2>
+        </div>
+        <SigningActions
+          doc={calc}
+          role={userRole}
+          service={shoreTankCalculationService}
+          docLabel="STC"
+          onRefresh={load}
+          setError={setError}
+        />
+      </div>
     </div>
   );
 };

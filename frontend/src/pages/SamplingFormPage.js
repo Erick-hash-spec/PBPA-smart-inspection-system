@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { samplingFormService } from '../services/api';
+import { LogoHeader } from '../components/LogoHeader';
+import { SigningActions } from '../components/SigningActions';
 import { FlaskConical, Plus, Search, Inbox, AlertCircle } from 'lucide-react';
 import { TerminalSelect, ProductSelect } from '../components/FormOptions';
 
@@ -415,13 +417,20 @@ export const SamplingFormDetailPage = () => {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const userRole = localStorage.getItem('user_role');
 
-  useEffect(() => {
-    samplingFormService.getFormById(id)
-      .then(res => setForm(res.data))
-      .catch(() => setError('Failed to load sampling form'))
-      .finally(() => setLoading(false));
-  }, [id]);
+  useEffect(() => { loadForm(); }, [id]); // eslint-disable-line
+
+  const loadForm = async () => {
+    try {
+      const res = await samplingFormService.getFormById(id);
+      setForm(res.data);
+    } catch {
+      setError('Failed to load sampling form');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleIssue = async () => {
     await samplingFormService.issueForm(id);
@@ -457,13 +466,9 @@ export const SamplingFormDetailPage = () => {
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto animate-fade-in">
       <button onClick={() => navigate('/sampling-forms')} className="text-sm text-blue-600 hover:underline mb-4 inline-flex items-center gap-1">← Back</button>
-
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Vessel Sampling Form</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">{form.form_number} · {form.vessel_name}</p>
-        </div>
-        <div className="grid grid-cols-1 sm:flex gap-2 w-full md:w-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <LogoHeader title="Vessel Sampling Form" subtitle={form ? `${form.form_number} · ${form.vessel_name}` : 'Loading...'} />
+        <div className="flex flex-wrap gap-2">
           <StatusBadge status={form.status} />
           {form.status === 'draft' && (
             <button onClick={() => navigate(`/sampling-forms/${id}/edit`)} className="px-4 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition">Edit</button>
@@ -521,7 +526,21 @@ export const SamplingFormDetailPage = () => {
             <Field label="Inspector Signature" value={form.pbpa_inspector_signature} />
           </div>
         </SectionCard>
+
+        <SectionCard title="Signing Workflow">
+          <SigningActions
+            doc={form}
+            role={userRole}
+            service={samplingFormService}
+            docLabel="SF"
+            onRefresh={loadForm}
+            setError={setError}
+            counterpartyLabel="Vessel Captain"
+            counterpartySendLabel="Vessel Captain"
+          />
+        </SectionCard>
       </div>
+
     </div>
   );
 };

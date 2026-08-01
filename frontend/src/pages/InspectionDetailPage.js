@@ -80,7 +80,13 @@ export const InspectionDetailPage = () => {
 
   const fetchInspection = async () => {
     try { const res = await inspectionService.getInspectionById(id); setInspection(res.data); }
-    catch { setError('Failed to load inspection'); }
+    catch (err) {
+      if (err.response?.status === 404) {
+        navigate('/inspections', { replace: true });
+        return;
+      }
+      setError(err.response?.data?.detail || 'This inspection could not be opened. Please return to the list and try again.');
+    }
     finally { setLoading(false); }
   };
 
@@ -148,8 +154,11 @@ export const InspectionDetailPage = () => {
   
   if (error) return (
     <div className="p-8 max-w-5xl mx-auto">
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex gap-2">
-        <span>{error}</span>
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+        <p className="font-semibold">{error}</p>
+        <button onClick={() => navigate('/inspections')} className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary-600 hover:text-primary-700">
+          <ChevronLeft className="w-4 h-4" />Back to dip tickets
+        </button>
       </div>
     </div>
   );
@@ -352,7 +361,7 @@ export const InspectionDetailPage = () => {
             </button>
           )}
           
-          {inspection.status === 'submitted' && userRole === 'supervisor' && (
+          {inspection.status === 'submitted' && (userRole === 'terminal_representative' || userRole === 'admin') && (
             <>
               <button onClick={handleApprove} className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition">Approve
 </button>

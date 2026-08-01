@@ -8,6 +8,8 @@ MIN_TEMPERATURE_C = -50
 MAX_TEMPERATURE_C = 150
 MIN_CORRECTION_FACTOR = 0.8
 MAX_CORRECTION_FACTOR = 1.2
+MIN_WCF = 0.5  # WCF = density@20 - 0.0011; covers density range 0.5-1.2
+MAX_WCF = 1.2
 
 
 def _is_number(value):
@@ -94,12 +96,15 @@ def validate_shore_tank_item_data(item_data):
                 f'{label} density, sample temperature, and tank temperature are required together for ASTM lookup.',
             )
 
-        for field, value in ((f'vcf_{state}', vcf), (f'wcf_{state}', wcf)):
-            if _is_number(value) and not (MIN_CORRECTION_FACTOR <= value <= MAX_CORRECTION_FACTOR):
+        for field, value, lo, hi in (
+            (f'vcf_{state}', vcf, MIN_CORRECTION_FACTOR, MAX_CORRECTION_FACTOR),
+            (f'wcf_{state}', wcf, MIN_WCF, MAX_WCF),
+        ):
+            if _is_number(value) and not (lo <= value <= hi):
                 _add_error(
                     errors,
                     field,
-                    f'{label} correction factor must be between {MIN_CORRECTION_FACTOR} and {MAX_CORRECTION_FACTOR}.',
+                    f'{label} correction factor must be between {lo} and {hi}.',
                 )
 
         if gross and roof + water_volume > gross:
@@ -216,33 +221,18 @@ class InspectionCalculationEngine:
         return round(base_density / density_corrected, 6)
 
 
-def _astm_expansion(density_kg_l):
-    """ASTM D1250 thermal expansion coefficient by density range."""
-    if density_kg_l >= 0.8:
-        return 0.00064   # heavy products (fuel oil, diesel, crude)
-    return 0.001210      # light products (gasoline, naphtha)
-
-
 class ASTMD1250Calculator:
     """ASTM D1250 / API MPMS Ch.11 helper — Table 54B/59B & Table 60B."""
 
     @staticmethod
     def density_at_20(sample_density_kg_l, sample_temperature_c):
-        """Table 54B/59B: correct observed sample density to 20°C.
-        d20 = d_obs * (1 + alpha*(T_obs - 20))
-        """
-        if sample_density_kg_l is None or sample_temperature_c is None:
-            return None
-        alpha = _astm_expansion(sample_density_kg_l)
-        return round(sample_density_kg_l * (1 + alpha * (sample_temperature_c - 20)), 4)
+        from .astm_tables import density_at_20_formula
+        return density_at_20_formula(sample_density_kg_l, sample_temperature_c)
 
     @staticmethod
     def vcf(density_at_20_kg_l, tank_temperature_c):
-        """Table 60B: VCF = 1 / (1 + alpha*(T_tank - 20))."""
-        if density_at_20_kg_l is None or tank_temperature_c is None:
-            return 1.0
-        alpha = _astm_expansion(density_at_20_kg_l)
-        return round(1 / (1 + alpha * (tank_temperature_c - 20)), 6)
+        from .astm_tables import vcf_formula
+        return vcf_formula(density_at_20_kg_l, tank_temperature_c)
 
     @staticmethod
     def wcf(density_at_20_kg_l):
@@ -263,28 +253,16 @@ class ShoreTankCalculationEngine:
     @staticmethod
     def density_at_20(sample_density_kg_l, sample_temperature_c):
         """Table 59B lookup with formula fallback."""
-        from .astm_tables import density_at_20_from_table
+        from .astm_tables import density_at_20_from_table, density_at_20_formula
         result = density_at_20_from_table(sample_density_kg_l, sample_temperature_c)
-        if result is not None:
-            return result
-        # formula fallback
-        if sample_density_kg_l is None or sample_temperature_c is None:
-            return None
-        alpha = _astm_expansion(sample_density_kg_l)
-        return round(sample_density_kg_l * (1 + alpha * (sample_temperature_c - 20)), 4)
+        return result if result is not None else density_at_20_formula(sample_density_kg_l, sample_temperature_c)
 
     @staticmethod
     def vcf(density_at_20_kg_l, tank_temperature_c):
         """Table 60B lookup with formula fallback."""
-        from .astm_tables import vcf_from_table
+        from .astm_tables import vcf_from_table, vcf_formula
         result = vcf_from_table(density_at_20_kg_l, tank_temperature_c)
-        if result is not None:
-            return result
-        # formula fallback
-        if density_at_20_kg_l is None or tank_temperature_c is None:
-            return 1.0
-        alpha = _astm_expansion(density_at_20_kg_l)
-        return round(1 / (1 + alpha * (tank_temperature_c - 20)), 6)
+        return result if result is not None else vcf_formula(density_at_20_kg_l, tank_temperature_c)
 
     @staticmethod
     def wcf(density_at_20_kg_l):

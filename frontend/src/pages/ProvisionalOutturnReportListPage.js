@@ -18,6 +18,8 @@ const StatusBadge = ({ status }) => {
 
 const ProvisionalOutturnReportListPage = () => {
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('user_role');
+  const isAdmin = userRole === 'admin';
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -75,10 +77,12 @@ const ProvisionalOutturnReportListPage = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">PBPA vessel outturn summary records</p>
           </div>
         </div>
+        {!isAdmin && (
         <button onClick={() => navigate('/provisional-outturn-reports/new')}
           className="gradient-primary text-white px-5 py-2.5 rounded-xl font-semibold text-sm inline-flex items-center gap-2 hover:opacity-90 transition shadow-sm">
           <Plus className="w-4 h-4" />New Report
-</button>
+        </button>
+      )}
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">{error}</div>}
@@ -115,8 +119,10 @@ const ProvisionalOutturnReportListPage = () => {
                       <div className="report-actions" onClick={e => e.stopPropagation()}>
                         <button onClick={() => navigate(`/provisional-outturn-reports/${r.id}`)} title="View"
                           className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
-                        <button onClick={() => navigate(`/provisional-outturn-reports/${r.id}/edit`)} title="Edit"
-                          className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
+                        {!isAdmin && (
+                          <button onClick={() => navigate(`/provisional-outturn-reports/${r.id}/edit`)} title="Edit"
+                            className="report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
+                        )}
                         {r.status === 'final' && (
                           submittedIds.has(r.id)
                             ? <span className="report-action inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>

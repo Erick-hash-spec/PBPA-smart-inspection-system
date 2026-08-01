@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sealIsolationReportService } from '../services/api';
-import { SubmitModal } from '../components/SubmitModal';
 import { Shield, Plus } from 'lucide-react';
 
 const StatusBadge = ({ status }) => {
@@ -31,12 +30,12 @@ const ConfirmModal = ({ message, onConfirm, onCancel }) => (
 
 export const SealIsolationReportListPage = () => {
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('user_role');
+  const isAdmin = userRole === 'admin';
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [submitTarget, setSubmitTarget] = useState(null);
-  const [submittedIds, setSubmittedIds] = useState(new Set());
 
   useEffect(() => { fetchReports(); }, []); // eslint-disable-line
 
@@ -71,18 +70,56 @@ export const SealIsolationReportListPage = () => {
     } catch { setError('Failed to download document'); }
   };
 
+  const handleWorkflowAction = async (action, fallbackMessage) => {
+    try {
+      setError('');
+      await action();
+      fetchReports();
+    } catch (err) {
+      setError(err.response?.data?.detail || fallbackMessage);
+    }
+  };
+
+  const renderSigningAction = (report) => {
+    if (report.signing_step === 'submitted') {
+      return <span className="report-action inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>;
+    }
+
+    if (report.status !== 'issued' || isAdmin) return null;
+
+    if (report.signing_step === 'client_signed') {
+      if (userRole === 'terminal_representative') {
+        return (
+          <button onClick={() => handleWorkflowAction(() => sealIsolationReportService.sendToInspector(report.id), 'Failed to send back to inspector')} title="Send Back"
+            className="report-action seal-report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Send Back</button>
+        );
+      }
+      return <span className="report-action inline-flex items-center gap-1 text-xs font-semibold text-amber-700 px-2 py-1 bg-amber-50 rounded-lg border border-amber-200">Awaiting send back</span>;
+    }
+
+    if (report.signing_step === 'sent_to_inspector' && userRole === 'inspector') {
+      return (
+        <button onClick={() => handleWorkflowAction(() => sealIsolationReportService.submitToAdmin(report.id), 'Failed to submit to admin')} title="Submit to Admin"
+          className="report-action seal-report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit Admin</button>
+      );
+    }
+
+    if (report.signing_step === 'verified' && userRole === 'inspector') {
+      return (
+        <button onClick={() => handleWorkflowAction(() => sealIsolationReportService.submitToAdmin(report.id), 'Failed to submit to admin')} title="Submit to Admin"
+          className="report-action seal-report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit Admin</button>
+      );
+    }
+
+    if (report.signing_step === 'sent_to_client') {
+      return <span className="report-action inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 px-2 py-1 bg-indigo-50 rounded-lg border border-indigo-200">Awaiting signature</span>;
+    }
+
+    return null;
+  };
+
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto animate-fade-in">
-      {submitTarget && (
-        <SubmitModal
-          docType="Seal & Isolation Report" docTypeKey="seal_isolation"
-          docId={submitTarget.id} docNumber={submitTarget.report_number}
-          vesselName={submitTarget.vessel_name} terminal={submitTarget.terminal}
-          onDownload={() => handleDownloadDoc(submitTarget)}
-          onClose={() => setSubmitTarget(null)}
-          onSubmitted={(id) => { setSubmittedIds(p => new Set(p).add(id)); setSubmitTarget(null); }}
-        />
-      )}
       {deleteTarget && (
         <ConfirmModal
           message={`Delete report #${deleteTarget.report_number} for ${deleteTarget.vessel_name}? This cannot be undone.`}
@@ -101,10 +138,12 @@ export const SealIsolationReportListPage = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">PBPA seal location and number records</p>
           </div>
         </div>
+        {!isAdmin && (
         <button onClick={() => navigate('/seal-isolation-reports/new')}
           className="gradient-primary text-white px-5 py-2.5 rounded-xl font-semibold text-sm inline-flex items-center gap-2 hover:opacity-90 transition shadow-sm">
           <Plus className="w-4 h-4" />New Report
-</button>
+        </button>
+      )}
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">{error}</div>}
@@ -142,19 +181,16 @@ export const SealIsolationReportListPage = () => {
                       <div className="report-actions seal-report-actions" onClick={e => e.stopPropagation()}>
                         <button onClick={() => navigate(`/seal-isolation-reports/${r.id}`)} title="View"
                           className="report-action seal-report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700">View</button>
-                        {r.status === 'draft' && (
+                        {r.status === 'draft' && !isAdmin && (
                           <button onClick={() => navigate(`/seal-isolation-reports/${r.id}/edit`)} title="Edit"
                             className="report-action seal-report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">Edit</button>
                         )}
-                        {r.status === 'draft' && (
+                        {r.status === 'draft' && !isAdmin && (
                           <button onClick={() => handleSubmitReport(r.id)} title="Submit"
                             className="report-action seal-report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700">Submit</button>
                         )}
                         {r.status === 'issued' && (
-                          submittedIds.has(r.id)
-                            ? <span className="report-action inline-flex items-center gap-1 text-xs font-semibold text-green-700 px-2 py-1 bg-green-50 rounded-lg border border-green-200">Sent</span>
-                            : <button onClick={() => setSubmitTarget(r)} title="Submit"
-                                className="report-action seal-report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Submit</button>
+                          renderSigningAction(r)
                         )}
                         <button onClick={() => setDeleteTarget(r)} title="Delete"
                           className="report-action seal-report-action px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition whitespace-nowrap bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700">Delete</button>
