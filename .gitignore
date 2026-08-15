@@ -4,8 +4,6 @@
 .env
 .env.*
 !.env.example
-!.env.production
-!.env.development
 
 # ==============================
 # Python
