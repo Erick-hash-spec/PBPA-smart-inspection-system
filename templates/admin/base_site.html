@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | Smart Reporting Admin{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'inspections/css/admin-tailwind.css' %}">
+{% endblock %}
+
+{% block branding %}
+<div class="sr-admin-brand">
+  <span class="sr-admin-brand__title">Smart Reporting</span>
+  <span class="sr-admin-brand__subtitle">PBPA Operations Console</span>
+</div>
+{% endblock %}
+
+{% block nav-global %}
+<div class="sr-admin-links">
+  <a href="/">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg>
+    API Status
+  </a>
+  <a href="/api/">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    API Root
+  </a>
+  <a href="{{ frontend_url|default:'/' }}">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v12H4zM9 21h6m-3-4v4"/></svg>
+    Frontend
+  </a>
+</div>
+{% endblock %}
