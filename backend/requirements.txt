@@ -22,13 +22,9 @@ python-docx==0.8.11
 pyHanko>=0.20.0
 pyhanko-certvalidator>=0.26.0
 cryptography>=41.0.0
-argon2-cffi>=23.1.0
 
 # Image handling
 Pillow>=10.0.0
-
-# QR code generation
-qrcode[pil]>=7.4.2
 
 # Security & logging
 python-json-logger==2.0.7
