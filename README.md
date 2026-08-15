@@ -766,4 +766,4 @@ python manage.py shell
 
 ## License
 
-© 2024 PBPA Smart Reporting System — Erick Muhanuzi Final Year Project
+© 2026 PBPA Smart Reporting System — Erick Muhanuzi Final Year Project
